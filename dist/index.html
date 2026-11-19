@@ -10,8 +10,10 @@
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="hunt.css">
   <link rel="stylesheet" href="navigation.css?v=a78c2d5">
-  <link rel="stylesheet" href="controls.css?v=20261119-3">
-  <script defer src="app.js?v=a78c2d5"></script>
+  <link rel="stylesheet" href="controls.css?v=personal-1">
+  <link rel="stylesheet" href="personal.css?v=personal-1">
+  <script defer src="personal.js?v=personal-1"></script>
+  <script defer src="app.js?v=personal-1"></script>
   <script defer src="hunt.js"></script>
 </head>
 <body>
@@ -21,7 +23,7 @@
       <div><span class="brand-en" lang="en" dir="ltr">MAPLE ATLAS</span><span class="brand-he">כל עולם מתחיל בשער</span></div>
     </a>
     <div class="edition"><span lang="en" dir="ltr">MapleStory Classic World</span><span>גרסה 2.0.0 · נתוני 18.11.2026</span></div>
-    <div class="header-actions"><button id="huntToggle" class="button hunt-toggle" type="button"><span class="icon" data-icon="compass"></span><span>חיפוש וציד</span></button><button id="routeToggle" class="button primary" type="button"><span class="icon" data-icon="route"></span>תכנון מסלול</button><button id="aboutButton" class="button quiet" type="button" aria-label="על האטלס"><span class="icon" data-icon="book"></span><span>על האטלס</span></button></div>
+    <div class="header-actions"><button id="personalToggle" class="button quiet personal-toggle" type="button" aria-label="המקומות שלי — מועדפים ומפות אחרונות"><span class="icon" aria-hidden="true">★</span><span class="personal-label">המקומות שלי</span></button><button id="huntToggle" aria-label="חיפוש וציד" class="button hunt-toggle" type="button"><span class="icon" data-icon="compass"></span><span>חיפוש וציד</span></button><button id="routeToggle" class="button primary" type="button"><span class="icon" data-icon="route"></span>תכנון מסלול</button><button id="aboutButton" class="button quiet" type="button" aria-label="על האטלס"><span class="icon" data-icon="book"></span><span>על האטלס</span></button></div>
   </header>
   <main class="workspace">
     <section class="world-pane" aria-label="מפת הקשרים של עולם המשחק">
@@ -52,13 +54,18 @@
       <section id="routePanel" class="route-panel" hidden>
         <div class="section-heading"><div><span class="eyebrow">בוחרים יעד, מוצאים דרך</span><h2>המסע שלך</h2></div><button id="closeRoute" type="button" class="icon-button" aria-label="סגירת תכנון מסלול"><span class="icon" data-icon="close"></span></button></div>
         <form id="routeForm"><label for="routeFrom">מאיפה יוצאים?</label><input id="routeFrom" list="mapOptions" required autocomplete="off" dir="ltr"><label for="routeTo">לאן מגיעים?</label><input id="routeTo" list="mapOptions" required autocomplete="off" dir="ltr"><datalist id="mapOptions"></datalist><label class="check-row"><input id="useServices" type="checkbox"><span>לכלול כניסות דרך דמויות ומשימות</span></label><p class="route-help">המסלול ממזער מעברים בין מפות. זמן הליכה ותנאי כניסה אינם מחושבים.</p><button class="button primary full" type="submit">מצא מסלול</button></form>
-        <div id="routeResult" aria-live="polite"></div>
+        <p id="routeRestoreNote" class="route-restore-note" role="status"></p><p id="routeStorageStatus" class="personal-storage" role="status"></p><div id="routeResult" aria-live="polite"></div><div id="routeShareBox" class="route-share-box" hidden><label for="routeShareUrl">קישור למסלול ולשלב הנוכחי</label><input id="routeShareUrl" readonly dir="ltr" aria-describedby="routeShareHelp"><small id="routeShareHelp">המועדפים והמפות האחרונות אינם נכללים בקישור.</small></div>
       </section>
       <section id="mapDetails"><div class="detail-placeholder">בחרו מקום על המפה כדי להתחיל לחקור.</div></section>
       <footer class="panel-footer"><span>מחקר: 19 בנובמבר 2026</span><button id="coverageButton" type="button">כיסוי ומקורות</button></footer>
     </aside>
   </main>
-  <dialog id="sceneDialog" class="scene-dialog">
+  <dialog id="personalDialog" class="personal-dialog" aria-labelledby="personalTitle">
+    <div class="section-heading"><h2 id="personalTitle">המקומות שלי</h2><button id="closePersonal" type="button" class="icon-button" aria-label="סגירת המקומות שלי">×</button></div>
+    <label for="personalFilter">מה להציג?</label><select id="personalFilter"><option value="favorites">★ המועדפים שלי</option><option value="recent">מפות שפתחתי לאחרונה</option></select>
+    <p id="personalStorage" class="personal-storage" role="status"></p><div id="personalList"></div><button id="clearRecent" type="button" class="button quiet">ניקוי מפות אחרונות</button>
+  </dialog>
+  <dialog id="sceneDialog" class="scene-dialog" aria-labelledby="sceneTitle">
     <header class="scene-header"><div><span id="sceneRegion" class="eyebrow"></span><h2 id="sceneTitle" dir="ltr"></h2></div><div class="scene-header-actions"><button id="sceneFit" class="button quiet" type="button"><span class="icon" data-icon="fit"></span>כל המפה</button><button id="sceneZoomIn" class="icon-button" type="button" aria-label="הגדלת תמונת מפה">+</button><button id="sceneZoomOut" class="icon-button" type="button" aria-label="הקטנת תמונת מפה">−</button><button id="closeScene" class="icon-button" type="button" aria-label="סגירת תמונת מפה"><span class="icon" data-icon="close"></span></button></div></header>
     <section id="sceneNavigation" class="scene-navigation" aria-label="מדריך המסלול" hidden>
       <div class="navigation-copy" aria-live="polite"><span id="sceneNavStatus" class="navigation-status"></span><div class="navigation-destination"><span id="sceneNavLabel"></span><bdi id="sceneNavTarget"></bdi></div><p id="sceneNavInstruction"></p></div>

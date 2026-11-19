@@ -8,6 +8,7 @@ const suites=[
   ['atlas-behavior.cjs','Search, portal actions and entity scenes'],
   ['atlas-graph.cjs','Graph, selection and region filters'],
   ['hunt.cjs','Item, monster and NPC catalog behavior'],
+  ['personal.cjs','Saved journeys, sharing and personal map library'],
 ];
 let total=0,failed=0;
 for(const [file,label] of suites){
