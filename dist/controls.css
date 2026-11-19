@@ -41,6 +41,7 @@ input[type=checkbox],.check-row input,.hunt-panel input[type=checkbox]{width:20p
 .directory-filters select{max-width:230px}
 .hunt-search-field input{border-radius:14px}
 @media(max-width:780px){
+ .world-pane:has(.directory:not([hidden])){z-index:31}
  .search-wrap{height:48px}.search-wrap input:not([type=checkbox]):not([type=radio]){font-size:16px;min-height:44px}
  .region-nav{top:69px}.region-nav button{font-size:12px;min-height:40px;padding:8px 12px}
  .directory-filters select{max-width:none;width:100%}
