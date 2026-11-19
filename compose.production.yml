@@ -1,0 +1,32 @@
+name: mcp-atlas
+services:
+  atlas:
+    image: ${ATLAS_IMAGE:?Set the verified immutable release image}
+    user: "101:101"
+    read_only: true
+    tmpfs: ["/tmp:size=16m,mode=1777,noexec,nosuid"]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    restart: unless-stopped
+    mem_limit: 64m
+    pids_limit: 32
+    networks: [web]
+    healthcheck:
+      test: [CMD, wget, -q, -O, /dev/null, "http://127.0.0.1:8080/healthz"]
+      interval: 15s
+      timeout: 4s
+      retries: 3
+      start_period: 5s
+    logging:
+      driver: json-file
+      options: {max-size: "5m", max-file: "2"}
+    labels:
+      traefik.enable: "true"
+      traefik.docker.network: web
+      traefik.http.routers.mcp-atlas.rule: "Host(`maple.omerlabinsky.com`)"
+      traefik.http.routers.mcp-atlas.entrypoints: websecure
+      traefik.http.routers.mcp-atlas.tls: "true"
+      traefik.http.services.mcp-atlas.loadbalancer.server.port: "8080"
+networks:
+  web:
+    external: true
