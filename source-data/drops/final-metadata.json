@@ -1,0 +1,60 @@
+{
+  "game": "MapleStory Classic World",
+  "catalogVersion": "2.0.0",
+  "checkedAt": "2026-11-19",
+  "sourcePage": "https://ms-classic.com/drops",
+  "sourcePageSha256": "4ce23d738a8f05d4419922d1378662ebb81c1937438d60982b4081e48e487ece",
+  "sourceRecords": 1006,
+  "sourceMonsterNames": 65,
+  "supplementalConfirmedRelationships": 4,
+  "numericIdJoinsCorroboratedBySixPath": 49,
+  "acceptedRelationships": 124,
+  "coveredItemIds": 63,
+  "coveredMonsterIds": 26,
+  "unresolvedRelationships": 1,
+  "excluded": {
+    "legacy_reference_without_classic_confirmation": 885
+  },
+  "statusCounts": {
+    "classic_counted": 99,
+    "team_seen": 1,
+    "classic_confirmed": 24
+  },
+  "allKnownGameDrops": false,
+  "dropRatesIncluded": false,
+  "missingDataMeans": "not_documented_in_collected_sources",
+  "coverageNoteHe": "נכללו רק קשרי נשירה שמסומנים במקור כתצפיות בקלאסיק. זהו מאגר חלקי של דיווחים קהילתיים, ולא טבלת הנשירה הרשמית. תצפיות קודמות לא נבדקו מחדש בכל עדכון.",
+  "missingNoteHe": "אין במקורות שנאספו תיעוד לנשירה של הפריט הזה. זה לא אומר שהפריט אינו נושר.",
+  "historicalVersionNoteHe": "מזהי הפריטים והמפלצות תואמים לקטלוג גרסה 2.0.0. גרסת המשחק ותאריך התצפית של כל דיווח אינם מפורטים בטבלת המקור.",
+  "idMatchNote": "Items use numeric source-icon IDs and exact current names. Monsters require exact name, displayed level, and identical sprite hash. The ambiguous Zombie Mushroom row is excluded from fixed-ID links.",
+  "license": "CC BY-NC-SA 4.0 for the MapleClassic Wiki-derived observations; separately attributed isolated factual observations from MS-Classic and MaplelandHub.",
+  "licenseUrl": "https://creativecommons.org/licenses/by-nc-sa/4.0/",
+  "attribution": "Classic drop observations: MapleClassic Wiki, via MS-Classic. Filtered to explicitly Classic-confirmed observations, ID-matched to OSMS Data Explorer, rates removed. Game content © Nexon.",
+  "sources": [
+    {
+      "name": "MS-Classic drop table",
+      "url": "https://ms-classic.com/drops",
+      "role": "Published source records and Classic-confirmed / team-seen labels"
+    },
+    {
+      "name": "MapleClassic Wiki reuse and license",
+      "url": "https://mapleclassic.wiki/wiki/MapleWiki:About#Reusing_the_wiki",
+      "role": "Underlying observation attribution and CC BY-NC-SA 4.0 license"
+    },
+    {
+      "name": "OSMS Data Explorer public dataset",
+      "url": "https://osmsdataexplorer.com/data/api/v1/README.md",
+      "role": "Current item/monster IDs; expressly excludes server-side drop tables"
+    },
+    {
+      "name": "MaplelandHub Classic World Mushmom drops",
+      "url": "https://maplelandhub.com/classic/en/monster/700000",
+      "role": "Four explicitly Classic-confirmed factual relationships, exact numeric IDs; all historical KMS rates excluded"
+    },
+    {
+      "name": "Six Path public counted drop rows",
+      "url": "https://sixpath.wiki/drops",
+      "role": "Corroborates numeric item/monster IDs for 49 links; observations share underlying wiki data"
+    }
+  ]
+}

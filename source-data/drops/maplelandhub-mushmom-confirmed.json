@@ -1,0 +1,48 @@
+{
+  "sourceUrl": "https://maplelandhub.com/classic/en/monster/700000",
+  "retrievedOn": "2026-11-19",
+  "sourceHtmlSha256": "d5e82f9ea4fcea8ed03e406f15948e54f79240cd6de9e1c96d6549602e901922",
+  "selection": "Only exact factual relationships explicitly labelled Confirmed in Classic. Historical KMS rates and unconfirmed rows omitted.",
+  "rows": [
+    {
+      "monsterId": 700000,
+      "monsterName": "Mushmom",
+      "monsterLevel": 40,
+      "itemId": 2070004,
+      "itemName": "Tobi Throwing Stars",
+      "itemPath": "/classic/en/item/2070004",
+      "sourceLabel": "Confirmed in Classic",
+      "underlyingSourceUrl": null
+    },
+    {
+      "monsterId": 700000,
+      "monsterName": "Mushmom",
+      "monsterLevel": 40,
+      "itemId": 2070006,
+      "itemName": "Ilbi Throwing Stars",
+      "itemPath": "/classic/en/item/2070006",
+      "sourceLabel": "Confirmed in Classic",
+      "underlyingSourceUrl": "https://meowdb.com/msclassic/item-db/300"
+    },
+    {
+      "monsterId": 700000,
+      "monsterName": "Mushmom",
+      "monsterLevel": 40,
+      "itemId": 2040801,
+      "itemName": "Gloves Attack Scroll: Intermediate",
+      "itemPath": "/classic/en/item/2040801",
+      "sourceLabel": "Confirmed in Classic",
+      "underlyingSourceUrl": "https://meowdb.com/msclassic/item-db/114"
+    },
+    {
+      "monsterId": 700000,
+      "monsterName": "Mushmom",
+      "monsterLevel": 40,
+      "itemId": 2040309,
+      "itemName": "Earring INT Scroll: Intermediate",
+      "itemPath": "/classic/en/item/2040309",
+      "sourceLabel": "Confirmed in Classic",
+      "underlyingSourceUrl": null
+    }
+  ]
+}

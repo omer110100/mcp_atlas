@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#0c1d27">
+  <meta name="description" content="אטלס אינטראקטיבי למייפלסטורי קלאסיק: כל רשומות המפות בגרסה 2.0.0, שערים, מקומות נסתרים וניווט בין מפות.">
+  <title>אטלס מייפלסטורי קלאסיק</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath fill='%23e9bd78' d='M32 3l6 16 13-5-3 14 12 5-18 12-9 16-3-20-22-8 13-5-3-14 10 5z'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="hunt.css">
+  <script defer src="app.js"></script>
+  <script defer src="hunt.js"></script>
+</head>
+<body>
+  <header class="app-header">
+    <a class="brand" href="#" aria-label="הצגת האטלס כולו">
+      <svg class="brand-leaf" viewBox="0 0 64 64" aria-hidden="true"><path d="M32 4l6 16 13-5-3 13 12 5-18 12-9 15-3-19-22-8 13-5-3-13 10 5z"/><path class="leaf-vein" d="M32 22v24m0-12-13-4m13 4 13-9"/></svg>
+      <div><span class="brand-en" lang="en" dir="ltr">MAPLE ATLAS</span><span class="brand-he">כל עולם מתחיל בשער</span></div>
+    </a>
+    <div class="edition"><span lang="en" dir="ltr">MapleStory Classic World</span><span>גרסה 2.0.0 · נתוני 18.11.2026</span></div>
+    <div class="header-actions"><button id="huntToggle" class="button hunt-toggle" type="button"><span class="icon" data-icon="compass"></span><span>חיפוש וציד</span></button><button id="routeToggle" class="button primary" type="button"><span class="icon" data-icon="route"></span>תכנון מסלול</button><button id="aboutButton" class="button quiet" type="button" aria-label="על האטלס"><span class="icon" data-icon="book"></span><span>על האטלס</span></button></div>
+  </header>
+  <main class="workspace">
+    <section class="world-pane" aria-label="מפת הקשרים של עולם המשחק">
+      <div class="map-topbar">
+        <div class="search-wrap"><span class="icon" data-icon="search"></span><input id="search" autocomplete="off" aria-label="חיפוש מפה, פריט, מפלצת או דמות" placeholder="מפה, פריט, מפלצת או דמות…" role="combobox" aria-expanded="false" aria-controls="searchResults"><kbd>/</kbd><div id="searchResults" class="search-results" role="listbox" hidden></div></div>
+        <button id="directoryToggle" class="button glass" type="button"><span class="icon" data-icon="grid"></span>כל המקומות <span id="mapCount" class="mini-count">364</span></button>
+      </div>
+      <nav class="region-nav" aria-label="אזורים באטלס">
+        <button type="button" data-region="world" class="active">כל העולם</button>
+        <button type="button" data-region="victoria">ויקטוריה</button>
+        <button type="button" data-region="maple">אי המתחילים</button>
+        <button type="button" data-region="hollow">החלל הנשכח</button>
+        <button type="button" data-region="special">שוק ומשימות</button>
+        <button type="button" data-region="archive">אירועים ומערכת</button>
+      </nav>
+      <div id="mapCanvas" class="map-canvas">
+        <svg id="worldSvg" xmlns="http://www.w3.org/2000/svg" aria-label="מפת עולם אינטראקטיבית. ניתן לחפש מקום או לבחור נקודה." role="img"><defs id="worldDefs"></defs><g id="worldViewport"><g id="landLayer"></g><g id="edgeLayer"></g><g id="routeLayer"></g><g id="nodeLayer"></g><g id="decorationLayer"></g></g></svg>
+        <div id="mapTooltip" class="map-tooltip" hidden></div>
+        <div class="map-intro" id="mapIntro"><span class="eyebrow">הדרך מסתתרת בפרטים</span><h1>מעבר לכל שער</h1><p>ערים, יערות, חדרים וסודות.<br>בחרו מקום. גלו לאן הוא מוביל.</p></div>
+        <div id="loading" class="loading"><span class="loading-orb"></span>פורשים את המפה…</div>
+        <div class="map-controls" aria-label="בקרת תצוגה"><button id="zoomIn" type="button" aria-label="הגדלת מפה">+</button><button id="zoomOut" type="button" aria-label="הקטנת מפה">−</button><button id="fitMap" type="button" aria-label="התאמת המפה למסך"><span class="icon" data-icon="fit"></span></button><button id="labelsToggle" type="button" aria-label="הצגת שמות כל המפות" aria-pressed="false"><span class="icon" data-icon="label"></span></button></div>
+        <div class="map-legend"><span><i class="legend-mark ordinary"></i>שער בין מפות</span><span><i class="legend-mark secret"></i>ללא אפקט / דלת</span><span><i class="legend-mark service"></i>מעבר מותנה</span></div>
+        <div class="map-footnote">פריסת קשרים סכמטית · גלגלת לקירוב · גרירה לתנועה</div>
+      </div>
+      <section id="directory" class="directory" aria-label="כל רשומות המפות" hidden><div class="directory-heading"><div><span class="eyebrow">אף פינה לא נשארת בחוץ</span><h2>כל המקומות</h2></div><button id="closeDirectory" type="button" class="icon-button" aria-label="סגירת רשימת מפות"><span class="icon" data-icon="close"></span></button></div><div class="directory-filters"><input id="directorySearch" aria-label="סינון רשימת המפות" placeholder="שם מפה או מזהה…"><select id="directoryGroup" aria-label="סינון לפי אזור"><option value="all">כל האזורים</option></select></div><p class="directory-counter" id="directoryCounter"></p><div id="directoryGrid" class="directory-grid"></div></section>
+    </section>
+    <aside id="sidePanel" class="side-panel" aria-label="פרטי המקום הנבחר">
+      <section id="routePanel" class="route-panel" hidden>
+        <div class="section-heading"><div><span class="eyebrow">בוחרים יעד, מוצאים דרך</span><h2>המסע שלך</h2></div><button id="closeRoute" type="button" class="icon-button" aria-label="סגירת תכנון מסלול"><span class="icon" data-icon="close"></span></button></div>
+        <form id="routeForm"><label for="routeFrom">מאיפה יוצאים?</label><input id="routeFrom" list="mapOptions" required autocomplete="off" dir="ltr"><label for="routeTo">לאן מגיעים?</label><input id="routeTo" list="mapOptions" required autocomplete="off" dir="ltr"><datalist id="mapOptions"></datalist><label class="check-row"><input id="useServices" type="checkbox"><span>לכלול כניסות דרך דמויות ומשימות</span></label><p class="route-help">המסלול ממזער מעברים בין מפות. זמן הליכה ותנאי כניסה אינם מחושבים.</p><button class="button primary full" type="submit">מצא מסלול</button></form>
+        <div id="routeResult" aria-live="polite"></div>
+      </section>
+      <section id="mapDetails"><div class="detail-placeholder">בחרו מקום על המפה כדי להתחיל לחקור.</div></section>
+      <footer class="panel-footer"><span>מחקר: 19 בנובמבר 2026</span><button id="coverageButton" type="button">כיסוי ומקורות</button></footer>
+    </aside>
+  </main>
+  <dialog id="sceneDialog" class="scene-dialog">
+    <header class="scene-header"><div><span id="sceneRegion" class="eyebrow"></span><h2 id="sceneTitle" dir="ltr"></h2></div><div class="scene-header-actions"><button id="sceneFit" class="button quiet" type="button"><span class="icon" data-icon="fit"></span>כל המפה</button><button id="sceneZoomIn" class="icon-button" type="button" aria-label="הגדלת תמונת מפה">+</button><button id="sceneZoomOut" class="icon-button" type="button" aria-label="הקטנת תמונת מפה">−</button><button id="closeScene" class="icon-button" type="button" aria-label="סגירת תמונת מפה"><span class="icon" data-icon="close"></span></button></div></header>
+    <div class="scene-body"><div id="sceneCanvas" class="scene-canvas"><svg id="sceneSvg" xmlns="http://www.w3.org/2000/svg" aria-label="מפת המשחק עם מיקומים ממוספרים"><g id="sceneViewport"><image id="sceneImage"/><g id="sceneInternal"></g><g id="scenePins"></g><g id="sceneEntities"></g></g></svg><div id="sceneHint" class="scene-hint">המספרים תואמים לרשימת השערים · גלגלת לקירוב · גרירה לתנועה</div></div><aside class="scene-sidebar"><nav id="sceneLayers" class="scene-layers" aria-label="סוג המיקומים בתמונה"><button type="button" data-layer="portals" class="active">שערים</button><button type="button" data-layer="monsters">מפלצות</button><button type="button" data-layer="npcs">דמויות</button></nav><div id="sceneFilters" class="scene-filters"><button type="button" data-kind="cross" class="active">למפה אחרת</button><button type="button" data-kind="internal">בתוך המפה</button><button type="button" data-kind="unknown">ללא יעד קבוע</button><button type="button" data-kind="all">הכל</button></div><div id="sceneEntitySummary"></div><div id="sceneSelected" aria-live="polite"></div><div id="scenePortalList"></div><a id="originalImage" class="original-image" target="_blank" rel="noopener noreferrer">תמונת המקור ברזולוציה מלאה</a></aside></div>
+  </dialog>
+  <dialog id="aboutDialog" class="about-dialog"><div class="about-header"><span class="eyebrow">מפה יפה צריכה גם להיות נכונה</span><button id="closeAbout" class="icon-button" type="button" aria-label="סגירת מידע"><span class="icon" data-icon="close"></span></button></div><h2>אטלס של קלאסיק, עד הפרטים הקטנים</h2><p class="about-game" lang="en" dir="ltr">MapleStory Classic World · v2.0.0</p><div id="coverageStats" class="coverage-stats"></div><h3>מה יש כאן?</h3><p>כל 364 רשומות המפה שבמאגר הלקוח מתאריך 18 בנובמבר 2026, כולל ערים, חנויות, בתים, דרכי מעבר, מפות נסתרות, משימות קבוצתיות, אירועים וחדרי מערכת. לכל מפה נשמרו כל רשומות השערים שלה, גם כשכמה שערים מובילים לאותו יעד.</p><h3>איך קוראים את האטלס?</h3><ul><li>מפת העולם היא פריסה סכמטית של קשרים. היא אינה מציגה מרחקים פיזיים או זמני הליכה.</li><li>בתמונה של מפה בודדת, מיקומי השערים מבוססים על הקואורדינטות של תמונת המקור.</li><li>שער ללא אפקט עשוי להיות מעבר נסתר או דלת גלויה במבנה. זו אינה הבטחה שהוא סוד.</li><li>כניסות דרך דמויות, אירועים ומשימות מוצגות בנפרד ודורשות את התנאים המפורטים.</li><li>385 רשומות אינן כוללות יעד קבוע. הן מוצגות בגלוי, בלי להמציא לאן הן מובילות.</li><li>מפות אירוע ומערכת קיימות בקבצים; אין בכך אישור שהן נגישות כעת לשחקן. אזורים מהבטא שאינם נמצאים בנתוני הגרסה הזאת לא נוספו.</li></ul><h3>העדכון החדש</h3><p>כל 29 מפות החלל הנשכח נכללות, וגם חמש רשומות המפה של משימת ארנב הירח. רצף המעברים המלא של משימה זו אינו מפורסם בקובצי השערים; רק הכניסה המאומתת מוצגת כחיבור מותנה.</p><h3>הנתונים והמקורות</h3><div id="sourcesList" class="sources-list"></div><p class="copyright" dir="ltr" lang="en">Data from OSMS Data Explorer (https://osmsdataexplorer.com), CC BY 4.0. Grouping, Hebrew annotations and schematic layout adapted for this atlas. Game names and artwork © Nexon. Unofficial fan-made reference.</p><a href="atlas-data.json" download="maplestory-classic-atlas-data.json" class="button quiet download-data"><span class="icon" data-icon="download"></span>הורדת נתוני האטלס</a></dialog>
+  <div id="toast" class="toast" role="status" hidden></div>
+</body>
+</html>

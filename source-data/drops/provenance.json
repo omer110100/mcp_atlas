@@ -1,0 +1,35 @@
+{
+  "retrievedOn": "2026-11-19",
+  "outputFile": "dist/drop-data.json",
+  "outputSha256": "3f63b8f4e7484db1d5c90b62818cea543e1268a274b02839f5d3d15aaaab97cc",
+  "rebuildCommand": "python build_drop_data.py",
+  "sources": [
+    {
+      "file": "msclassic-confirmed-records.json",
+      "fileSha256": "141bd4286095b422f51c7376cc8e9b53cb99092c98524a114fec34db478e5540",
+      "sourceUrl": "https://ms-classic.com/drops",
+      "sourceHtmlSha256": "4ce23d738a8f05d4419922d1378662ebb81c1937438d60982b4081e48e487ece",
+      "selection": "Only source rows with an explicit Confirmed in Classic or Seen by our team label. Original rate strings are source observations/reference text and are never used in the output."
+    },
+    {
+      "file": "maplelandhub-mushmom-confirmed.json",
+      "fileSha256": "feb31bac05f8fb46b10eb086d40c80dc303a19c45937a0299e6e2692784a8bec",
+      "sourceUrl": "https://maplelandhub.com/classic/en/monster/700000",
+      "sourceHtmlSha256": "d5e82f9ea4fcea8ed03e406f15948e54f79240cd6de9e1c96d6549602e901922",
+      "selection": "Only exact factual relationships explicitly labelled Confirmed in Classic. Historical KMS rates and unconfirmed rows omitted."
+    },
+    {
+      "file": "sixpath-counted-id-corroboration.json",
+      "fileSha256": "d3042a59916e5068da951638899f272f1f060666de755bf6ee76bd25d60a3080",
+      "sourceUrl": "https://sixpath.wiki/drops",
+      "sourceHtmlSha256": "e1179313d939f7684745edc33f8a56313a0ae944946ef6c90aa7e9213e50d3e1",
+      "selection": "The49public rows labelled Counted in Classic. Numeric URL IDs only; no rates or page UI. Underlying observations overlap MapleClassic Wiki, so these are corroborations, not extra reports."
+    }
+  ],
+  "acceptedRelationships": 124,
+  "unresolvedRelationships": 1,
+  "excludedLegacyRelationships": 885,
+  "coverage": "Partial community observations, not an official or exhaustive server drop table",
+  "negativeEvidence": "A missing row means no record in these collected sources; it does not prove a non-drop",
+  "rates": "All rates removed from the deliverable. Source labels are used only as evidence of a relationship."
+}

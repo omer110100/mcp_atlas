@@ -1,0 +1,75 @@
+{
+  "stats": {
+    "maps": 364,
+    "cross": 694,
+    "internal": 357,
+    "unknown": 385,
+    "pairs": 621,
+    "portals": 1436,
+    "services": 21,
+    "majorTowns": 11,
+    "scopes": {
+      "world": 295,
+      "conditional": 42,
+      "unavailable": 1,
+      "system": 3,
+      "event": 23
+    }
+  },
+  "groups": [
+    {
+      "id": "maple",
+      "count": 25
+    },
+    {
+      "id": "kerning",
+      "count": 52
+    },
+    {
+      "id": "perion",
+      "count": 49
+    },
+    {
+      "id": "ellinia",
+      "count": 42
+    },
+    {
+      "id": "henesys",
+      "count": 38
+    },
+    {
+      "id": "lith",
+      "count": 11
+    },
+    {
+      "id": "sleepy",
+      "count": 48
+    },
+    {
+      "id": "hollow",
+      "count": 29
+    },
+    {
+      "id": "florina",
+      "count": 7
+    },
+    {
+      "id": "market",
+      "count": 21
+    },
+    {
+      "id": "special",
+      "count": 16
+    },
+    {
+      "id": "events",
+      "count": 23
+    },
+    {
+      "id": "system",
+      "count": 3
+    }
+  ],
+  "imagesWithDimensions": 364,
+  "minNodeDistance": 47.0
+}

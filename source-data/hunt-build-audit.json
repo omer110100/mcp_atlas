@@ -1,0 +1,353 @@
+{
+  "stats": {
+    "items": 2353,
+    "monsters": 128,
+    "maps": 364,
+    "mapsWithSpawns": 233,
+    "spawnPoints": 8623,
+    "monsterMapPairs": 799,
+    "monstersWithSpawns": 98,
+    "bossRecords": 16,
+    "distinctBossNames": 10,
+    "bossesWithRecordedSpawns": 8,
+    "npcs": 311,
+    "npcsWithRecordedLocations": 221,
+    "npcPlacements": 270,
+    "mapsWithNpcs": 132,
+    "localIcons": 2674,
+    "localIconBytes": 4314789
+  },
+  "verifiedSpawnCountPairs": 799,
+  "bossSpawnPoints": [
+    {
+      "id": 700000,
+      "name": "Mushmom",
+      "spawns": [
+        {
+          "mapId": 10001005,
+          "count": 1,
+          "mobTime": "3600.00",
+          "timer": {
+            "raw": "3600.00",
+            "minSeconds": 3600.0,
+            "maxSeconds": 3600.0,
+            "meanSeconds": 3600.0
+          },
+          "points": [
+            {
+              "mobId": 700000,
+              "x": 833,
+              "y": 1070
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 700001,
+      "name": "Jr. Balrog",
+      "spawns": [
+        {
+          "mapId": 10005105,
+          "count": 1,
+          "mobTime": "10800.00",
+          "timer": {
+            "raw": "10800.00",
+            "minSeconds": 10800.0,
+            "maxSeconds": 10800.0,
+            "meanSeconds": 10800.0
+          },
+          "points": [
+            {
+              "mobId": 700001,
+              "x": 658,
+              "y": 1238
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 700002,
+      "name": "Zombie Mushmom",
+      "spawns": [
+        {
+          "mapId": 10005078,
+          "count": 1,
+          "mobTime": "3600.00",
+          "timer": {
+            "raw": "3600.00",
+            "minSeconds": 3600.0,
+            "maxSeconds": 3600.0,
+            "meanSeconds": 3600.0
+          },
+          "points": [
+            {
+              "mobId": 700002,
+              "x": 778,
+              "y": 1719
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 700003,
+      "name": "Rotten Mushmom",
+      "spawns": [
+        {
+          "mapId": 10006121,
+          "count": 1,
+          "mobTime": "3600.00",
+          "timer": {
+            "raw": "3600.00",
+            "minSeconds": 3600.0,
+            "maxSeconds": 3600.0,
+            "meanSeconds": 3600.0
+          },
+          "points": [
+            {
+              "mobId": 700003,
+              "x": 1167,
+              "y": 819
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 700004,
+      "name": "Mano",
+      "spawns": [
+        {
+          "mapId": 10000013,
+          "count": 1,
+          "mobTime": "3600.00",
+          "timer": {
+            "raw": "3600.00",
+            "minSeconds": 3600.0,
+            "maxSeconds": 3600.0,
+            "meanSeconds": 3600.0
+          },
+          "points": [
+            {
+              "mobId": 700004,
+              "x": 832,
+              "y": 410
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 700005,
+      "name": "Crimson Balrog",
+      "spawns": []
+    },
+    {
+      "id": 700006,
+      "name": "Shade",
+      "spawns": [
+        {
+          "mapId": 10003112,
+          "count": 1,
+          "mobTime": "3600.00",
+          "timer": {
+            "raw": "3600.00",
+            "minSeconds": 3600.0,
+            "maxSeconds": 3600.0,
+            "meanSeconds": 3600.0
+          },
+          "points": [
+            {
+              "mobId": 700006,
+              "x": 766,
+              "y": 609
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 700007,
+      "name": "Stumpy",
+      "spawns": [
+        {
+          "mapId": 10004057,
+          "count": 1,
+          "mobTime": "3600.00",
+          "timer": {
+            "raw": "3600.00",
+            "minSeconds": 3600.0,
+            "maxSeconds": 3600.0,
+            "meanSeconds": 3600.0
+          },
+          "points": [
+            {
+              "mobId": 700007,
+              "x": 920,
+              "y": 1381
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 700008,
+      "name": "Faust",
+      "spawns": []
+    },
+    {
+      "id": 800003,
+      "name": "King Slime",
+      "spawns": [
+        {
+          "mapId": 80000400,
+          "count": 1,
+          "points": [
+            {
+              "mobId": 800003,
+              "x": 842,
+              "y": 2735
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 810000,
+      "name": "Mano",
+      "spawns": []
+    },
+    {
+      "id": 810001,
+      "name": "King Slime",
+      "spawns": []
+    },
+    {
+      "id": 810002,
+      "name": "Mushmom",
+      "spawns": []
+    },
+    {
+      "id": 810003,
+      "name": "Zombie Mushmom",
+      "spawns": []
+    },
+    {
+      "id": 810004,
+      "name": "Rotten Mushmom",
+      "spawns": []
+    },
+    {
+      "id": 810005,
+      "name": "Jr. Balrog",
+      "spawns": []
+    }
+  ],
+  "duplicateItemNames": {
+    "Blue Moon": 2,
+    "Red Cloth Vest": 2,
+    "Blue Cloth Vest": 2,
+    "Black Cloth Vest": 2,
+    "Green Bennis Chainmail": 2,
+    "Blue Bennis Chainmail": 2,
+    "Red Bennis Chainmail": 2,
+    "Dark Shadow": 2,
+    "Red Cloth Pants": 2,
+    "Blue Cloth Pants": 2,
+    "Black Cloth Pants": 2,
+    "Dark Shadow Pants": 2,
+    "Hero's Gladius": 2,
+    "Red Potion": 2,
+    "Blue Potion": 2,
+    "Elixir": 2,
+    "Lemon": 2,
+    "Cake": 2,
+    "Moon Bunny's Rice Cake": 2,
+    "Return Scroll - Nearest Town": 2,
+    "Earring Crit. Damage Scroll: Lesser": 2,
+    "Earring Evasion Scroll: Lesser": 2,
+    "Topwear DEF Scroll: Lesser": 2,
+    "Overall Armor STR Scroll: Lesser": 2,
+    "Overall Armor DEX Scroll: Lesser": 2,
+    "Overall Armor INT Scroll: Lesser": 2,
+    "Overall Armor LUK Scroll: Lesser": 2,
+    "Bottomwear DEF Scroll: Lesser": 2,
+    "Gloves Attack Scroll: Lesser": 2,
+    "Gloves Magic Attack Scroll: Lesser": 2,
+    "Pet Food": 2,
+    "Lie Detector Test": 3,
+    "Compensation Box": 5,
+    "The Red Relaxer": 2,
+    "Jr. Sentinel Shellpiece": 2,
+    "Nependeath Seed": 2,
+    "Dark Nependeath Seed": 2,
+    "Old Gold Watch": 2,
+    "Dances with Balrog's Letter": 2,
+    "Dark Marble": 4,
+    "The Proof of a Hero": 4,
+    "Omok Table": 6,
+    "Omok Piece: Slime": 3,
+    "Omok Piece: Mushroom": 3,
+    "Omok Piece: Pig": 3,
+    "Omok Piece: Octopus": 3,
+    "Lewis's Letter": 2,
+    "Old Ring": 3,
+    "Encrypted Document": 2,
+    "Maple Leaf": 2
+  },
+  "duplicateMonsterNames": {
+    "Blue Mushroom": 2,
+    "Stirge": 3,
+    "Jr. Necki": 2,
+    "Horny Mushroom": 2,
+    "Zombie Mushroom": 2,
+    "Evil Eye": 2,
+    "Ligator": 2,
+    "Fire Boar": 2,
+    "Curse Eye": 3,
+    "Lupin": 2,
+    "Cold Eye": 2,
+    "Glowshroom": 2,
+    "Raffle": 2,
+    "Golden Stirge": 2,
+    "Aqumander": 2,
+    "Rafflesia": 2,
+    "Duskmander": 2,
+    "Myewood": 2,
+    "Rotten Mushroom": 2,
+    "Sporewood": 2,
+    "Flyeye": 3,
+    "Mushmom": 2,
+    "Jr. Balrog": 2,
+    "Zombie Mushmom": 2,
+    "Rotten Mushmom": 2,
+    "Mano": 2,
+    "King Slime": 2,
+    "Goblin Fire": 2
+  },
+  "duplicateNpcNames": {
+    "Sam": 2,
+    "VIP Cab": 3,
+    "Regular Cab": 5,
+    "Bowman Job Instructor": 2,
+    "Community Board": 2,
+    "Doorbell": 2,
+    "Mailbox": 2,
+    "Magician Job Instructor": 2,
+    "Fully Bloomed Bluebell": 3,
+    "Door of Dimension": 3,
+    "Nella": 2,
+    "Treasure Chest": 3,
+    "Thief Job Instructor": 2,
+    "Whitney": 2,
+    "Mr. Wang": 2,
+    "Harry": 2,
+    "Warrior Job Instructor": 2,
+    "Bluebell Bud": 2,
+    "Zelya": 2,
+    "Nyroth": 2,
+    "Maple Administrator": 5
+  }
+}

@@ -1,0 +1,1460 @@
+{
+  "sourceUrl": "https://ms-classic.com/drops",
+  "retrievedOn": "2026-11-19",
+  "sourceHtmlSha256": "4ce23d738a8f05d4419922d1378662ebb81c1937438d60982b4081e48e487ece",
+  "originalMonsterCount": 65,
+  "originalRelationshipCount": 1006,
+  "excludedLegacyUnconfirmedCount": 885,
+  "selection": "Only source rows with an explicit Confirmed in Classic or Seen by our team label. Original rate strings are source observations/reference text and are never used in the output.",
+  "monsters": [
+    {
+      "name": "Snail",
+      "slug": "snail",
+      "level": 1,
+      "img": "/img/game/monsters/d8caace4e0f119f7a3f2b1fb450f7ed4.png",
+      "drops": [
+        {
+          "item": "Snail Shell",
+          "islug": "snail-shell",
+          "icon": "/img/game/items/04000001.png",
+          "rate": "51%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Red Potion",
+          "islug": "red-potion",
+          "icon": "/img/game/items/02000000.png",
+          "rate": "2.9%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Bronze Ore",
+          "islug": "bronze-ore",
+          "icon": "/img/game/items/04010000.png",
+          "rate": "0.97%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Garnet Ore",
+          "islug": "garnet-ore",
+          "icon": "/img/game/items/04020000.png",
+          "rate": "0.97%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Arrows for Bows",
+          "islug": "arrows-for-bows",
+          "icon": "/img/game/items/02060000.png",
+          "rate": "0.97%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Arrows for Crossbows",
+          "islug": "arrows-for-crossbows",
+          "icon": "/img/game/items/02061000.png",
+          "rate": "0.97%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        }
+      ]
+    },
+    {
+      "name": "Blue Snail",
+      "slug": "blue-snail",
+      "level": 2,
+      "img": "/img/game/monsters/efc52c887787816b486be1b945382d30.png",
+      "drops": [
+        {
+          "item": "Blue Snail Shell",
+          "islug": "blue-snail-shell",
+          "icon": "/img/game/items/04000002.png",
+          "rate": "47%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Arrows for Crossbows",
+          "islug": "arrows-for-crossbows",
+          "icon": "/img/game/items/02061000.png",
+          "rate": "4.8%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Red Potion",
+          "islug": "red-potion",
+          "icon": "/img/game/items/02000000.png",
+          "rate": "2.9%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Iron Ore",
+          "islug": "iron-ore",
+          "icon": "/img/game/items/04010001.png",
+          "rate": "2.9%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Amethyst Ore",
+          "islug": "amethyst-ore",
+          "icon": "/img/game/items/04020001.png",
+          "rate": "0.70%",
+          "counted": false,
+          "confirmed": "Confirmed in Classic"
+        }
+      ]
+    },
+    {
+      "name": "Shroom",
+      "slug": "shroom",
+      "level": 3,
+      "img": "/img/game/monsters/a5f40f0d4971941d8a05ef19788a6ae6.png",
+      "drops": [
+        {
+          "item": "Mushroom Spore",
+          "islug": "mushroom-spore",
+          "icon": "/img/game/items/04000003.png",
+          "rate": "43%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Field Dagger",
+          "islug": "field-dagger",
+          "icon": "/img/game/items/01332003.png",
+          "rate": "4.8%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Arrows for Bows",
+          "islug": "arrows-for-bows",
+          "icon": "/img/game/items/02060000.png",
+          "rate": "4.8%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        }
+      ]
+    },
+    {
+      "name": "Red Snail",
+      "slug": "red-snail",
+      "level": 4,
+      "img": "/img/game/monsters/0b472789db8c8a9d14203a612d715c69.png",
+      "drops": [
+        {
+          "item": "Red Snail Shell",
+          "islug": "red-snail-shell",
+          "icon": "/img/game/items/04000004.png",
+          "rate": "41%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Silver Ore",
+          "islug": "silver-ore",
+          "icon": "/img/game/items/04010004.png",
+          "rate": "2.2%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Red Potion",
+          "islug": "red-potion",
+          "icon": "/img/game/items/02000000.png",
+          "rate": "1.7%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Arrows for Bows",
+          "islug": "arrows-for-bows",
+          "icon": "/img/game/items/02060000.png",
+          "rate": "1.7%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Opal Ore",
+          "islug": "opal-ore",
+          "icon": "/img/game/items/04020004.png",
+          "rate": "1.1%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Arrows for Crossbows",
+          "islug": "arrows-for-crossbows",
+          "icon": "/img/game/items/02061000.png",
+          "rate": "1.1%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Wooden Sword",
+          "islug": "wooden-sword",
+          "icon": "/img/game/items/01402000.png",
+          "rate": "0.55%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        }
+      ]
+    },
+    {
+      "name": "Stump",
+      "slug": "stump",
+      "level": 5,
+      "img": "/img/game/monsters/05379de382e49140532ecdf946308ddc.png",
+      "drops": [
+        {
+          "item": "Tree Branch",
+          "islug": "tree-branch",
+          "icon": "/img/game/items/04000005.png",
+          "rate": "45%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Red Potion",
+          "islug": "red-potion",
+          "icon": "/img/game/items/02000000.png",
+          "rate": "3.4%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Bronze Ore",
+          "islug": "bronze-ore",
+          "icon": "/img/game/items/04010000.png",
+          "rate": "2.4%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Arrows for Crossbows",
+          "islug": "arrows-for-crossbows",
+          "icon": "/img/game/items/02061000.png",
+          "rate": "1.4%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Emerald Ore",
+          "islug": "emerald-ore",
+          "icon": "/img/game/items/04020003.png",
+          "rate": "0.48%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Wooden Wand",
+          "islug": "wooden-wand",
+          "icon": "/img/game/items/01372000.png",
+          "rate": "0.48%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Arrows for Bows",
+          "islug": "arrows-for-bows",
+          "icon": "/img/game/items/02060000.png",
+          "rate": "0.48%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        }
+      ]
+    },
+    {
+      "name": "Slime",
+      "slug": "slime",
+      "level": 6,
+      "img": "/img/game/monsters/f4672b8825109ad41b9cc2ab5df64909.png",
+      "drops": [
+        {
+          "item": "Squishy Liquid",
+          "islug": "squishy-liquid",
+          "icon": "/img/game/items/04000006.png",
+          "rate": "45%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Slime Bubble",
+          "islug": "slime-bubble",
+          "icon": "/img/game/items/04000007.png",
+          "rate": "4.9%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Red Potion",
+          "islug": "red-potion",
+          "icon": "/img/game/items/02000000.png",
+          "rate": "3.6%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Orihalcon Ore",
+          "islug": "orihalcon-ore",
+          "icon": "/img/game/items/04010005.png",
+          "rate": "2.0%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Arrows for Bows",
+          "islug": "arrows-for-bows",
+          "icon": "/img/game/items/02060000.png",
+          "rate": "0.91%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Arrows for Crossbows",
+          "islug": "arrows-for-crossbows",
+          "icon": "/img/game/items/02061000.png",
+          "rate": "0.65%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Sapphire Ore",
+          "islug": "sapphire-ore",
+          "icon": "/img/game/items/04020005.png",
+          "rate": "0.26%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Lemona",
+          "islug": "lemona",
+          "icon": "/img/game/items/01082003.png",
+          "rate": "0.13%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Omok Piece: Slime",
+          "islug": "omok-piece-slime",
+          "icon": "/img/game/items/04031047.png",
+          "rate": "—",
+          "counted": false,
+          "confirmed": "Confirmed in Classic"
+        }
+      ]
+    },
+    {
+      "name": "Pig",
+      "slug": "pig",
+      "level": 7,
+      "img": "/img/game/monsters/a80fbd00fe58eb4b58cdb84b8c864782.png",
+      "drops": [
+        {
+          "item": "Pig's Head",
+          "islug": "pigs-head",
+          "icon": "/img/game/items/04000008.png",
+          "rate": "6.4%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Stiff Feather",
+          "islug": "stiff-feather",
+          "icon": "/img/game/items/04003002.png",
+          "rate": "5.6%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Leather",
+          "islug": "leather",
+          "icon": "/img/game/items/04000049.png",
+          "rate": "4.8%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Red Potion",
+          "islug": "red-potion",
+          "icon": "/img/game/items/02000000.png",
+          "rate": "4.0%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Animal Fur Bundle",
+          "islug": "animal-fur-bundle",
+          "icon": "/img/game/items/04000062.png",
+          "rate": "2.4%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Gold Ore",
+          "islug": "gold-ore",
+          "icon": "/img/game/items/04010006.png",
+          "rate": "1.2%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Arrows for Bows",
+          "islug": "arrows-for-bows",
+          "icon": "/img/game/items/02060000.png",
+          "rate": "1.2%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Arrows for Crossbows",
+          "islug": "arrows-for-crossbows",
+          "icon": "/img/game/items/02061000.png",
+          "rate": "0.80%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Topaz Ore",
+          "islug": "topaz-ore",
+          "icon": "/img/game/items/04020006.png",
+          "rate": "0.40%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        }
+      ]
+    },
+    {
+      "name": "Orange Mushroom",
+      "slug": "orange-mushroom",
+      "level": 8,
+      "img": "/img/game/monsters/acd018a3a11f4390c1cf9fdad8f0b1e7.png",
+      "drops": [
+        {
+          "item": "Orange Mushroom Cap",
+          "islug": "orange-mushroom-cap",
+          "icon": "/img/game/items/04000009.png",
+          "rate": "48%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Red Potion",
+          "islug": "red-potion",
+          "icon": "/img/game/items/02000000.png",
+          "rate": "2.2%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Bronze Ore",
+          "islug": "bronze-ore",
+          "icon": "/img/game/items/04010000.png",
+          "rate": "2.2%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Arrows for Bows",
+          "islug": "arrows-for-bows",
+          "icon": "/img/game/items/02060000.png",
+          "rate": "1.6%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Arrows for Crossbows",
+          "islug": "arrows-for-crossbows",
+          "icon": "/img/game/items/02061000.png",
+          "rate": "0.54%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        }
+      ]
+    },
+    {
+      "name": "Ribbon Pig",
+      "slug": "ribbon-pig",
+      "level": 10,
+      "img": "/img/game/monsters/a15534e9c9a4e4176670a5274096db8d.png",
+      "drops": [
+        {
+          "item": "Pig's Ribbon",
+          "islug": "pigs-ribbon",
+          "icon": "/img/game/items/04000010.png",
+          "rate": "48%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Stiff Feather",
+          "islug": "stiff-feather",
+          "icon": "/img/game/items/04003002.png",
+          "rate": "13%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Leather",
+          "islug": "leather",
+          "icon": "/img/game/items/04000049.png",
+          "rate": "7.5%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Arrows for Bows",
+          "islug": "arrows-for-bows",
+          "icon": "/img/game/items/02060000.png",
+          "rate": "5.0%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Animal Fur Bundle",
+          "islug": "animal-fur-bundle",
+          "icon": "/img/game/items/04000062.png",
+          "rate": "5.0%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Mithril Ore",
+          "islug": "mithril-ore",
+          "icon": "/img/game/items/04010002.png",
+          "rate": "2.5%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Arrows for Crossbows",
+          "islug": "arrows-for-crossbows",
+          "icon": "/img/game/items/02061000.png",
+          "rate": "2.5%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Pig's Head",
+          "islug": "pigs-head",
+          "icon": "/img/game/items/04000008.png",
+          "rate": "—",
+          "counted": false,
+          "confirmed": "Confirmed in Classic"
+        }
+      ]
+    },
+    {
+      "name": "Dark Stump",
+      "slug": "dark-stump",
+      "level": 11,
+      "img": "/img/game/monsters/5472100d1bbb129adca4acb49b193d69.png",
+      "drops": [
+        {
+          "item": "Leaf",
+          "islug": "leaf",
+          "icon": "/img/game/items/04000011.png",
+          "rate": "47%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Tree Branch",
+          "islug": "tree-branch",
+          "icon": "/img/game/items/04000005.png",
+          "rate": "20%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Red Potion",
+          "islug": "red-potion",
+          "icon": "/img/game/items/02000000.png",
+          "rate": "3.4%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Arrows for Bows",
+          "islug": "arrows-for-bows",
+          "icon": "/img/game/items/02060000.png",
+          "rate": "1.7%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Iron Ore",
+          "islug": "iron-ore",
+          "icon": "/img/game/items/04010001.png",
+          "rate": "1.7%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Garnet Ore",
+          "islug": "garnet-ore",
+          "icon": "/img/game/items/04020000.png",
+          "rate": "0.70%",
+          "counted": false,
+          "confirmed": "Confirmed in Classic"
+        }
+      ]
+    },
+    {
+      "name": "Octopus",
+      "slug": "octopus",
+      "level": 12,
+      "img": "/img/game/monsters/b073e44628e85e514f7ea6261b7ded6f.png",
+      "drops": [
+        {
+          "item": "Octopus Leg",
+          "islug": "octopus-leg",
+          "icon": "/img/game/items/04000012.png",
+          "rate": "48%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Red Potion",
+          "islug": "red-potion",
+          "icon": "/img/game/items/02000000.png",
+          "rate": "4.3%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Arrows for Crossbows",
+          "islug": "arrows-for-crossbows",
+          "icon": "/img/game/items/02061000.png",
+          "rate": "4.3%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Fragment of Magic",
+          "islug": "fragment-of-magic",
+          "icon": "/img/game/items/04000063.png",
+          "rate": "4.3%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Aquamarine Ore",
+          "islug": "aquamarine-ore",
+          "icon": "/img/game/items/04020002.png",
+          "rate": "4.3%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Omok Piece: Octopus",
+          "islug": "omok-piece-octopus",
+          "icon": "/img/game/items/04031054.png",
+          "rate": "—",
+          "counted": false,
+          "confirmed": "Confirmed in Classic"
+        }
+      ]
+    },
+    {
+      "name": "Green Mushroom",
+      "slug": "green-mushroom",
+      "level": 14,
+      "img": "/img/game/monsters/711ecf98bdb712e5d9e415853f8707ae.png",
+      "drops": [
+        {
+          "item": "Green Mushroom Cap",
+          "islug": "green-mushroom-cap",
+          "icon": "/img/game/items/04000013.png",
+          "rate": "42%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Red Potion",
+          "islug": "red-potion",
+          "icon": "/img/game/items/02000000.png",
+          "rate": "3.5%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Arrows for Bows",
+          "islug": "arrows-for-bows",
+          "icon": "/img/game/items/02060000.png",
+          "rate": "1.5%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Blue Potion",
+          "islug": "blue-potion",
+          "icon": "/img/game/items/02000003.png",
+          "rate": "0.97%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Silver Ore",
+          "islug": "silver-ore",
+          "icon": "/img/game/items/04010004.png",
+          "rate": "0.81%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Fragment of Magic",
+          "islug": "fragment-of-magic",
+          "icon": "/img/game/items/04000063.png",
+          "rate": "0.81%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Arrows for Crossbows",
+          "islug": "arrows-for-crossbows",
+          "icon": "/img/game/items/02061000.png",
+          "rate": "0.65%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Emerald Ore",
+          "islug": "emerald-ore",
+          "icon": "/img/game/items/04020003.png",
+          "rate": "0.16%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Green Feather Hat",
+          "islug": "green-feather-hat",
+          "icon": "/img/game/items/01002043.png",
+          "rate": "0.16%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Blue Qi Pao Pants",
+          "islug": "blue-qi-pao-pants",
+          "icon": "/img/game/items/01061030.png",
+          "rate": "0.16%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Animal Fossil",
+          "islug": "animal-fossil",
+          "icon": "/img/game/items/04031068.png",
+          "rate": "—",
+          "counted": false,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Pan Lid",
+          "islug": "pan-lid",
+          "icon": "/img/game/items/01092002.png",
+          "rate": "0.07%",
+          "counted": false,
+          "confirmed": "Seen by our team"
+        }
+      ]
+    },
+    {
+      "name": "Bubbling",
+      "slug": "bubbling",
+      "level": 15,
+      "img": "/img/game/monsters/fc3df6b2a679797ef762f4aba331aecd.png",
+      "drops": [
+        {
+          "item": "Bubbling's Huge Bubble",
+          "islug": "bubblings-huge-bubble",
+          "icon": "/img/game/items/04000014.png",
+          "rate": "39%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        }
+      ]
+    },
+    {
+      "name": "Axe Stump",
+      "slug": "axe-stump",
+      "level": 17,
+      "img": "/img/game/monsters/662269680b63f63a09095c4d5c37de1b.png",
+      "drops": [
+        {
+          "item": "Firewood",
+          "islug": "firewood",
+          "icon": "/img/game/items/04000015.png",
+          "rate": "46%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Red Potion",
+          "islug": "red-potion",
+          "icon": "/img/game/items/02000000.png",
+          "rate": "2.7%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Orihalcon Ore",
+          "islug": "orihalcon-ore",
+          "icon": "/img/game/items/04010005.png",
+          "rate": "2.7%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Plant Fossil",
+          "islug": "plant-fossil",
+          "icon": "/img/game/items/04031069.png",
+          "rate": "—",
+          "counted": false,
+          "confirmed": "Confirmed in Classic"
+        }
+      ]
+    },
+    {
+      "name": "Blue Mushroom",
+      "slug": "blue-mushroom",
+      "level": 19,
+      "img": "/img/game/monsters/7e55e8ffa6e2ee9e8ebc23ff8516ffd6.png",
+      "drops": [
+        {
+          "item": "Blue Mushroom Cap",
+          "islug": "blue-mushroom-cap",
+          "icon": "/img/game/items/04000016.png",
+          "rate": "47%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Gold Ore",
+          "islug": "gold-ore",
+          "icon": "/img/game/items/04010006.png",
+          "rate": "3.3%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Arrows for Crossbows",
+          "islug": "arrows-for-crossbows",
+          "icon": "/img/game/items/02061000.png",
+          "rate": "3.3%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        }
+      ]
+    },
+    {
+      "name": "Ghost Stump",
+      "slug": "ghost-stump",
+      "level": 19,
+      "img": "/img/game/monsters/87244b103cae39031ac89ad89234fe2f.png",
+      "drops": []
+    },
+    {
+      "name": "Stirge",
+      "slug": "stirge",
+      "level": 20,
+      "img": "/img/game/monsters/d598318653eb406124f055c72a597e28.png",
+      "drops": [
+        {
+          "item": "Stirge Wing",
+          "islug": "stirge-wing",
+          "icon": "/img/game/items/04000017.png",
+          "rate": "30%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Orange Potion",
+          "islug": "orange-potion",
+          "icon": "/img/game/items/02000001.png",
+          "rate": "10%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Arrows for Crossbows",
+          "islug": "arrows-for-crossbows",
+          "icon": "/img/game/items/02061000.png",
+          "rate": "5.0%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Stiff Feather",
+          "islug": "stiff-feather",
+          "icon": "/img/game/items/04003002.png",
+          "rate": "0.70%",
+          "counted": false,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Garnet Ore",
+          "islug": "garnet-ore",
+          "icon": "/img/game/items/04020000.png",
+          "rate": "0.70%",
+          "counted": false,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Broken Mirror Glass",
+          "islug": "broken-mirror-glass",
+          "icon": "/img/game/items/04031007.png",
+          "rate": "—",
+          "counted": false,
+          "confirmed": "Confirmed in Classic"
+        }
+      ]
+    },
+    {
+      "name": "Mano",
+      "slug": "mano",
+      "level": 20,
+      "img": "/img/game/monsters/2a31d70ff0214998062693109b1e6471.png",
+      "drops": []
+    },
+    {
+      "name": "Jr. Necki",
+      "slug": "jr-necki",
+      "level": 21,
+      "img": "/img/game/monsters/ec645992c476df2d9a391c049b35ab1c.png",
+      "drops": [
+        {
+          "item": "Jr. Necki Skin",
+          "islug": "jr-necki-skin",
+          "icon": "/img/game/items/04000018.png",
+          "rate": "20%",
+          "counted": false,
+          "confirmed": "Confirmed in Classic"
+        }
+      ]
+    },
+    {
+      "name": "Horny Mushroom",
+      "slug": "horny-mushroom",
+      "level": 22,
+      "img": "/img/game/monsters/3dac2d0d2b0cb975286bcafa75fa56b1.png",
+      "drops": [
+        {
+          "item": "Horny Mushroom Cap",
+          "islug": "horny-mushroom-cap",
+          "icon": "/img/game/items/04000019.png",
+          "rate": "46%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Orange Potion",
+          "islug": "orange-potion",
+          "icon": "/img/game/items/02000001.png",
+          "rate": "2.5%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Bronze Ore",
+          "islug": "bronze-ore",
+          "icon": "/img/game/items/04010000.png",
+          "rate": "2.4%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Arrows for Crossbows",
+          "islug": "arrows-for-crossbows",
+          "icon": "/img/game/items/02061000.png",
+          "rate": "1.3%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Blue Potion",
+          "islug": "blue-potion",
+          "icon": "/img/game/items/02000003.png",
+          "rate": "0.95%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Magic Potion",
+          "islug": "magic-potion",
+          "icon": "/img/game/items/02002001.png",
+          "rate": "0.95%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Arrows for Bows",
+          "islug": "arrows-for-bows",
+          "icon": "/img/game/items/02060000.png",
+          "rate": "0.63%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Topaz Ore",
+          "islug": "topaz-ore",
+          "icon": "/img/game/items/04020006.png",
+          "rate": "0.32%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Black Sneak Pants",
+          "islug": "black-sneak-pants",
+          "icon": "/img/game/items/01060028.png",
+          "rate": "0.16%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Sky Sneak Pants",
+          "islug": "sky-sneak-pants",
+          "icon": "/img/game/items/01061039.png",
+          "rate": "0.16%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        }
+      ]
+    },
+    {
+      "name": "Dark Axe Stump",
+      "slug": "dark-axe-stump",
+      "level": 23,
+      "img": "/img/game/monsters/df13e10e3527ad20dd277f6dc70454d1.png",
+      "drops": [
+        {
+          "item": "Firewood",
+          "islug": "firewood",
+          "icon": "/img/game/items/04000015.png",
+          "rate": "30%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Stump's Teardrop",
+          "islug": "stumps-teardrop",
+          "icon": "/img/game/items/04031075.png",
+          "rate": "—",
+          "counted": false,
+          "confirmed": "Confirmed in Classic"
+        }
+      ]
+    },
+    {
+      "name": "Wooden Mask",
+      "slug": "wooden-mask",
+      "level": 23,
+      "img": "/img/game/monsters/1b001acf9c98fb7d875abdfef9475c9e.png",
+      "drops": []
+    },
+    {
+      "name": "Rocky Mask",
+      "slug": "rocky-mask",
+      "level": 24,
+      "img": "/img/game/monsters/b838becc63efec8aed2a0971a517307a.png",
+      "drops": []
+    },
+    {
+      "name": "Wild Boar",
+      "slug": "wild-boar",
+      "level": 25,
+      "img": "/img/game/monsters/1f5cb50a6abaf657a554e7a6d03f16ff.png",
+      "drops": [
+        {
+          "item": "Leather",
+          "islug": "leather",
+          "icon": "/img/game/items/04000049.png",
+          "rate": "20%",
+          "counted": false,
+          "confirmed": "Confirmed in Classic"
+        }
+      ]
+    },
+    {
+      "name": "Evil Eye",
+      "slug": "evil-eye",
+      "level": 27,
+      "img": "/img/game/monsters/4e63eae3726599b7f8651c09509c878f.png",
+      "drops": [
+        {
+          "item": "Evil Eye Tail",
+          "islug": "evil-eye-tail",
+          "icon": "/img/game/items/04000022.png",
+          "rate": "48%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Orange Potion",
+          "islug": "orange-potion",
+          "icon": "/img/game/items/02000001.png",
+          "rate": "6.6%",
+          "counted": true,
+          "confirmed": "Confirmed in Classic"
+        }
+      ]
+    },
+    {
+      "name": "Iron Hog",
+      "slug": "iron-hog",
+      "level": 28,
+      "img": "/img/game/monsters/3c24947b97677b510d44b1019a535d24.png",
+      "drops": []
+    },
+    {
+      "name": "Zombie Mushroom",
+      "slug": "zombie-mushroom-800011",
+      "level": 30,
+      "img": "/img/game/monsters/e61cd432f658abe6423687a09e2a5d2a.png",
+      "drops": [
+        {
+          "item": "Charm of the Undead",
+          "islug": "charm-of-the-undead",
+          "icon": "/img/game/items/04000020.png",
+          "rate": "—",
+          "counted": false,
+          "confirmed": "Confirmed in Classic"
+        }
+      ]
+    },
+    {
+      "name": "Ligator",
+      "slug": "ligator",
+      "level": 31,
+      "img": "/img/game/monsters/577bdd9e9fabd86810915238ff472ae8.png",
+      "drops": []
+    },
+    {
+      "name": "Fire Boar",
+      "slug": "fire-boar",
+      "level": 32,
+      "img": "/img/game/monsters/d29ec72f95d2aff95965a228be673945.png",
+      "drops": [
+        {
+          "item": "Leather",
+          "islug": "leather",
+          "icon": "/img/game/items/04000049.png",
+          "rate": "20%",
+          "counted": false,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Garnet Ore",
+          "islug": "garnet-ore",
+          "icon": "/img/game/items/04020000.png",
+          "rate": "0.70%",
+          "counted": false,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Arwen's Glass Shoe",
+          "islug": "arwens-glass-shoe",
+          "icon": "/img/game/items/04001000.png",
+          "rate": "—",
+          "counted": false,
+          "confirmed": "Confirmed in Classic"
+        }
+      ]
+    },
+    {
+      "name": "Curse Eye",
+      "slug": "curse-eye",
+      "level": 33,
+      "img": "/img/game/monsters/4b1cb3b9e02f52af1150c98a21607a54.png",
+      "drops": []
+    },
+    {
+      "name": "Jr. Wraith",
+      "slug": "jr-wraith",
+      "level": 34,
+      "img": "/img/game/monsters/3be09656d8765b665d06a67274483303.png",
+      "drops": []
+    },
+    {
+      "name": "Stumpy",
+      "slug": "stumpy",
+      "level": 35,
+      "img": "/img/game/monsters/9fcd8f53e44ed2842d9921071d796401.png",
+      "drops": []
+    },
+    {
+      "name": "Lupin",
+      "slug": "lupin",
+      "level": 37,
+      "img": "/img/game/monsters/40ff0da91faabc091a6bbc044a046d35.png",
+      "drops": [
+        {
+          "item": "Leather",
+          "islug": "leather",
+          "icon": "/img/game/items/04000049.png",
+          "rate": "20%",
+          "counted": false,
+          "confirmed": "Confirmed in Classic"
+        },
+        {
+          "item": "Stiff Feather",
+          "islug": "stiff-feather",
+          "icon": "/img/game/items/04003002.png",
+          "rate": "0.70%",
+          "counted": false,
+          "confirmed": "Confirmed in Classic"
+        }
+      ]
+    },
+    {
+      "name": "Lorang",
+      "slug": "lorang",
+      "level": 38,
+      "img": "/img/game/monsters/0df185e0a2941d3759645f024864dff2.png",
+      "drops": [
+        {
+          "item": "Garnet Ore",
+          "islug": "garnet-ore",
+          "icon": "/img/game/items/04020000.png",
+          "rate": "0.70%",
+          "counted": false,
+          "confirmed": "Confirmed in Classic"
+        }
+      ]
+    },
+    {
+      "name": "Cold Eye",
+      "slug": "cold-eye",
+      "level": 40,
+      "img": "/img/game/monsters/8bd2a3b3758b5e04844864e82297c37b.png",
+      "drops": []
+    },
+    {
+      "name": "Raffle",
+      "slug": "raffle",
+      "level": 40,
+      "img": "/img/game/monsters/140751e31e145c03d7e557a2ecd16c74.png",
+      "drops": []
+    },
+    {
+      "name": "Mushmom",
+      "slug": "mushmom",
+      "level": 40,
+      "img": "/img/game/monsters/b16c9baee05732b23ac054dcaab36bbf.png",
+      "drops": []
+    },
+    {
+      "name": "Zombie Lupin",
+      "slug": "zombie-lupin",
+      "level": 41,
+      "img": "/img/game/monsters/0b3149d85bb2e2e558822a6d98095d30.png",
+      "drops": [
+        {
+          "item": "Leather",
+          "islug": "leather",
+          "icon": "/img/game/items/04000049.png",
+          "rate": "—",
+          "counted": false,
+          "confirmed": "Confirmed in Classic"
+        }
+      ]
+    },
+    {
+      "name": "Golden Stirge",
+      "slug": "golden-stirge",
+      "level": 42,
+      "img": "/img/game/monsters/4e02d4aed3516ef9ed68f0e7fe18c972.png",
+      "drops": []
+    },
+    {
+      "name": "Aqumander",
+      "slug": "aqumander",
+      "level": 43,
+      "img": "/img/game/monsters/e2ae25ced20842ad83e8eb8f0d49c428.png",
+      "drops": []
+    },
+    {
+      "name": "Skeledog",
+      "slug": "skeledog",
+      "level": 44,
+      "img": "/img/game/monsters/b3543101949b77e5d404693a8130476f.png",
+      "drops": []
+    },
+    {
+      "name": "Copper Drake",
+      "slug": "copper-drake",
+      "level": 45,
+      "img": "/img/game/monsters/fbe305fe396ffe211d27afdf7d90439c.png",
+      "drops": []
+    },
+    {
+      "name": "Echopus",
+      "slug": "echopus",
+      "level": 45,
+      "img": "/img/game/monsters/9c63897a416a3a42ba941f3bf9d21bfa.png",
+      "drops": []
+    },
+    {
+      "name": "Tortie",
+      "slug": "tortie",
+      "level": 46,
+      "img": "/img/game/monsters/ec3f503eb6b01b35d0532e8c67b637b9.png",
+      "drops": []
+    },
+    {
+      "name": "Rafflesia",
+      "slug": "rafflesia",
+      "level": 47,
+      "img": "/img/game/monsters/17bf57486ed008987c1b2eacceb8ae02.png",
+      "drops": []
+    },
+    {
+      "name": "Mummydog",
+      "slug": "mummydog",
+      "level": 47,
+      "img": "/img/game/monsters/65447bf8e06b41eefa2f3deabfab5b4f.png",
+      "drops": []
+    },
+    {
+      "name": "Wraith",
+      "slug": "wraith",
+      "level": 48,
+      "img": "/img/game/monsters/4d0200d50d8d5ae5580b2fd4b4ba7208.png",
+      "drops": []
+    },
+    {
+      "name": "Shade",
+      "slug": "shade",
+      "level": 48,
+      "img": "/img/game/monsters/f1ce18693d4f0d76a74c72c7e92476bc.png",
+      "drops": []
+    },
+    {
+      "name": "Clang",
+      "slug": "clang",
+      "level": 49,
+      "img": "/img/game/monsters/5eab93d00be656e458f941fe79181b2d.png",
+      "drops": []
+    },
+    {
+      "name": "Drake",
+      "slug": "drake",
+      "level": 50,
+      "img": "/img/game/monsters/c2129ba9caa5243f3379ae4fa54a2662.png",
+      "drops": []
+    },
+    {
+      "name": "Duskmander",
+      "slug": "duskmander",
+      "level": 50,
+      "img": "/img/game/monsters/17412ebf60144abd11f76ce24ce02227.png",
+      "drops": []
+    },
+    {
+      "name": "Croco",
+      "slug": "croco",
+      "level": 52,
+      "img": "/img/game/monsters/85380ed5024572d7769982ba7c37c240.png",
+      "drops": []
+    },
+    {
+      "name": "Malady",
+      "slug": "malady",
+      "level": 55,
+      "img": "/img/game/monsters/6e31569667480d836544624c487e287a.png",
+      "drops": []
+    },
+    {
+      "name": "Zombie Mushmom",
+      "slug": "zombie-mushmom",
+      "level": 55,
+      "img": "/img/game/monsters/18132063d8013d75d42109eb21f2d544.png",
+      "drops": []
+    },
+    {
+      "name": "Stone Golem",
+      "slug": "stone-golem",
+      "level": 56,
+      "img": "/img/game/monsters/3199f843e46d3e2a9057b9825a95d993.png",
+      "drops": []
+    },
+    {
+      "name": "Skeleton Soldier",
+      "slug": "skeleton-soldier",
+      "level": 57,
+      "img": "/img/game/monsters/c533ec00e2bdb0c156b19a01611ad10c.png",
+      "drops": []
+    },
+    {
+      "name": "Dark Stone Golem",
+      "slug": "dark-stone-golem",
+      "level": 58,
+      "img": "/img/game/monsters/eeb3a505dbe8347b6f75c3e5292d0951.png",
+      "drops": []
+    },
+    {
+      "name": "Red Drake",
+      "slug": "red-drake",
+      "level": 60,
+      "img": "/img/game/monsters/a2f54990debf2e13bdb5bf0cbfcd8b45.png",
+      "drops": []
+    },
+    {
+      "name": "Rotten Mushmom",
+      "slug": "rotten-mushmom",
+      "level": 60,
+      "img": "/img/game/monsters/f734e43ee1fd7c875aac4aaab8451860.png",
+      "drops": []
+    },
+    {
+      "name": "Wild Kargo",
+      "slug": "wild-kargo",
+      "level": 62,
+      "img": "/img/game/monsters/f20385e60492fa2d4b29a7b46fafdd40.png",
+      "drops": []
+    },
+    {
+      "name": "Officer Skeleton",
+      "slug": "officer-skeleton",
+      "level": 63,
+      "img": "/img/game/monsters/93604f4ed5094a6fc790acaf2fb13d8c.png",
+      "drops": []
+    },
+    {
+      "name": "Tauromacis",
+      "slug": "tauromacis",
+      "level": 70,
+      "img": "/img/game/monsters/a702e91a68afdb4f2d236372ef8e29a6.png",
+      "drops": []
+    },
+    {
+      "name": "Commander Skeleton",
+      "slug": "commander-skeleton",
+      "level": 73,
+      "img": "/img/game/monsters/2e62646c1ad5919d497ee0f090df522e.png",
+      "drops": []
+    },
+    {
+      "name": "Taurospear",
+      "slug": "taurospear",
+      "level": 75,
+      "img": "/img/game/monsters/7e1cc8abdb51ff8a9c9756059237e539.png",
+      "drops": []
+    },
+    {
+      "name": "Jr. Balrog",
+      "slug": "jr-balrog",
+      "level": 80,
+      "img": "/img/game/monsters/4e1d4766fe8ff1316dc32b3600bc054c.png",
+      "drops": []
+    }
+  ]
+}

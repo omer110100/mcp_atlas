@@ -1,0 +1,302 @@
+{
+  "sourceUrl": "https://sixpath.wiki/drops",
+  "retrievedOn": "2026-11-19",
+  "sourceHtmlSha256": "e1179313d939f7684745edc33f8a56313a0ae944946ef6c90aa7e9213e50d3e1",
+  "selection": "The49public rows labelled Counted in Classic. Numeric URL IDs only; no rates or page UI. Underlying observations overlap MapleClassic Wiki, so these are corroborations, not extra reports.",
+  "rows": [
+    {
+      "itemId": 2060000,
+      "mobId": 6,
+      "sourceUrl": "https://sixpath.wiki/drops",
+      "status": "classic_counted"
+    },
+    {
+      "itemId": 2061000,
+      "mobId": 6,
+      "sourceUrl": "https://sixpath.wiki/drops",
+      "status": "classic_counted"
+    },
+    {
+      "itemId": 4010000,
+      "mobId": 6,
+      "sourceUrl": "https://sixpath.wiki/drops",
+      "status": "classic_counted"
+    },
+    {
+      "itemId": 4020003,
+      "mobId": 6,
+      "sourceUrl": "https://sixpath.wiki/drops",
+      "status": "classic_counted"
+    },
+    {
+      "itemId": 2000000,
+      "mobId": 6,
+      "sourceUrl": "https://sixpath.wiki/drops",
+      "status": "classic_counted"
+    },
+    {
+      "itemId": 4000005,
+      "mobId": 6,
+      "sourceUrl": "https://sixpath.wiki/drops",
+      "status": "classic_counted"
+    },
+    {
+      "itemId": 1372000,
+      "mobId": 6,
+      "sourceUrl": "https://sixpath.wiki/drops",
+      "status": "classic_counted"
+    },
+    {
+      "itemId": 2060000,
+      "mobId": 7,
+      "sourceUrl": "https://sixpath.wiki/drops",
+      "status": "classic_counted"
+    },
+    {
+      "itemId": 2061000,
+      "mobId": 7,
+      "sourceUrl": "https://sixpath.wiki/drops",
+      "status": "classic_counted"
+    },
+    {
+      "itemId": 1082003,
+      "mobId": 7,
+      "sourceUrl": "https://sixpath.wiki/drops",
+      "status": "classic_counted"
+    },
+    {
+      "itemId": 4010005,
+      "mobId": 7,
+      "sourceUrl": "https://sixpath.wiki/drops",
+      "status": "classic_counted"
+    },
+    {
+      "itemId": 2000000,
+      "mobId": 7,
+      "sourceUrl": "https://sixpath.wiki/drops",
+      "status": "classic_counted"
+    },
+    {
+      "itemId": 4020005,
+      "mobId": 7,
+      "sourceUrl": "https://sixpath.wiki/drops",
+      "status": "classic_counted"
+    },
+    {
+      "itemId": 4000007,
+      "mobId": 7,
+      "sourceUrl": "https://sixpath.wiki/drops",
+      "status": "classic_counted"
+    },
+    {
+      "itemId": 4000006,
+      "mobId": 7,
+      "sourceUrl": "https://sixpath.wiki/drops",
+      "status": "classic_counted"
+    },
+    {
+      "itemId": 2060000,
+      "mobId": 9,
+      "sourceUrl": "https://sixpath.wiki/drops",
+      "status": "classic_counted"
+    },
+    {
+      "itemId": 2061000,
+      "mobId": 9,
+      "sourceUrl": "https://sixpath.wiki/drops",
+      "status": "classic_counted"
+    },
+    {
+      "itemId": 4010000,
+      "mobId": 9,
+      "sourceUrl": "https://sixpath.wiki/drops",
+      "status": "classic_counted"
+    },
+    {
+      "itemId": 4000009,
+      "mobId": 9,
+      "sourceUrl": "https://sixpath.wiki/drops",
+      "status": "classic_counted"
+    },
+    {
+      "itemId": 2000000,
+      "mobId": 9,
+      "sourceUrl": "https://sixpath.wiki/drops",
+      "status": "classic_counted"
+    },
+    {
+      "itemId": 4000062,
+      "mobId": 10,
+      "sourceUrl": "https://sixpath.wiki/drops",
+      "status": "classic_counted"
+    },
+    {
+      "itemId": 2060000,
+      "mobId": 10,
+      "sourceUrl": "https://sixpath.wiki/drops",
+      "status": "classic_counted"
+    },
+    {
+      "itemId": 2061000,
+      "mobId": 10,
+      "sourceUrl": "https://sixpath.wiki/drops",
+      "status": "classic_counted"
+    },
+    {
+      "itemId": 4000049,
+      "mobId": 10,
+      "sourceUrl": "https://sixpath.wiki/drops",
+      "status": "classic_counted"
+    },
+    {
+      "itemId": 4010002,
+      "mobId": 10,
+      "sourceUrl": "https://sixpath.wiki/drops",
+      "status": "classic_counted"
+    },
+    {
+      "itemId": 4000010,
+      "mobId": 10,
+      "sourceUrl": "https://sixpath.wiki/drops",
+      "status": "classic_counted"
+    },
+    {
+      "itemId": 4003002,
+      "mobId": 10,
+      "sourceUrl": "https://sixpath.wiki/drops",
+      "status": "classic_counted"
+    },
+    {
+      "itemId": 4000015,
+      "mobId": 15,
+      "sourceUrl": "https://sixpath.wiki/drops",
+      "status": "classic_counted"
+    },
+    {
+      "itemId": 4010005,
+      "mobId": 15,
+      "sourceUrl": "https://sixpath.wiki/drops",
+      "status": "classic_counted"
+    },
+    {
+      "itemId": 2000000,
+      "mobId": 15,
+      "sourceUrl": "https://sixpath.wiki/drops",
+      "status": "classic_counted"
+    },
+    {
+      "itemId": 2061000,
+      "mobId": 16,
+      "sourceUrl": "https://sixpath.wiki/drops",
+      "status": "classic_counted"
+    },
+    {
+      "itemId": 4000016,
+      "mobId": 16,
+      "sourceUrl": "https://sixpath.wiki/drops",
+      "status": "classic_counted"
+    },
+    {
+      "itemId": 4010006,
+      "mobId": 16,
+      "sourceUrl": "https://sixpath.wiki/drops",
+      "status": "classic_counted"
+    },
+    {
+      "itemId": 2061000,
+      "mobId": 17,
+      "sourceUrl": "https://sixpath.wiki/drops",
+      "status": "classic_counted"
+    },
+    {
+      "itemId": 2000001,
+      "mobId": 17,
+      "sourceUrl": "https://sixpath.wiki/drops",
+      "status": "classic_counted"
+    },
+    {
+      "itemId": 4000017,
+      "mobId": 17,
+      "sourceUrl": "https://sixpath.wiki/drops",
+      "status": "classic_counted"
+    },
+    {
+      "itemId": 2060000,
+      "mobId": 19,
+      "sourceUrl": "https://sixpath.wiki/drops",
+      "status": "classic_counted"
+    },
+    {
+      "itemId": 2061000,
+      "mobId": 19,
+      "sourceUrl": "https://sixpath.wiki/drops",
+      "status": "classic_counted"
+    },
+    {
+      "itemId": 1060028,
+      "mobId": 19,
+      "sourceUrl": "https://sixpath.wiki/drops",
+      "status": "classic_counted"
+    },
+    {
+      "itemId": 2000003,
+      "mobId": 19,
+      "sourceUrl": "https://sixpath.wiki/drops",
+      "status": "classic_counted"
+    },
+    {
+      "itemId": 4010000,
+      "mobId": 19,
+      "sourceUrl": "https://sixpath.wiki/drops",
+      "status": "classic_counted"
+    },
+    {
+      "itemId": 4000019,
+      "mobId": 19,
+      "sourceUrl": "https://sixpath.wiki/drops",
+      "status": "classic_counted"
+    },
+    {
+      "itemId": 2002001,
+      "mobId": 19,
+      "sourceUrl": "https://sixpath.wiki/drops",
+      "status": "classic_counted"
+    },
+    {
+      "itemId": 2000001,
+      "mobId": 19,
+      "sourceUrl": "https://sixpath.wiki/drops",
+      "status": "classic_counted"
+    },
+    {
+      "itemId": 1061039,
+      "mobId": 19,
+      "sourceUrl": "https://sixpath.wiki/drops",
+      "status": "classic_counted"
+    },
+    {
+      "itemId": 4020006,
+      "mobId": 19,
+      "sourceUrl": "https://sixpath.wiki/drops",
+      "status": "classic_counted"
+    },
+    {
+      "itemId": 4000015,
+      "mobId": 20,
+      "sourceUrl": "https://sixpath.wiki/drops",
+      "status": "classic_counted"
+    },
+    {
+      "itemId": 4000022,
+      "mobId": 23,
+      "sourceUrl": "https://sixpath.wiki/drops",
+      "status": "classic_counted"
+    },
+    {
+      "itemId": 2000001,
+      "mobId": 23,
+      "sourceUrl": "https://sixpath.wiki/drops",
+      "status": "classic_counted"
+    }
+  ]
+}

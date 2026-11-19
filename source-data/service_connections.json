@@ -1,0 +1,632 @@
+{
+  "game": "MapleStory Classic World",
+  "version_context": "2.0.0",
+  "checked_date": "2026-11-19",
+  "sources": {
+    "shanks": {
+      "url": "https://mapleclassic.wiki/wiki/Shanks",
+      "reference": "turn584662390view2",
+      "basis": "Classic-specific NPC article states Southperry to Lith Harbor, dialogue transport and no direct return ferry. Article labels its confirmation pre-launch; supported by the getting-started guide."
+    },
+    "getting_started": {
+      "url": "https://mapleclassic.wiki/wiki/Getting_started",
+      "reference": "turn584662390view3"
+    },
+    "florina": {
+      "url": "https://meowdb.com/msclassic/maps/010007000",
+      "reference": "turn772291796search0",
+      "basis": "Pason in Lith Harbor takes you here; Pison sends you back."
+    },
+    "florina_quest": {
+      "url": "https://www.mapleclassicguide.com/quests/special-taste-of-florina-beach/",
+      "reference": "turn772291796search3",
+      "basis": "Explicitly describes boat from Lith and return with Pison. Fare is labelled not confirmed, so fare is omitted."
+    },
+    "market": {
+      "url": "https://ms-classic.com/guides/free-market-how-to",
+      "reference": "turn593870731view1",
+      "basis": "Henesys Market and Perion both lead to Free Market Entrance. Return to originating town is community-reported. This source correctly lists 20 rooms."
+    },
+    "moon_bunny": {
+      "url": "https://mapleclassic.wiki/wiki/Moon_Bunny%27s_Rice_Cake_%28quest%29",
+      "reference": "turn860241765search4",
+      "basis": "Version 2.0.0: Tory in Henesys Park sends a party into Primrose Hill."
+    },
+    "official_november": {
+      "url": "https://www.nexon.com/maplestory/news/update/48255/november-update-forgotten-hollow-patch-notes",
+      "mirror_url": "https://gcmaple.com/en/news/48255",
+      "reference": "turn127834917view3",
+      "basis": "Official level, party-size, channels and event dates. Also confirms Zenith KPQ channels 3-6."
+    },
+    "kpq_steps": {
+      "url": "https://planet-helper.com/gmsclassic/guide/party-quests/kerning/",
+      "reference": "turn593870731view2",
+      "basis": "Updated 2026-11-19. Lists exact ordered stages, Cloto stage unlocks, bonus and exit. Uses launch data and post-launch community reports."
+    },
+    "kpq_exit": {
+      "url": "https://meowdb.com/msclassic/guides/kerning-city-party-quest-kpq-guide",
+      "reference": "turn593870731view0",
+      "basis": "Explicitly describes bonus after boss, exit after bonus, and leaving via Nella. Does not explicitly name the final exterior destination, so final destination is left unknown."
+    },
+    "job_test": {
+      "url": "https://ms-classic.com/guides/second-job-advancement-quests",
+      "reference": "turn584662390view0",
+      "basis": "Table names every field instructor location and corresponding hidden test map; says instructor sends character into the test."
+    },
+    "job_test_secondary": {
+      "url": "https://maplescanner.com/classic/gms/en/job/",
+      "reference": "turn667795691view0"
+    },
+    "hollow_guide": {
+      "url": "https://ms-classic.com/guides/forgotten-hollow-guide",
+      "basis": "Updated Classic World guide confirms hidden entrances from The Tree Tunnel At the Forest Up North and Sleepy Dungeon V."
+    },
+    "november_wiki": {
+      "url": "https://mapleclassic.wiki/wiki/Update%3A18_November_2026_Forgotten_Hollow",
+      "basis": "Classic World November update corroboration used by independent route audit."
+    },
+    "welcome_to_hollow": {
+      "url": "https://metacw.com/db/quest/10611",
+      "basis": "Quest-level context. Quest availability level is not inferred to be an entrance requirement."
+    }
+  },
+  "edges": [
+    {
+      "id": "ship-southperry-lith",
+      "from": 60,
+      "to": 10000000,
+      "from_name": "Southperry",
+      "to_name": "Lith Harbor",
+      "kind": "boat",
+      "label_he": "סירה לוויקטוריה",
+      "condition_he": "שיחה עם רב החובל. מעבר בכיוון אחד; אין שירות חזרה ישיר.",
+      "sources": [
+        "shanks",
+        "getting_started"
+      ],
+      "source_urls": [
+        "https://mapleclassic.wiki/wiki/Shanks",
+        "https://mapleclassic.wiki/wiki/Getting_started"
+      ],
+      "npc": "Shanks",
+      "route_allowed": true,
+      "evidence": "sourced-service-or-script, not a fixed destination in raw portal data",
+      "checked_date": "2026-11-19"
+    },
+    {
+      "id": "boat-lith-florina",
+      "from": 10000000,
+      "to": 10007000,
+      "from_name": "Lith Harbor",
+      "to_name": "Florina Beach",
+      "kind": "boat",
+      "label_he": "הפלגה לפלורינה",
+      "condition_he": "שיחה עם מדריך הטיולים. מחיר הנסיעה אינו מאומת כאן.",
+      "sources": [
+        "florina",
+        "florina_quest"
+      ],
+      "source_urls": [
+        "https://meowdb.com/msclassic/maps/010007000",
+        "https://www.mapleclassicguide.com/quests/special-taste-of-florina-beach/"
+      ],
+      "npc": "Pason",
+      "route_allowed": true,
+      "evidence": "sourced-service-or-script, not a fixed destination in raw portal data",
+      "checked_date": "2026-11-19",
+      "stores_state": "florina_origin"
+    },
+    {
+      "id": "boat-florina-lith",
+      "from": 10007000,
+      "to": 10000000,
+      "from_name": "Florina Beach",
+      "to_name": "Lith Harbor",
+      "kind": "boat",
+      "label_he": "חזרה מפלורינה",
+      "condition_he": "שיחה עם מדריך החזרה, לאחר הגעה מהנמל בלית. השירות מחזיר למקום שממנו הגעת.",
+      "sources": [
+        "florina",
+        "florina_quest"
+      ],
+      "source_urls": [
+        "https://meowdb.com/msclassic/maps/010007000",
+        "https://www.mapleclassicguide.com/quests/special-taste-of-florina-beach/"
+      ],
+      "npc": "Pison",
+      "route_allowed": true,
+      "evidence": "sourced-service-or-script, not a fixed destination in raw portal data",
+      "checked_date": "2026-11-19",
+      "requires_state": {
+        "florina_origin": 10000000
+      }
+    },
+    {
+      "id": "free-market-entry-10001040",
+      "from": 10001040,
+      "to": 80002000,
+      "from_name": "Henesys Market",
+      "to_name": "Free Market Entrance",
+      "kind": "scripted_portal",
+      "label_he": "כניסה לשוק החופשי",
+      "condition_he": "פורטל השוק בהנסיס. היציאה מהשוק תלויה במקום שממנו נכנסת.",
+      "sources": [
+        "market"
+      ],
+      "source_urls": [
+        "https://ms-classic.com/guides/free-market-how-to"
+      ],
+      "npc": null,
+      "route_allowed": true,
+      "evidence": "sourced-service-or-script, not a fixed destination in raw portal data",
+      "checked_date": "2026-11-19",
+      "portal_name": "market00",
+      "source_portal_id": "21",
+      "x": 1518,
+      "y": 736,
+      "stores_state": "free_market_origin"
+    },
+    {
+      "id": "free-market-entry-10004000",
+      "from": 10004000,
+      "to": 80002000,
+      "from_name": "Perion",
+      "to_name": "Free Market Entrance",
+      "kind": "scripted_portal",
+      "label_he": "כניסה לשוק החופשי",
+      "condition_he": "פורטל השוק בפריון. היציאה מהשוק תלויה במקום שממנו נכנסת.",
+      "sources": [
+        "market"
+      ],
+      "source_urls": [
+        "https://ms-classic.com/guides/free-market-how-to"
+      ],
+      "npc": null,
+      "route_allowed": true,
+      "evidence": "sourced-service-or-script, not a fixed destination in raw portal data",
+      "checked_date": "2026-11-19",
+      "portal_name": "market00",
+      "source_portal_id": "24",
+      "x": 1510,
+      "y": 1524,
+      "stores_state": "free_market_origin"
+    },
+    {
+      "id": "free-market-return",
+      "from": 80002000,
+      "to": null,
+      "from_name": "Free Market Entrance",
+      "to_name": null,
+      "kind": "dynamic_return",
+      "label_he": "חזרה למקום הכניסה",
+      "condition_he": "היעד נקבע לפי מקום הכניסה לשוק. אין להשתמש בשוק כקיצור דרך חופשי בין הנסיס לפריון.",
+      "sources": [
+        "market",
+        "getting_started"
+      ],
+      "source_urls": [
+        "https://ms-classic.com/guides/free-market-how-to",
+        "https://mapleclassic.wiki/wiki/Getting_started"
+      ],
+      "npc": null,
+      "route_allowed": false,
+      "evidence": "sourced-service-or-script, not a fixed destination in raw portal data",
+      "checked_date": "2026-11-19",
+      "destination_policy": "previous-entry-origin",
+      "candidates": [
+        10001040,
+        10004000
+      ]
+    },
+    {
+      "id": "moon-bunny-entry",
+      "from": 10001050,
+      "to": 80003000,
+      "from_name": "Henesys Park",
+      "to_name": "Primrose Hill",
+      "kind": "party_quest",
+      "label_he": "כניסה למשימת ארנב הירח",
+      "condition_he": "רמה 11 ומעלה, קבוצה של 3. ערוצים 20 עד 30 בווינדיה ו-7 עד 10 בזניט. זמין עד 9 בדצמבר 2026 בשעה 23:59 לפי זמן אוניברסלי.",
+      "sources": [
+        "moon_bunny",
+        "official_november"
+      ],
+      "source_urls": [
+        "https://mapleclassic.wiki/wiki/Moon_Bunny%27s_Rice_Cake_%28quest%29",
+        "https://www.nexon.com/maplestory/news/update/48255/november-update-forgotten-hollow-patch-notes"
+      ],
+      "npc": "Tory",
+      "route_allowed": true,
+      "evidence": "sourced-service-or-script, not a fixed destination in raw portal data",
+      "checked_date": "2026-11-19",
+      "min_level": 11,
+      "party_size": 3,
+      "active_until_utc": "2026-12-09T23:59:00Z"
+    },
+    {
+      "id": "kpq-entry",
+      "from": 10003000,
+      "to": 80000000,
+      "from_name": "Kerning City",
+      "to_name": "1st Accompaniment <1st Stage>",
+      "kind": "party_quest",
+      "label_he": "כניסה למשימה הקבוצתית בקרנינג",
+      "condition_he": "רמה 21 ומעלה וקבוצה של 4. מנהיג הקבוצה פונה למפעילת המשימה. ערוצים 3 עד 12 בווינדיה ו-3 עד 6 בזניט.",
+      "sources": [
+        "kpq_steps",
+        "official_november"
+      ],
+      "source_urls": [
+        "https://planet-helper.com/gmsclassic/guide/party-quests/kerning/",
+        "https://www.nexon.com/maplestory/news/update/48255/november-update-forgotten-hollow-patch-notes"
+      ],
+      "npc": "Lakelis",
+      "route_allowed": true,
+      "evidence": "sourced-service-or-script, not a fixed destination in raw portal data",
+      "checked_date": "2026-11-19",
+      "min_level": 21,
+      "party_size": 4
+    },
+    {
+      "id": "kpq-stage-1",
+      "from": 80000000,
+      "to": 80000100,
+      "from_name": "1st Accompaniment <1st Stage>",
+      "to_name": "1st Accompaniment <2nd Stage>",
+      "kind": "quest_progression",
+      "label_he": "המשך לשלב הבא",
+      "condition_he": "מותנה בהשלמת השלב ובאישור מפעילת המשימה. חיבור מותנה של המשימה, לא מעבר חופשי.",
+      "sources": [
+        "kpq_steps",
+        "kpq_exit"
+      ],
+      "source_urls": [
+        "https://planet-helper.com/gmsclassic/guide/party-quests/kerning/",
+        "https://meowdb.com/msclassic/guides/kerning-city-party-quest-kpq-guide"
+      ],
+      "npc": "Cloto",
+      "route_allowed": true,
+      "evidence": "sourced-service-or-script, not a fixed destination in raw portal data",
+      "checked_date": "2026-11-19",
+      "portal_name": "next00",
+      "source_portal_id": "2",
+      "x": 1961,
+      "y": 1746,
+      "requires_progress": {
+        "quest": "Kerning PQ",
+        "completed_stage": 1
+      }
+    },
+    {
+      "id": "kpq-stage-2",
+      "from": 80000100,
+      "to": 80000200,
+      "from_name": "1st Accompaniment <2nd Stage>",
+      "to_name": "1st Accompaniment <3rd Stage>",
+      "kind": "quest_progression",
+      "label_he": "המשך לשלב הבא",
+      "condition_he": "מותנה בהשלמת השלב ובאישור מפעילת המשימה. חיבור מותנה של המשימה, לא מעבר חופשי.",
+      "sources": [
+        "kpq_steps",
+        "kpq_exit"
+      ],
+      "source_urls": [
+        "https://planet-helper.com/gmsclassic/guide/party-quests/kerning/",
+        "https://meowdb.com/msclassic/guides/kerning-city-party-quest-kpq-guide"
+      ],
+      "npc": "Cloto",
+      "route_allowed": true,
+      "evidence": "sourced-service-or-script, not a fixed destination in raw portal data",
+      "checked_date": "2026-11-19",
+      "portal_name": "next00",
+      "source_portal_id": "2",
+      "x": 1448,
+      "y": 1693,
+      "requires_progress": {
+        "quest": "Kerning PQ",
+        "completed_stage": 2
+      }
+    },
+    {
+      "id": "kpq-stage-3",
+      "from": 80000200,
+      "to": 80000300,
+      "from_name": "1st Accompaniment <3rd Stage>",
+      "to_name": "1st Accompaniment <4th stage>",
+      "kind": "quest_progression",
+      "label_he": "המשך לשלב הבא",
+      "condition_he": "מותנה בהשלמת השלב ובאישור מפעילת המשימה. חיבור מותנה של המשימה, לא מעבר חופשי.",
+      "sources": [
+        "kpq_steps",
+        "kpq_exit"
+      ],
+      "source_urls": [
+        "https://planet-helper.com/gmsclassic/guide/party-quests/kerning/",
+        "https://meowdb.com/msclassic/guides/kerning-city-party-quest-kpq-guide"
+      ],
+      "npc": "Cloto",
+      "route_allowed": true,
+      "evidence": "sourced-service-or-script, not a fixed destination in raw portal data",
+      "checked_date": "2026-11-19",
+      "portal_name": "next00",
+      "source_portal_id": "2",
+      "x": 1837,
+      "y": 525,
+      "requires_progress": {
+        "quest": "Kerning PQ",
+        "completed_stage": 3
+      }
+    },
+    {
+      "id": "kpq-stage-4",
+      "from": 80000300,
+      "to": 80000400,
+      "from_name": "1st Accompaniment <4th stage>",
+      "to_name": "1st Accompaniment <Last Stage>",
+      "kind": "quest_progression",
+      "label_he": "המשך לשלב הבא",
+      "condition_he": "מותנה בהשלמת השלב ובאישור מפעילת המשימה. חיבור מותנה של המשימה, לא מעבר חופשי.",
+      "sources": [
+        "kpq_steps",
+        "kpq_exit"
+      ],
+      "source_urls": [
+        "https://planet-helper.com/gmsclassic/guide/party-quests/kerning/",
+        "https://meowdb.com/msclassic/guides/kerning-city-party-quest-kpq-guide"
+      ],
+      "npc": "Cloto",
+      "route_allowed": true,
+      "evidence": "sourced-service-or-script, not a fixed destination in raw portal data",
+      "checked_date": "2026-11-19",
+      "portal_name": "next00",
+      "source_portal_id": "2",
+      "x": 1117,
+      "y": 522,
+      "requires_progress": {
+        "quest": "Kerning PQ",
+        "completed_stage": 4
+      }
+    },
+    {
+      "id": "kpq-stage-5",
+      "from": 80000400,
+      "to": 80000500,
+      "from_name": "1st Accompaniment <Last Stage>",
+      "to_name": "1st Accompaniment <Bonus>",
+      "kind": "quest_progression",
+      "label_he": "המשך לשלב הבונוס",
+      "condition_he": "מותנה בהשלמת השלב ובאישור מפעילת המשימה. חיבור מותנה של המשימה, לא מעבר חופשי.",
+      "sources": [
+        "kpq_steps",
+        "kpq_exit"
+      ],
+      "source_urls": [
+        "https://planet-helper.com/gmsclassic/guide/party-quests/kerning/",
+        "https://meowdb.com/msclassic/guides/kerning-city-party-quest-kpq-guide"
+      ],
+      "npc": "Cloto",
+      "route_allowed": true,
+      "evidence": "sourced-service-or-script, not a fixed destination in raw portal data",
+      "checked_date": "2026-11-19",
+      "portal_name": "next00",
+      "source_portal_id": "2",
+      "x": 1050,
+      "y": 409,
+      "requires_progress": {
+        "quest": "Kerning PQ",
+        "completed_stage": 5
+      }
+    },
+    {
+      "id": "kpq-bonus-exit",
+      "from": 80000500,
+      "to": 80000600,
+      "from_name": "1st Accompaniment <Bonus>",
+      "to_name": "1st Accompaniment <Exit>",
+      "kind": "npc",
+      "label_he": "יציאה משלב הבונוס",
+      "condition_he": "שיחה עם מפעילת היציאה מתוך המשימה.",
+      "sources": [
+        "kpq_exit",
+        "kpq_steps"
+      ],
+      "source_urls": [
+        "https://meowdb.com/msclassic/guides/kerning-city-party-quest-kpq-guide",
+        "https://planet-helper.com/gmsclassic/guide/party-quests/kerning/"
+      ],
+      "npc": "Nella",
+      "route_allowed": true,
+      "evidence": "sourced-service-or-script, not a fixed destination in raw portal data",
+      "checked_date": "2026-11-19"
+    },
+    {
+      "id": "kpq-final-exit",
+      "from": 80000600,
+      "to": null,
+      "from_name": "1st Accompaniment <Exit>",
+      "to_name": null,
+      "kind": "npc",
+      "label_he": "יציאה מהמשימה",
+      "condition_he": "שיחה עם מפעילת היציאה. המקור מאמת את היציאה אך אינו מציין את מספר מפת היעד הסופית.",
+      "sources": [
+        "kpq_exit"
+      ],
+      "source_urls": [
+        "https://meowdb.com/msclassic/guides/kerning-city-party-quest-kpq-guide"
+      ],
+      "npc": "Nella",
+      "route_allowed": false,
+      "evidence": "sourced-service-or-script, not a fixed destination in raw portal data",
+      "checked_date": "2026-11-19"
+    },
+    {
+      "id": "job-test-bowman",
+      "from": 10001090,
+      "to": 80001000,
+      "from_name": "The Road to the Dungeon",
+      "to_name": "Ant Tunnel For Bowman",
+      "kind": "job_test",
+      "label_he": "כניסה למבחן העבודה השנייה",
+      "condition_he": "רמה 30 ומעלה במקצוע קשת, במסגרת משימת הקידום ועם מכתב המדריך המתאים.",
+      "sources": [
+        "job_test",
+        "job_test_secondary"
+      ],
+      "source_urls": [
+        "https://ms-classic.com/guides/second-job-advancement-quests",
+        "https://maplescanner.com/classic/gms/en/job/"
+      ],
+      "npc": "Bowman Job Instructor",
+      "route_allowed": true,
+      "evidence": "sourced-service-or-script, not a fixed destination in raw portal data",
+      "checked_date": "2026-11-19",
+      "min_level": 30,
+      "job": "bowman"
+    },
+    {
+      "id": "job-test-magician",
+      "from": 10002070,
+      "to": 80001100,
+      "from_name": "The Forest North of Ellinia",
+      "to_name": "Magician's Tree Dungeon",
+      "kind": "job_test",
+      "label_he": "כניסה למבחן העבודה השנייה",
+      "condition_he": "רמה 30 ומעלה במקצוע קוסם, במסגרת משימת הקידום ועם מכתב המדריך המתאים.",
+      "sources": [
+        "job_test",
+        "job_test_secondary"
+      ],
+      "source_urls": [
+        "https://ms-classic.com/guides/second-job-advancement-quests",
+        "https://maplescanner.com/classic/gms/en/job/"
+      ],
+      "npc": "Magician Job Instructor",
+      "route_allowed": true,
+      "evidence": "sourced-service-or-script, not a fixed destination in raw portal data",
+      "checked_date": "2026-11-19",
+      "min_level": 30,
+      "job": "magician"
+    },
+    {
+      "id": "job-test-thief",
+      "from": 10003080,
+      "to": 80001200,
+      "from_name": "Construction Site North of Kerning City",
+      "to_name": "Thief's Construction Site",
+      "kind": "job_test",
+      "label_he": "כניסה למבחן העבודה השנייה",
+      "condition_he": "רמה 30 ומעלה במקצוע גנב, במסגרת משימת הקידום ועם מכתב המדריך המתאים.",
+      "sources": [
+        "job_test",
+        "job_test_secondary"
+      ],
+      "source_urls": [
+        "https://ms-classic.com/guides/second-job-advancement-quests",
+        "https://maplescanner.com/classic/gms/en/job/"
+      ],
+      "npc": "Thief Job Instructor",
+      "route_allowed": true,
+      "evidence": "sourced-service-or-script, not a fixed destination in raw portal data",
+      "checked_date": "2026-11-19",
+      "min_level": 30,
+      "job": "thief"
+    },
+    {
+      "id": "job-test-warrior",
+      "from": 10004023,
+      "to": 80001300,
+      "from_name": "West Rocky Mountain IV",
+      "to_name": "Warrior's Rocky Mountain",
+      "kind": "job_test",
+      "label_he": "כניסה למבחן העבודה השנייה",
+      "condition_he": "רמה 30 ומעלה במקצוע לוחם, במסגרת משימת הקידום ועם מכתב המדריך המתאים.",
+      "sources": [
+        "job_test",
+        "job_test_secondary"
+      ],
+      "source_urls": [
+        "https://ms-classic.com/guides/second-job-advancement-quests",
+        "https://maplescanner.com/classic/gms/en/job/"
+      ],
+      "npc": "Warrior Job Instructor",
+      "route_allowed": true,
+      "evidence": "sourced-service-or-script, not a fixed destination in raw portal data",
+      "checked_date": "2026-11-19",
+      "min_level": 30,
+      "job": "warrior"
+    },
+    {
+      "id": "hollow-script-entry-10002071",
+      "from": 10002071,
+      "to": 10006060,
+      "from_name": "The Tree Tunnel At the Forest Up North",
+      "to_name": "Forgotten Entrance III",
+      "kind": "documented_portal",
+      "label_he": "כניסה נסתרת לחלל הנשכח מאליניה",
+      "condition_he": "כניסה נסתרת מתועדת לגרסה 2.0.0, בתחתית המפה. לא נדרשת כאן רמה 39 לצורך חישוב המסלול; רמת המשימות באזור אינה תנאי הכניסה.",
+      "source_urls": [
+        "https://ms-classic.com/guides/forgotten-hollow-guide",
+        "https://mapleclassic.wiki/wiki/Update%3A18_November_2026_Forgotten_Hollow",
+        "https://metacw.com/db/quest/10611"
+      ],
+      "sources": [
+        "hollow_guide",
+        "november_wiki",
+        "welcome_to_hollow"
+      ],
+      "npc": null,
+      "route_allowed": true,
+      "portal_name": "down00",
+      "source_portal_id": "9",
+      "x": 567,
+      "y": 4114,
+      "raw_portal_type": 8,
+      "evidence": "Guide-confirmed script destination; raw source portal sentinel preserved",
+      "checked_date": "2026-11-19",
+      "walkable": true,
+      "conditional": false
+    },
+    {
+      "id": "hollow-script-entry-10005054",
+      "from": 10005054,
+      "to": 10006071,
+      "from_name": "Sleepy Dungeon V",
+      "to_name": "Forgotten Dungeon Tunnel",
+      "kind": "documented_portal",
+      "label_he": "כניסה נסתרת לחלל הנשכח מסליפיווד",
+      "condition_he": "כניסה נסתרת מתועדת לגרסה 2.0.0, בתחתית המפה בצד ימין. לא נדרשת כאן רמה 39 לצורך חישוב המסלול; רמת המשימות באזור אינה תנאי הכניסה.",
+      "source_urls": [
+        "https://ms-classic.com/guides/forgotten-hollow-guide",
+        "https://mapleclassic.wiki/wiki/Update%3A18_November_2026_Forgotten_Hollow",
+        "https://metacw.com/db/quest/10611"
+      ],
+      "sources": [
+        "hollow_guide",
+        "november_wiki",
+        "welcome_to_hollow"
+      ],
+      "npc": null,
+      "route_allowed": true,
+      "portal_name": "down00",
+      "source_portal_id": "7",
+      "x": 1772,
+      "y": 3473,
+      "raw_portal_type": 8,
+      "evidence": "Guide-confirmed script destination; raw source portal sentinel preserved",
+      "checked_date": "2026-11-19",
+      "walkable": true,
+      "conditional": false
+    }
+  ],
+  "notes": [
+    "These are supplementary services and scripted transitions. Do not count them as raw recorded portals.",
+    "Every non-null endpoint was matched to the current OSMS map ID and name.",
+    "Fare amounts deliberately omitted due to incomplete or conflicting current confirmation.",
+    "Free Market exit is state-dependent. Do not add unconditional edges to both towns.",
+    "Quest progression edges require successful progress. A map-only route search cannot guarantee eligibility.",
+    "No Moon Bunny internal NPC sequence was inferred: only entry into Primrose Hill is supported with an exact destination. The other four maps remain browsable with native client records.",
+    "No reverse Maple Island ferry, Ossyria service, or generic old-GMS transport was added.",
+    "Job-test return_map_id is respawn metadata and must not silently become a walkable return portal.",
+    "Two guide-confirmed Forgotten Hollow script destinations are supplementary walkable documented_portal edges. Original client portal records remain unchanged."
+  ]
+}
