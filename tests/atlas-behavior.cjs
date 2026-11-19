@@ -160,6 +160,38 @@ check('same-map route completes with both controls disabled',get('sceneNavNext')
 get('routeTo').value='Forgotten Hollow [10006000]';run('submitRoute()');
 check('replacing route invalidates old guide',!run('navigationActive()')&&get('sceneNavigation').hidden);
 
+// Compact navigation and explicit rerouting from a user-selected map.
+get('routeFrom').value='Ellinia [10002000]';get('routeTo').value='Forgotten Hollow [10006000]';get('useServices').checked=false;run('submitRoute();openRouteStep(0)');
+fire('sceneNavCompact','click');
+check('compact mode exposes pressed control and removes sidebar layout',run('compactNavigation')&&get('sceneDialog').classList.contains('compact-navigation')&&get('sceneNavCompact').getAttribute('aria-pressed')==='true');
+check('compact mode centers the required exit in the canvas',run('Math.abs(scene.x+navigationGate().x*scene.k-500)<.001&&Math.abs(scene.y+navigationGate().y*scene.k-350)<.001&&selectedGate===navigationGate().key'));
+fire('sceneNavNext','click');
+check('next compact step centers its own gate, not the previous map gate',run('navigationIndex===1&&sceneId===route.steps[1].from&&selectedGate===navigationGate().key&&Math.abs(scene.x+navigationGate().x*scene.k-500)<.001&&Math.abs(scene.y+navigationGate().y*scene.k-350)<.001'));
+fire('sceneNavCompact','click');
+check('leaving compact mode restores full layout and clears pressed state',!run('compactNavigation')&&!get('sceneDialog').classList.contains('compact-navigation')&&get('sceneNavCompact').getAttribute('aria-pressed')==='false');
+run('setCompactNavigation(true);openScene(10001000)');
+check('detour exposes full map and explicit reroute while retaining compact preference',run('compactNavigation&&!navigationFollowing')&&!get('sceneDialog').classList.contains('compact-navigation')&&!get('sceneNavReroute').hidden&&get('sceneNavCompact').hidden);
+fire('sceneNavReturn','click');
+check('return to saved route restores compact layout and current exit focus',get('sceneDialog').classList.contains('compact-navigation')&&run('navigationIndex===1&&selectedGate===navigationGate().key&&Math.abs(scene.x+navigationGate().x*scene.k-500)<.001'));
+run('openRouteStep(route.steps.findIndex(s=>s.service))');
+check('compact guide retains the documented conditional transition instructions',get('sceneNavInstruction').textContent===run('serviceCondition(route.steps[navigationIndex].service)')&&get('sceneNavInstruction').textContent.length>0);
+run('openRouteStep(route.steps.length)');
+check('compact destination handles absent exit and disables advancing',run('selectedGate===null')&&get('sceneNavNext').disabled&&get('sceneNavFocus').hidden);
+run('openRouteStep(1);openScene(10001000);globalThis.previousDestination=route.to;');get('useServices').checked=true;
+check('explicit reroute from detour succeeds',run('rerouteFromScene()')===true);
+check('reroute uses displayed origin, same destination and restarts at its exact exit',run('route.from===10001000&&route.to===previousDestination&&navigationIndex===0&&navigationFollowing&&selectedGate===navigationGate().key'));
+check('reroute retains planned service policy despite an edited form checkbox',run('routeUsesServices===false')&&get('useServices').checked===false);
+run('openRouteStep(1);globalThis.beforeFailedRoute=route;globalThis.beforeFailedIndex=navigationIndex;openScene(10007000)');
+check('unreachable detour reports failure instead of replacing the route',run('rerouteFromScene()')===false&&run('route===beforeFailedRoute&&navigationIndex===beforeFailedIndex&&routeUsesServices===false')&&get('sceneNavError').textContent.length>0);
+fire('sceneNavReturn','click');
+check('return remains usable after failed reroute',run('navigationFollowing&&navigationIndex===beforeFailedIndex&&route===beforeFailedRoute')&&get('sceneNavError').textContent==='');
+get('routeFrom').value='Ellinia [10002000]';get('routeTo').value='Lith Harbor [10000000]';get('useServices').checked=true;run('submitRoute();openRouteStep(0);openScene(60)');get('useServices').checked=false;
+check('enabled conditional-travel preference survives reroute and includes documented boat',run('rerouteFromScene()&&routeUsesServices&&route.from===60&&route.to===10000000&&route.steps.some(s=>s.service?.id==="ship-southperry-lith")')&&get('useServices').checked===true);
+run('openScene(route.to)');
+check('reroute from destination gives valid zero-step completion',run('rerouteFromScene()&&route.from===route.to&&route.steps.length===0&&navigationIndex===0')&&get('sceneNavNext').disabled&&get('sceneNavPrevious').disabled);
+run('navigationRoute=null;renderSceneNavigation();globalThis.inactiveRoute=route');
+check('inactive guide never forces compact layout or allows reroute',!get('sceneDialog').classList.contains('compact-navigation')&&run('rerouteFromScene()===false&&route===inactiveRoute'));
+
 const report={checkedAt:new Date().toISOString(),method:'Node VM with lightweight DOM contract stubs; no browser, no rendering, no network checks',appSha256:crypto.createHash('sha256').update(source).digest('hex'),results,failures:results.filter(r=>!r.passed)};
 process.exitCode=report.failures.length?1:0;
 console.log(JSON.stringify({checks:results.length,failed:report.failures.length,failures:report.failures}));

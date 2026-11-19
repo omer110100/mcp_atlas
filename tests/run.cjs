@@ -4,6 +4,7 @@
 const {spawnSync}=require('node:child_process');
 const {join}=require('node:path');
 const suites=[
+  ['map-search.cjs','Unified Hebrew map lookup'],
   ['atlas-routing.cjs','Directed routing and original data'],
   ['atlas-behavior.cjs','Search, portal actions and entity scenes'],
   ['atlas-graph.cjs','Graph, selection and region filters'],

@@ -76,8 +76,17 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,[r
 }
 @media(max-height:600px) and (orientation:landscape){
  .scene-navigation{padding:8px 14px 12px;display:flex}
- .navigation-copy p{display:none}
+ .navigation-copy p{display:block;font-size:12px;max-height:110px;overflow:auto}
  .navigation-actions{display:flex;margin:0;max-width:none}
  .scene-body{grid-template-columns:minmax(0,1fr) 270px;grid-template-rows:1fr}
  .scene-header{min-height:54px}
 }
+
+/* Keep route conditions visible even when the map details are collapsed. */
+.scene-dialog.compact-navigation .scene-sidebar{display:none}
+.scene-dialog.compact-navigation .scene-body{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr)}
+.scene-dialog.compact-navigation .scene-hint{display:none}
+#sceneNavCompact[aria-pressed=true]{border-color:#eed092;color:#ffdea0;background:#d7be8420}
+.navigation-error:empty{display:none}.navigation-copy .navigation-error{color:#ffd2ad;border-inline-start:3px solid #e9ad6b;padding-inline-start:10px}
+.field-error{display:block;color:#ffc3ae;font-size:13px;line-height:1.6;margin-top:6px}.field-error:empty{display:none}
+@media(max-width:780px){#sceneNavCompact,#sceneNavReroute{grid-column:1/-1}.scene-navigation{max-height:55dvh;overflow:auto}.scene-dialog.compact-navigation .scene-canvas{min-height:150px}}

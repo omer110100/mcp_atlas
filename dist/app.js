@@ -254,7 +254,7 @@ function renderSearch(){
   $('searchResults').hidden=false;$('search').setAttribute('aria-expanded','true');
 }
 const aliases={'הנסיס':'henesys','אליניה':'ellinia','פריון':'perion','קרנינג':'kerning','סליפיווד':'sleepywood','לית':'lith','פלורינה':'florina','אמהרסט':'amherst'};
-function findMaps(q){q=q.trim().toLowerCase();const alias=Object.entries(aliases).find(([he])=>q===he);if(alias)q=alias[1];return maps.filter(m=>`${m.name} ${m.id} ${m.street} ${groupLabel(m)}`.toLowerCase().includes(q)).sort((a,b)=>Number(b.name.toLowerCase().startsWith(q))-Number(a.name.toLowerCase().startsWith(q))||Number(b.major)-Number(a.major)||a.name.localeCompare(b.name));}
+function findMaps(q){if(typeof window!=='undefined'&&window.MapSearch)return window.MapSearch.search(q,maps.length);q=q.trim().toLowerCase();const alias=Object.entries(aliases).find(([he])=>q===he);if(alias)q=alias[1];return maps.filter(m=>`${m.name} ${m.id} ${m.street} ${groupLabel(m)}`.toLowerCase().includes(q)).sort((a,b)=>Number(b.name.toLowerCase().startsWith(q))-Number(a.name.toLowerCase().startsWith(q))||Number(b.major)-Number(a.major)||a.name.localeCompare(b.name));}
 function chooseSearch(id,kind='map'){closeSearch();activeSearchResults=[];$('search').value='';$('directory').hidden=true;if(kind!=='map'){window.Hunt?.open(kind,Number(id));return;}window.Hunt?.close();selectMap(id,{focus:true});}
 function openDirectory(){const opening=$('directory').hidden;$('directory').hidden=!opening;if(opening){window.Hunt?.close();renderDirectory();$('directorySearch').focus();}}
 function renderDirectory(){const q=$('directorySearch').value.trim().toLowerCase(),group=$('directoryGroup').value;const list=(q?findMaps(q):[...maps].sort((a,b)=>a.name.localeCompare(b.name)||a.id-b.id)).filter(m=>group==='all'||m.group===group);$('directoryCounter').textContent=`${fmt(list.length)} מתוך ${fmt(maps.length)} רשומות · כל מפה נשמרת לפי מזהה ייחודי`;
@@ -273,7 +273,7 @@ function planTo(mapId,fromId){
   $('useServices').checked=!findRoute(origin.id,target.id,false)&&!!findRoute(origin.id,target.id,true);
   submitRoute();
 }
-function routeMap(value){const id=value.match(/\[(\d+)\]\s*$/);if(id)return byId.get(Number(id[1]));const normalized=value.trim().toLowerCase();const exact=maps.filter(m=>m.name.toLowerCase()===normalized||String(m.id)===normalized);return exact.length===1?exact[0]:null;}
+function routeMap(value){if(typeof window!=='undefined'&&window.MapSearch)return window.MapSearch.resolve(value);const id=value.match(/\[(\d+)\]\s*$/);if(id)return byId.get(Number(id[1]));const normalized=value.trim().toLowerCase();const exact=maps.filter(m=>m.name.toLowerCase()===normalized||String(m.id)===normalized);return exact.length===1?exact[0]:null;}
 function findRoute(from,to,services=false){
   const queue=[{id:from,origin:null}],seen=new Set([`${from}:null`]),prev=new Map();let found=null;
   for(let i=0;i<queue.length;i++){
@@ -288,7 +288,7 @@ function findRoute(from,to,services=false){
   }
   if(found===null)return null;const steps=[];while(prev.has(found)){const step=prev.get(found);steps.push(step);found=step.key;}steps.reverse();return {from,to,steps};
 }
-function submitRoute(e,{persist=true}={}){if(e)e.preventDefault();const from=routeMap($('routeFrom').value),to=routeMap($('routeTo').value);if(!from||!to){$('routeResult').innerHTML='<p class="route-warning">בחרו שתי מפות מהרשימה. כששם מופיע כמה פעמים, המזהה בסוגריים מבדיל בין המפות.</p>';return;}
+function submitRoute(e,{persist=true}={}){if(e)e.preventDefault();const from=routeMap($('routeFrom').value),to=routeMap($('routeTo').value);for(const [id,map] of [['routeFrom',from],['routeTo',to]]){$(id).setAttribute('aria-invalid',String(!map));$(id+'Error').textContent=map?'':'בחרו מפה מההצעות. כשיש כמה שמות זהים, המזהה מבדיל ביניהם.';}if(!from||!to){$(!from?'routeFrom':'routeTo').focus();return;}
   routeUsesServices=$('useServices').checked;route=findRoute(from.id,to.id,routeUsesServices);navigationRoute=null;navigationIndex=0;$('routeRestoreNote').textContent='';$('routeShareBox').hidden=true;if(persist)window.AtlasPersonal?.saveJourney();renderSceneNavigation();drawRoute();
   if(!route){$('routeResult').innerHTML='<p class="route-warning">אין מסלול מלא דרך המעברים הידועים שנבחרו. ייתכן שנדרשים שירות נסיעה, תנאי משחק, או מעבר שהיעד שלו אינו מופיע בקבצים. אפשר לסמן שימוש בכניסות דרך דמויות ומשימות; גם אז חלק מהמעברים נשארים לא ידועים.</p>';return;}
   const serviceCount=route.steps.filter(s=>s.service && !s.service.walkable).length;
@@ -306,7 +306,7 @@ function drawRoute(){const layer=$('routeLayer');layer.replaceChildren();if(!rou
 function fitRoute(ids){const ms=ids.map(id=>byId.get(id)),r=$('mapCanvas').getBoundingClientRect();const minX=Math.min(...ms.map(m=>m.x))-100,maxX=Math.max(...ms.map(m=>m.x))+100,minY=Math.min(...ms.map(m=>m.y))-100,maxY=Math.max(...ms.map(m=>m.y))+100;world.k=Math.min((r.width-90)/(maxX-minX),(r.height-185)/(maxY-minY),1.6);world.k=Math.max(.07,world.k);world.x=(r.width-(minX+maxX)*world.k)/2;world.y=100+(r.height-150-(minY+maxY)*world.k)/2;applyWorld();$('mapIntro').classList.add('is-hidden');}
 
 // Navigation progress is explicit, never inferred from the player's location.
-let navigationRoute=null, navigationIndex=0, navigationFollowing=false, routeUsesServices=false;
+let navigationRoute=null, navigationIndex=0, navigationFollowing=false, routeUsesServices=false, compactNavigation=false;
 function navigationGate(index=navigationIndex){
   const step=route?.steps[index];if(!step)return null;
   return step.p||(step.service?byId.get(step.from)?.portals.find(p=>supplementForGate(p,byId.get(step.from))?.id===step.service.id):null);
@@ -322,6 +322,8 @@ function openRouteStep(index,{show=true}={}){
 }
 function renderSceneNavigation(){
   const bar=$('sceneNavigation'),active=navigationActive();bar.hidden=!active;
+  $('sceneDialog').classList.toggle('compact-navigation',active&&navigationFollowing&&compactNavigation);
+  $('sceneNavCompact').setAttribute('aria-pressed',String(compactNavigation));$('sceneNavCompact').textContent=compactNavigation?'תצוגה מלאה':'ניווט מצומצם';
   if(!active)return;
   const step=route.steps[navigationIndex],gate=navigationGate();
   const following=navigationFollowing&&sceneId===(step?.from??route.to);
@@ -333,9 +335,29 @@ function renderSceneNavigation(){
   $('sceneNavNext').disabled=navigationIndex===route.steps.length;
   $('sceneNavNext').textContent=navigationIndex===route.steps.length-1?'למפת היעד':'הבא במסלול';
   $('sceneNavReturn').hidden=following;
+  $('sceneNavReroute').hidden=following;
+  $('sceneNavReroute').setAttribute('aria-label',`חישוב מסלול מהמפה המוצגת אל ${byId.get(route.to).name}`);
+  $('sceneNavCompact').hidden=!following;
+  $('sceneNavError').textContent='';
   $('sceneNavFocus').hidden=!following||!gate;
   $('sceneNavProgress').max=Math.max(1,route.steps.length);
   $('sceneNavProgress').value=navigationIndex;
+}
+function fitNavigationScene(){
+  fitScene();
+  if(navigationActive()&&navigationFollowing&&compactNavigation){const gate=navigationGate();if(gate)pickGate(gate.key,true);}
+}
+function setCompactNavigation(enabled){
+  compactNavigation=!!enabled;renderSceneNavigation();
+  if(navigationActive()&&navigationFollowing&&compactNavigation){const gate=navigationGate();if(gate)sceneKind=displayKind(gate,byId.get(sceneId));setSceneLayer('portals',[]);}
+  requestAnimationFrame(fitNavigationScene);
+}
+function rerouteFromScene(){
+  if(!navigationActive()||!byId.has(sceneId))return false;
+  const destination=route.to,candidate=findRoute(sceneId,destination,routeUsesServices);
+  if(!candidate){$('sceneNavError').textContent='לא נמצא מסלול מהמפה הזאת עם אפשרויות המעבר שבחרת. המסלול הקודם נשמר; אפשר לחזור אליו או לשנות את אפשרויות התכנון.';return false;}
+  $('routeFrom').value=mapLabel(byId.get(sceneId));$('routeTo').value=mapLabel(byId.get(destination));$('useServices').checked=routeUsesServices;
+  submitRoute();openRouteStep(0);$('sceneNavCompact').focus();toast('המסלול חושב מחדש מהמפה שבחרת לאותו יעד.');return true;
 }
 function travelScenePortal(key){
   const m=byId.get(sceneId),p=m?.portals.find(p=>p.key===key);if(!p)return;
@@ -357,7 +379,7 @@ function loadSceneImage(retry=false){
   image.onerror=()=>{if(sceneId!==requestedMap)return;status.dataset.state='error';$('sceneImageMessage').textContent='תמונת המפה לא נטענה. השערים והמיקומים עדיין זמינים ברשימה.';$('sceneImageRetry').hidden=false;$('sceneCanvas').setAttribute('aria-busy','false');};
   image.setAttribute('href',retry?`${m.image}?retry=${Date.now()}`:m.image);
 }
-function openScene(id,gateKey=null,options={}){const m=byId.get(Number(id));if(!m)return;navigationFollowing=options.following===true;sceneId=m.id;window.AtlasPersonal?.visit(m.id);selectedGate=gateKey;const gate=m.portals.find(p=>p.key===gateKey);sceneKind=gate?displayKind(gate,m):'cross';$('sceneTitle').textContent=m.name;$('sceneRegion').textContent=groupLabel(m);$('sceneImage').setAttribute('width',m.width||3000);$('sceneImage').setAttribute('height',m.height||1500);loadSceneImage();$('originalImage').href=m.originalImage||m.image;if(!$('sceneDialog').open)$('sceneDialog').showModal();setSceneLayer('portals',[]);renderSceneNavigation();requestAnimationFrame(()=>{fitScene();if(gate)pickGate(gate.key,false);});}
+function openScene(id,gateKey=null,options={}){const m=byId.get(Number(id));if(!m)return;navigationFollowing=options.following===true;sceneId=m.id;window.AtlasPersonal?.visit(m.id);selectedGate=gateKey;const gate=m.portals.find(p=>p.key===gateKey);sceneKind=gate?displayKind(gate,m):'cross';$('sceneTitle').textContent=m.name;$('sceneRegion').textContent=groupLabel(m);$('sceneImage').setAttribute('width',m.width||3000);$('sceneImage').setAttribute('height',m.height||1500);loadSceneImage();$('originalImage').href=m.originalImage||m.image;if(!$('sceneDialog').open)$('sceneDialog').showModal();setSceneLayer('portals',[]);renderSceneNavigation();requestAnimationFrame(()=>{fitNavigationScene();if(gate&&!compactNavigation)pickGate(gate.key,false);});}
 function fitScene(){const m=byId.get(sceneId);if(!m)return;const r=$('sceneCanvas').getBoundingClientRect(),w=m.width||3000,h=m.height||1500;scene.k=Math.min((r.width-48)/w,(r.height-60)/h);scene.x=(r.width-w*scene.k)/2;scene.y=(r.height-h*scene.k)/2;applyScene();}
 function applyScene(){const m=byId.get(sceneId);if(!m)return;$('sceneViewport').setAttribute('transform',`translate(${scene.x},${scene.y}) scale(${scene.k})`);for(const pin of portalPinElements.values()){pin.querySelector('circle').setAttribute('r',12/scene.k);pin.querySelector('circle').setAttribute('stroke-width',1.7/scene.k);pin.querySelector('text').setAttribute('font-size',11/scene.k);}for(const pin of entityPinElements.values()){pin.querySelector('circle').setAttribute('r',(pin.classList.contains('boss')?14:11)/scene.k);pin.querySelector('circle').setAttribute('stroke-width',1.7/scene.k);pin.querySelector('text').setAttribute('font-size',10/scene.k);}document.querySelectorAll('.internal-path').forEach(p=>{p.setAttribute('stroke-width',2/scene.k);p.setAttribute('stroke-dasharray',`${6/scene.k} ${5/scene.k}`);});}
 function zoomScene(factor,cx,cy){const r=$('sceneCanvas').getBoundingClientRect();cx??=r.width/2;cy??=r.height/2;const k=Math.max(.015,Math.min(3,scene.k*factor)),ratio=k/scene.k;scene.x=cx-(cx-scene.x)*ratio;scene.y=cy-(cy-scene.y)*ratio;scene.k=k;applyScene();}
@@ -450,6 +472,9 @@ function bindEvents(){
   $('routeToggle').addEventListener('click',()=>{if($('routePanel').hidden)openRoute();else{$('routePanel').hidden=true;$('routeToggle').setAttribute('aria-pressed','false');}});$('closeRoute').addEventListener('click',()=>{$('routePanel').hidden=true;$('routeToggle').setAttribute('aria-pressed','false');});$('routeForm').addEventListener('submit',submitRoute);
   $('routeResult').addEventListener('click',e=>{if(e.target.id==='shareRoute'){window.AtlasPersonal?.share();return;}if(e.target.id==='restartRoute'){openRouteStep(0);return;}if(e.target.id==='startRoute'){openRouteStep(navigationActive()?navigationIndex:0);return;}const gate=e.target.closest('[data-route-scene]');if(gate){const index=gate.dataset.routeIndex!==undefined?Number(gate.dataset.routeIndex):route?.steps.findIndex((s,i)=>s.from===Number(gate.dataset.routeScene)&&navigationGate(i)?.key===gate.dataset.routeGate);openRouteStep(index);return;}const map=e.target.closest('[data-route-map]');if(map)selectMap(map.dataset.routeMap,{focus:true,scroll:false});if(e.target.id==='clearRoute'){route=null;navigationRoute=null;navigationIndex=0;window.AtlasPersonal?.saveJourney();renderSceneNavigation();drawRoute();$('routeResult').innerHTML='';$('routeRestoreNote').textContent='';$('routeShareBox').hidden=true;}});
   $('mapDetails').addEventListener('click',e=>{const tab=e.target.closest('[data-tab]');if(tab){detailsTab=tab.dataset.tab;renderPortalContent();return;}const b=e.target.closest('[data-action]');if(!b)return;const m=byId.get(activeId),p=m.portals.find(p=>p.key===b.dataset.gate);switch(b.dataset.action){case'favorite':window.AtlasPersonal?.toggle(m.id);break;case'open-scene':openScene(m.id);break;case'map-monsters':openSpawns(m.id);break;case'map-npcs':openNpcs(m.id);break;case'route-from':openRoute();$('routeFrom').value=mapLabel(m);$('routeTo').focus();break;case'route-to':{const old=routeMap($('routeFrom').value);openRoute();if(!old||old.id===m.id)$('routeFrom').value=mapLabel(byId.get(10001000)||maps[0]);$('routeTo').value=mapLabel(m);$('routeFrom').focus();break;}case'portal-go':if(p?.kind==='cross')selectMap(p.to,{focus:true});else if(p)openScene(m.id,p.key);break;case'locate':if(p)openScene(m.id,p.key);break;case'incoming':selectMap(b.dataset.from,{focus:true});break;case'incoming-scene':openScene(Number(b.dataset.from),b.dataset.gate);break;case'service-target':if(b.dataset.target)selectMap(b.dataset.target,{focus:true});else toast('למעבר הזה אין יעד קבוע. הפרטים מופיעים בתנאי השירות.');break;}});
+  $('sceneNavCompact').addEventListener('click',()=>setCompactNavigation(!compactNavigation));
+  $('sceneNavReroute').addEventListener('click',rerouteFromScene);
+  for(const id of ['routeFrom','routeTo'])$(id).addEventListener('input',()=>{$(id).removeAttribute('aria-invalid');$(id+'Error').textContent='';});
   $('sceneNavPrevious').addEventListener('click',()=>openRouteStep(navigationIndex-1));
   $('sceneNavNext').addEventListener('click',()=>openRouteStep(navigationIndex+1));
   $('sceneNavReturn').addEventListener('click',()=>openRouteStep(navigationIndex));
@@ -463,12 +488,13 @@ function bindEvents(){
   window.addEventListener('hunt-ready',()=>{renderDetails();if($('search').value)renderSearch();renderHuntAbout();if($('sceneDialog').open&&sceneLayer!=='portals')setSceneLayer(sceneLayer,sceneEntityIds);});
   const about=()=>{renderHuntAbout();$('aboutDialog').showModal();};$('aboutButton').addEventListener('click',about);$('coverageButton').addEventListener('click',about);$('closeAbout').addEventListener('click',()=>$('aboutDialog').close());$('aboutDialog').addEventListener('click',e=>{if(e.target===$('aboutDialog')){const r=$('aboutDialog').getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)$('aboutDialog').close();}});
   document.querySelector('.brand').addEventListener('click',e=>{e.preventDefault();currentRegion='world';document.querySelectorAll('[data-region]').forEach(b=>b.classList.toggle('active',b.dataset.region==='world'));updateVisibleNodes();fitWorld();});
-  enablePanZoom($('worldSvg'),'world');enablePanZoom($('sceneSvg'),'scene');let resizeTimer;window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{fitWorld();if($('sceneDialog').open)fitScene();},180);});window.addEventListener('hashchange',()=>{const id=location.hash.match(/map=(\d+)/);if(id)selectMap(Number(id[1]),{focus:true,hash:false});});
+  enablePanZoom($('worldSvg'),'world');enablePanZoom($('sceneSvg'),'scene');let resizeTimer;window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{fitWorld();if($('sceneDialog').open)fitNavigationScene();},180);});window.addEventListener('hashchange',()=>{const id=location.hash.match(/map=(\d+)/);if(id)selectMap(Number(id[1]),{focus:true,hash:false});});
 }
 async function init(){
   document.querySelectorAll('[data-icon]').forEach(el=>el.innerHTML=`<svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[el.dataset.icon]||ICONS.pin}</svg>`);
   try{const response=await fetch('atlas-data.json');if(!response.ok)throw Error(`data ${response.status}`);atlas=await response.json();maps=atlas.maps;groups=atlas.groups;byId=new Map(maps.map(m=>[m.id,m]));incoming=new Map();adjacency=new Map();for(const m of maps){const out=[];for(const p of m.portals){if(p.kind==='cross'&&byId.has(p.to)){out.push({to:p.to,p});if(!incoming.has(p.to))incoming.set(p.to,[]);incoming.get(p.to).push({from:m,p});}}adjacency.set(m.id,out);}
     $('mapCount').textContent=maps.length;$('mapOptions').innerHTML=maps.map(m=>`<option value="${esc(mapLabel(m))}"></option>`).join('');$('directoryGroup').innerHTML='<option value="all">כל האזורים</option>'+groups.map(g=>`<option value="${esc(g.id)}">${esc(g.he)}</option>`).join('');
+    window.MapSearch?.init({maps,groupLabel});
     buildWorld();renderAbout();bindEvents();const hash=location.hash.match(/map=(\d+)/);selectMap(hash&&byId.has(Number(hash[1]))?Number(hash[1]):10001000,{hash:false,scroll:false});$('loading').hidden=true;requestAnimationFrame(()=>{fitWorld();if(hash)centerOnMap(byId.get(activeId));});
     window.Atlas={get data(){return atlas},findRoute,selectMap,openScene,openSpawns,openNpcs,planTo,get activeMap(){return activeId},get currentRoute(){return route},fitWorld};
     window.AtlasPersonal?.init({maps:byId,version:`${atlas.meta.version||''}:${atlas.meta.asOf}`,escape:esc,notice:toast,

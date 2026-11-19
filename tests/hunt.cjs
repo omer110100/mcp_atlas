@@ -5,7 +5,7 @@
 const fs=require('fs'),vm=require('vm'),assert=require('assert');
 const path=require('node:path');
 const base=path.resolve(__dirname,'..','dist')+path.sep;
-const source=fs.readFileSync(base+'hunt.js','utf8').replace('window.Hunt={searchAll,open,close,','window.Hunt={_test:{state,boot,retryDrops,render,renderDetail,renderCatalog,buildCandidates,sortCandidates,npcLocations,onPanelChange,onPanelClick,parseOrigin,walkDistanceText},searchAll,open,close,');
+const source=fs.readFileSync(base+'hunt.js','utf8').replace('window.Hunt={searchAll,open,close,','window.Hunt={_test:{state,boot,retryDrops,render,renderDetail,renderCatalog,buildCandidates,sortCandidates,npcLocations,onPanelChange,onPanelClick,parseOrigin,walkDistanceText,comparisonContent,comparisonAccess,toggleComparison},searchAll,open,close,');
 const rawAtlas=JSON.parse(fs.readFileSync(base+'atlas-data.json'));
 const rawHunt=JSON.parse(fs.readFileSync(base+'hunt-data.json'));
 const rawDrops=JSON.parse(fs.readFileSync(base+'drop-data.json'));
@@ -29,13 +29,15 @@ function makeHarness(options={}){
     querySelectorAll(selector){return this.children.flatMap(child=>[...(child.matches(selector)?[child]:[]),...child.querySelectorAll(selector)]);}
     querySelector(selector){return this.querySelectorAll(selector)[0]||null;}
     addEventListener(){}
-    focus(){if(this.isConnected&&!this.disabled&&!this.closest('[hidden]'))doc.activeElement=this;}
+    focus(options={}){this.focusOptions=options;if(this.isConnected&&!this.disabled&&!this.closest('[hidden]'))doc.activeElement=this;}
+    getBoundingClientRect(){return {top:this.id==='huntComparisonTitle'?180:20};}
+    scrollTo(options){this.lastScroll=options;this.scrollTop=options.top;}
     get innerHTML(){return this._html;}
     set innerHTML(html){this._html=html;this.writes++;
       if(this.id!=='huntBody')return;
       if(this.contains(doc.activeElement))doc.activeElement=doc.body;
       const disconnect=e=>{e.isConnected=false;if(e.id&&nodes[e.id]===e)delete nodes[e.id];e.children.forEach(disconnect);};this.children.forEach(disconnect);this.children=[];
-      for(const m of html.matchAll(/<(input|select|h3|p)\b([^>]*\bid="[^"]+"[^>]*)>/g))this.appendChild(new Element(m[1],m[2]));
+      for(const m of html.matchAll(/<(input|select|h3|h4|p|section)\b([^>]*\bid="[^"]+"[^>]*)>/g))this.appendChild(new Element(m[1],m[2]));
       for(const m of html.matchAll(/<(button|input)\b([^>]*\bdata-hunt-(?:target|action|open)="[^"]+"[^>]*)>/g))this.appendChild(new Element(m[1],m[2]));
       if(html.includes('class="hunt-candidates"')){const container=this.appendChild(new Element('div','class="hunt-candidates"'));for(const m of html.matchAll(/<article\b([^>]*\bdata-hunt-map="[^"]+"[^>]*)>([\s\S]*?)<\/article>/g)){const card=container.appendChild(new Element('article',m[1]));for(const cls of ['hunt-rank-number','hunt-distance','hunt-recommend-label']){const part=m[2].match(new RegExp('<(?:span|p)\\b([^>]*class="'+cls+'"[^>]*)>([^<]*)<'));if(part){const el=card.appendChild(new Element('span',part[1]));el.textContent=decode(part[2]);}}}}
     }
@@ -155,6 +157,54 @@ function report(){
     const c=makeHarness({hunt:'fail'});c.H.open('item');await c.H._test.boot();
     assert.equal(c.H.data,null);assert.equal(c.H.catalogStatus,'unavailable');assert.deepEqual(c.unavailableStatuses,['unavailable']);assert(c.nodes.huntBody.innerHTML.includes('הקטלוג לא נטען'));assert.equal(c.nodes.huntBody.getAttribute('aria-busy'),'false');
     c.modes.hunt='ready';await c.H._test.boot();assert.equal(c.H.data.items.length,2353);assert.equal(c.H.catalogStatus,'ready');
+  });
+  await check('comparison starts empty and excludes invalid/noncandidate map IDs',()=>{
+    H.open('item',1092002);assert.equal(T.state.compare.length,0);
+    assert(nodes.huntBody.innerHTML.includes('בחרו עד 3 מפות להשוואה'));
+    T.toggleComparison(-1);T.toggleComparison(10001000);assert.equal(T.state.compare.length,0);
+  });
+  await check('comparison holds three unique candidates and enforces limit',()=>{
+    const list=T.buildCandidates([...T.state.targets]);
+    for(const c of list.slice(0,3))T.toggleComparison(c.map.id);
+    assert.equal(T.state.compare.length,3);assert.equal(new Set(T.state.compare).size,3);
+    T.toggleComparison(list[3].map.id);assert.equal(T.state.compare.length,3);
+    assert(nodes.huntAnnouncement.textContent.includes('עד 3 מפות'));
+    assert(nodes.huntBody.innerHTML.includes('hunt-compare-toggle'));
+    T.toggleComparison(list[0].map.id);assert.equal(T.state.compare.length,2);
+    T.toggleComparison(list[3].map.id);assert.equal(T.state.compare.length,3);
+  });
+  await check('comparison table uses exact target metrics and real action IDs',()=>{
+    const list=T.buildCandidates([...T.state.targets]);const rows=T.state.compare.map(id=>list.find(c=>c.map.id===id));
+    const html=T.comparisonContent(list);
+    assert(html.includes('<table>'));assert(html.includes('scope="col"'));assert(html.includes('scope="row"'));
+    for(const c of rows){assert(html.includes(`data-map="${c.map.id}"`));assert(html.includes(`data-mobs="${c.ids.join(',')}"`));assert(html.includes(String(c.count)));}
+    assert(html.includes('אינם תפוקת ציד או סיכויי נפילה'));assert(html.includes('תנאי כניסה ומגבלות'));
+    nodes.huntBody.scrollTop=400;h.action('compare-open');assert.equal(T.state.compareOpen,true);assert.equal(doc.activeElement.id,'huntComparisonTitle');
+    assert.equal(nodes.huntComparisonTitle.focusOptions.preventScroll,true);assert.equal(nodes.huntBody.scrollTop,548);assert.equal(nodes.huntBody.lastScroll.behavior,'auto');assert.equal(nodes.huntPanel.scrollTop,0);
+  });
+  await check('comparison updates distances on origin change without losing selection',()=>{
+    const before=plain(T.state.compare),mapId=before[0];nodes.huntOrigin.value=String(mapId);T.onPanelChange({target:nodes.huntOrigin});
+    assert.deepEqual(plain(T.state.compare),before);
+    assert(nodes.huntComparison.innerHTML.includes('זו מפת המוצא'));
+    nodes.huntOrigin.value='unknown';T.onPanelChange({target:nodes.huntOrigin});assert(nodes.huntComparison.innerHTML.includes('בחרו מפת מוצא'));
+    nodes.huntOrigin.value='10001000';T.onPanelChange({target:nodes.huntOrigin});
+  });
+  await check('comparison retains same-entity context but resets on another entity',()=>{
+    const before=plain(T.state.compare),targets=[...T.state.targets];H.close();H.open('item',1092002);
+    assert.deepEqual(plain(T.state.compare),before);assert.deepEqual([...T.state.targets],targets);
+    H.open('boss',700000);assert.equal(T.state.compare.length,0);assert.equal(T.state.compareOpen,false);
+  });
+  await check('changing target filters removes stale compared maps and closes an empty comparison',()=>{
+    H.open('item',1092002);const list=T.buildCandidates([...T.state.targets]);T.toggleComparison(list[0].map.id);h.action('compare-open');
+    T.state.targets.clear();T.renderDetail();assert.equal(T.state.compare.length,0);assert.equal(T.state.compareOpen,false);
+    assert(!nodes.huntBody.innerHTML.includes('data-hunt-action="compare-toggle"'));assert(nodes.huntBody.innerHTML.includes('סמנו לפחות מפלצת אחת'));
+  });
+  await check('comparison clear is local to selection and conditional access text is escaped',()=>{
+    const mob=H.data.monsters.find(m=>m.hasRecordedSpawn&&!m.isBoss);H.open('monster',mob.id);const list=T.buildCandidates([mob.id]);assert(list.length);T.toggleComparison(list[0].map.id);h.action('compare-clear');
+    assert.equal(T.state.compare.length,0);assert.equal(T.state.selected.id,mob.id);
+    const map=h.atlas.maps.find(m=>h.atlas.services.some(s=>s.to===m.id&&s.condition));assert(map);
+    const html=T.comparisonAccess(map);assert(html.includes('כניסות מתועדות'));assert(html.includes('חלופיות'));
+    const service=h.atlas.services.find(s=>s.to===map.id);const previous=service.condition;service.condition='<img src=x onerror=x>';assert(T.comparisonAccess(map).includes('&lt;img'));service.condition=previous;
   });
   report();
 })().catch(error=>{results.push({name:'hunt test setup',passed:false,error:error.stack||error.message});report();});

@@ -1,0 +1,10 @@
+.map-lookup{position:relative;min-width:0;width:100%}
+.map-lookup-list{position:absolute;inset-inline:0;top:calc(100% + 5px);z-index:45;max-height:min(340px,45dvh);overflow:auto;overscroll-behavior:contain;background:#12313b;border:1px solid #a39168;border-radius:12px;box-shadow:0 14px 32px #0007;padding:5px;direction:rtl}
+.map-lookup-option{padding:11px 12px;min-height:50px;border-radius:8px;cursor:pointer;color:#eee9d7;text-align:start}
+.map-lookup-option bdi{display:block;font-size:16px;line-height:1.4;overflow-wrap:anywhere}
+.map-lookup-option small{display:block;font-size:12px;font-weight:400;color:#b3cbc8;margin-top:4px;line-height:1.4}
+.map-lookup-option:hover,.map-lookup-option[aria-selected=true]{background:#38534f;box-shadow:inset -3px 0 #edcb8e}
+.map-lookup-empty{padding:12px;color:#d5dfd6;font-size:14px;line-height:1.6;margin:0}
+.map-lookup-status{position:absolute;inline-size:1px;block-size:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;margin:0}
+.map-lookup:focus-within{z-index:46}
+@media(max-width:780px){.map-lookup-list{max-height:250px}.map-lookup-option{padding:12px;min-height:54px}}
