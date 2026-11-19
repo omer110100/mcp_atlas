@@ -87,7 +87,7 @@ def fetch_icons(records):
                 manifest["files"][relative] = result
             if completed % 100 == 0 or completed == len(jobs):
                 manifest["errors"] = errors
-                ICON_MANIFEST.write_text(json.dumps(manifest, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+                ICON_MANIFEST.write_text(json.dumps(manifest, ensure_ascii=False, separators=(",", ":")), encoding="utf-8", newline="\n")
                 print(json.dumps({"iconsDone": completed, "total": len(jobs), "errors": len(errors)}), flush=True)
     total_bytes = sum(info["bytes"] for info in manifest["files"].values())
     assert total_bytes < 5_000_000, f"Icon budget exceeded: {total_bytes}"
@@ -214,7 +214,7 @@ def build():
         },
         "items": items, "monsters": monsters, "mapSpawns": map_spawns, "npcs": npcs, "mapNpcs": map_npcs,
     }
-    (DIST / "hunt-data.json").write_text(json.dumps(dataset, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    (DIST / "hunt-data.json").write_text(json.dumps(dataset, ensure_ascii=False, separators=(",", ":")), encoding="utf-8", newline="\n")
     audit = {
         "stats": stats, "verifiedSpawnCountPairs": len(source_counts),
         "bossSpawnPoints": [{"id": m["id"], "name": m["name"], "spawns": [{**s, "points": [p for p in map_spawns[str(s["mapId"])]["points"] if p["mobId"] == m["id"]]} for s in m["spawns"]]} for m in monsters if m["isBoss"]],
@@ -222,7 +222,7 @@ def build():
         "duplicateMonsterNames": {name: count for name, count in Counter(m["name"] for m in monsters).items() if count > 1},
         "duplicateNpcNames": {name: count for name, count in Counter(n["name"] for n in npcs).items() if count > 1},
     }
-    (SOURCE / "hunt-build-audit.json").write_text(json.dumps(audit, ensure_ascii=False, indent=2), encoding="utf-8")
+    (SOURCE / "hunt-build-audit.json").write_text(json.dumps(audit, ensure_ascii=False, indent=2), encoding="utf-8", newline="\n")
     print(json.dumps({"huntDataBytes": (DIST / "hunt-data.json").stat().st_size, "stats": stats}), flush=True)
     return source_items + source_monsters + source_npcs
 

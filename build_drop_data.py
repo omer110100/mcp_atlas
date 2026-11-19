@@ -16,11 +16,11 @@ import argparse
 parser = argparse.ArgumentParser(description='Rebuild explicitly observed Classic item-monster links from attributed public factual snapshots')
 parser.add_argument('--output', type=Path, default=PROJECT / 'dist' / 'drop-data.json')
 OUTPUT = parser.parse_args().output
-items = json.loads((OSMS / 'items.json').read_text())
-mobs = json.loads((OSMS / 'monsters.json').read_text())
+items = json.loads((OSMS / 'items.json').read_text(encoding="utf-8"))
+mobs = json.loads((OSMS / 'monsters.json').read_text(encoding="utf-8"))
 by_item = {x['id']: x for x in items}
 
-snapshot = json.loads((ROOT / 'msclassic-confirmed-records.json').read_text())
+snapshot = json.loads((ROOT / 'msclassic-confirmed-records.json').read_text(encoding="utf-8"))
 records = snapshot['monsters']
 
 links = []
@@ -82,7 +82,7 @@ for mob in records:
         links.append(row)
 
 supplement_count = 0
-supplement = json.loads((ROOT / 'maplelandhub-mushmom-confirmed.json').read_text())
+supplement = json.loads((ROOT / 'maplelandhub-mushmom-confirmed.json').read_text(encoding="utf-8"))
 boss = next(x for x in mobs if x['id'] == 700000)
 assert boss['name'] == 'Mushmom' and boss['level'] == 40
 for fact in supplement['rows']:
@@ -121,7 +121,7 @@ for fact in supplement['rows']:
 
 # Numeric URLs on Six Path independently corroborate 49 identifier joins. Its
 # observations share underlying wiki data, so this is not 49 extra sightings.
-sixpath_rows = json.loads((ROOT / 'sixpath-counted-id-corroboration.json').read_text())['rows']
+sixpath_rows = json.loads((ROOT / 'sixpath-counted-id-corroboration.json').read_text(encoding="utf-8"))['rows']
 sixpath_pairs = {(r['itemId'], r['mobId']) for r in sixpath_rows}
 for row in links:
     if (row['itemId'], row['mobId']) in sixpath_pairs:
@@ -168,5 +168,5 @@ result = {
     'unresolved': unresolved,
 }
 OUTPUT.parent.mkdir(parents=True, exist_ok=True)
-OUTPUT.write_text(json.dumps(result, ensure_ascii=False, indent=2))
+OUTPUT.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8", newline="\n")
 print(json.dumps(result['meta'], ensure_ascii=False, indent=2))

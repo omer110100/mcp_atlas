@@ -1,0 +1,19 @@
+{
+  "name": "maple-classic-atlas",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Hebrew interactive atlas for the pinned MapleStory Classic World 2.0.0 dataset",
+  "type": "module",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node scripts/serve.mjs",
+    "verify": "node scripts/verify.mjs",
+    "test": "node scripts/verify.mjs",
+    "test:app": "node tests/run.cjs",
+    "check:rebuild": "node scripts/rebuild-data.mjs --check",
+    "build:data": "node scripts/rebuild-data.mjs"
+  }
+}

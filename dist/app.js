@@ -67,7 +67,7 @@ function portalCard(p,m,sceneMode=false) {
 
 function renderDetails() {
   const m=byId.get(activeId);if(!m)return;
-  const counts={cross:m.portals.filter(p=>displayKind(p,m)==='cross').length,internal:m.portals.filter(p=>p.kind==='internal').length,unknown:m.portals.filter(p=>displayKind(p,m)==='unknown').length,incoming:(incoming.get(m.id)||[]).length};
+  const counts={cross:m.portals.filter(p=>displayKind(p,m)==='cross').length,internal:m.portals.filter(p=>p.kind==='internal').length,unknown:m.portals.filter(p=>displayKind(p,m)==='unknown').length,incoming:(incoming.get(m.id)||[]).length+(atlas.services||[]).filter(s=>s.to===m.id).length};
   const tags=[];if(m.major)tags.push('<span class="tag">עיר / מוקד מרכזי</span>');else if(m.hiddenArea)tags.push('<span class="tag">אזור נסתר</span>');if(m.isNew)tags.push('<span class="tag new">תוספת נובמבר</span>');if(m.scope!=='world')tags.push(`<span class="tag warning">${scopeLabels[m.scope]||'כניסה מיוחדת'}</span>`);
   $('mapDetails').innerHTML=`<div class="map-detail-head"><div class="map-breadcrumb">${esc(groupLabel(m))}</div><h2 dir="ltr">${esc(m.name)}</h2><bdi dir="ltr" class="map-street">${esc(m.street)}</bdi>${tags.length?`<div class="tag-row">${tags.join('')}</div>`:''}</div><button type="button" class="map-preview" data-action="open-scene"><img src="${esc(m.image)}" alt="תמונת המפה ${esc(m.name)}" data-map="${m.id}"><span class="preview-label"><span>פתח את המפה ואת כל שעריה</span>${icon('expand')}</span></button><div class="detail-actions"><button type="button" class="button quiet" data-action="route-from">יציאה מכאן</button><button type="button" class="button primary" data-action="route-to">נווט לכאן</button></div><nav class="portal-tabs" aria-label="סוגי חיבורים">${[['cross','יציאות'],['internal','קיצורים'],['incoming','נכנסים'],['unknown','לא פתורים']].map(([k,v])=>`<button type="button" data-tab="${k}" class="${detailsTab===k?'active':''}">${v}<span class="count">${counts[k]}</span></button>`).join('')}</nav><div class="portal-content" id="portalContent"></div><div class="map-notes">${(m.notes||[]).map(n=>`<p>${esc(n)}</p>`).join('')}</div><div class="map-id"><span>מזהה מפה: <bdi>${m.id}</bdi></span><span>${m.portals.length} רשומות שער</span></div>`;
   $('mapDetails').querySelector('img').addEventListener('error',e=>imageFallback(e.target));
@@ -98,6 +98,12 @@ function serviceSection(services,isIncoming=false) {
 }
 function selectMap(id,{focus=false,hash=true,scroll=true}={}) {
   id=Number(id);if(!byId.has(id))return;
+  const target=byId.get(id);
+  if(!visibleMap(target)){
+    currentRegion=['event','system','unavailable'].includes(target.scope)?'archive':'world';
+    document.querySelectorAll('[data-region]').forEach(b=>b.classList.toggle('active',b.dataset.region===currentRegion));
+    updateVisibleNodes();
+  }
   activeId=id;detailsTab='cross';renderDetails();highlightGraph();
   if(hash)history.replaceState(null,'',`#map=${id}`);
   if(focus)centerOnMap(byId.get(id));
@@ -107,8 +113,9 @@ function highlightGraph() {
   const m=byId.get(activeId);if(!m)return;
   const neighbors=new Set(m.portals.filter(p=>p.kind==='cross').map(p=>p.to));
   (incoming.get(m.id)||[]).forEach(i=>neighbors.add(i.from.id));
+  for(const s of serviceElements){if(s.a===m.id)neighbors.add(s.b);if(s.b===m.id)neighbors.add(s.a);}
   for(const [id,g] of nodeElements){g.classList.toggle('selected',id===m.id);g.classList.toggle('neighbor',neighbors.has(id));}
-  for(const {element,a,b} of edgeElements)element.classList.toggle('highlighted',a===m.id || b===m.id);
+  for(const {element,a,b} of [...edgeElements,...serviceElements])element.classList.toggle('highlighted',a===m.id || b===m.id);
 }
 
 function buildWorld() {
@@ -212,19 +219,42 @@ function centerOnMap(m){const r=$('mapCanvas').getBoundingClientRect();world.k=M
 function zoomWorld(factor,cx,cy){const r=$('mapCanvas').getBoundingClientRect();cx??=r.width/2;cy??=r.height/2;const k=Math.max(.06,Math.min(4,world.k*factor)),ratio=k/world.k;world.x=cx-(cx-world.x)*ratio;world.y=cy-(cy-world.y)*ratio;world.k=k;applyWorld();$('mapIntro').classList.add('is-hidden');}
 function showMapTooltip(e,m){if(worldMoved||e.pointerType==='touch')return;const box=$('mapCanvas').getBoundingClientRect();const x=e.clientX-box.left,y=e.clientY-box.top;const tip=$('mapTooltip');tip.innerHTML=`${eng(m.name)}<small>${esc(groupLabel(m))} · ${m.portals.filter(p=>p.kind==='cross').length} שערי יציאה</small>`;tip.hidden=false;tip.style.left=`${Math.min(box.width-290,Math.max(12,x+18))}px`;tip.style.top=`${Math.min(box.height-90,y+18)}px`;}
 
+function closeSearch(){
+  $('searchResults').hidden=true;$('search').setAttribute('aria-expanded','false');
+  $('search').removeAttribute('aria-activedescendant');searchIndex=-1;
+  $('searchResults').querySelectorAll('[role="option"]').forEach(b=>b.setAttribute('aria-selected','false'));
+}
+function moveSearchSelection(delta){
+  if(!activeSearchResults.length)return;
+  searchIndex=searchIndex<0?(delta>0?0:activeSearchResults.length-1):(searchIndex+delta+activeSearchResults.length)%activeSearchResults.length;
+  const options=$('searchResults').querySelectorAll('[role="option"]');
+  options.forEach((b,i)=>b.setAttribute('aria-selected',String(i===searchIndex)));
+  const selected=options[searchIndex];
+  if(selected){$('search').setAttribute('aria-activedescendant',selected.id);selected.scrollIntoView({block:'nearest'});}
+}
+function handleSearchKey(e){
+  if(e.key==='Escape'){closeSearch();return;}
+  if(!$('search').value.trim())return;
+  if(e.key==='ArrowDown'||e.key==='ArrowUp'){
+    e.preventDefault();if($('searchResults').hidden)renderSearch();moveSearchSelection(e.key==='ArrowDown'?1:-1);
+  }else if(e.key==='Enter'&&!$('searchResults').hidden&&activeSearchResults.length){
+    e.preventDefault();const result=activeSearchResults[Math.max(0,searchIndex)];chooseSearch(result.id,result.kind);
+  }else if(e.key==='Tab')closeSearch();
+}
 function renderSearch(){
   const q=$('search').value.trim().toLowerCase();searchIndex=-1;
-  if(!q){$('searchResults').hidden=true;$('search').setAttribute('aria-expanded','false');return;}
+  $('search').removeAttribute('aria-activedescendant');
+  if(!q){activeSearchResults=[];$('searchResults').innerHTML='';closeSearch();return;}
   const mapMatches=findMaps(q).map(m=>({...m,kind:'map'}));
   const huntMatches=window.Hunt?.searchAll(q)||[];
-  activeSearchResults=[...mapMatches,...huntMatches].sort((a,b)=>Number(b.name.toLowerCase()===q)-Number(a.name.toLowerCase()===q)||Number(b.name.toLowerCase().startsWith(q))-Number(a.name.toLowerCase().startsWith(q))).slice(0,16);
+  activeSearchResults=[...mapMatches,...huntMatches].sort((a,b)=>Number(String(b.id)===q)-Number(String(a.id)===q)||Number(b.name.toLowerCase()===q)-Number(a.name.toLowerCase()===q)||Number(b.name.toLowerCase().startsWith(q))-Number(a.name.toLowerCase().startsWith(q))).slice(0,16);
   const kindLabels={map:'מפה',item:'פריט',monster:'מפלצת',boss:'בוס',npc:'דמות'};
-  $('searchResults').innerHTML=activeSearchResults.length?activeSearchResults.map(m=>`<button type="button" class="search-result search-result-mixed" role="option" data-id="${m.id}" data-kind="${esc(m.kind)}">${m.icon?`<img class="search-entity-icon" src="${esc(m.icon)}" alt="">`:`<span class="search-entity-icon search-map-icon">${icon('pin')}</span>`}<span class="search-result-copy">${eng(m.name)}<small>${kindLabels[m.kind]||'תוצאה'} · ${m.kind==='map'?esc(groupLabel(m))+' · ':''}${m.id}${m.kind==='map'&&m.scope!=='world'?' · '+scopeLabels[m.scope]:''}</small></span></button>`).join(''):'<div class="search-empty">לא נמצאה תוצאה. אפשר לחפש גם חלק משם באנגלית או מזהה.</div>';
+  $('searchResults').innerHTML=activeSearchResults.length?activeSearchResults.map((m,i)=>`<button type="button" id="search-option-${i}" class="search-result search-result-mixed" role="option" aria-selected="false" tabindex="-1" data-id="${m.id}" data-kind="${esc(m.kind)}">${m.icon?`<img class="search-entity-icon" src="${esc(m.icon)}" alt="">`:`<span class="search-entity-icon search-map-icon">${icon('pin')}</span>`}<span class="search-result-copy">${eng(m.name)}<small>${kindLabels[m.kind]||'תוצאה'} · ${m.kind==='map'?esc(groupLabel(m))+' · ':''}${m.id}${m.kind==='map'&&m.scope!=='world'?' · '+scopeLabels[m.scope]:''}</small></span></button>`).join(''):'<div class="search-empty">לא נמצאה תוצאה. אפשר לחפש גם חלק משם באנגלית או מזהה.</div>';
   $('searchResults').hidden=false;$('search').setAttribute('aria-expanded','true');
 }
 const aliases={'הנסיס':'henesys','אליניה':'ellinia','פריון':'perion','קרנינג':'kerning','סליפיווד':'sleepywood','לית':'lith','פלורינה':'florina','אמהרסט':'amherst'};
 function findMaps(q){q=q.trim().toLowerCase();const alias=Object.entries(aliases).find(([he])=>q===he);if(alias)q=alias[1];return maps.filter(m=>`${m.name} ${m.id} ${m.street} ${groupLabel(m)}`.toLowerCase().includes(q)).sort((a,b)=>Number(b.name.toLowerCase().startsWith(q))-Number(a.name.toLowerCase().startsWith(q))||Number(b.major)-Number(a.major)||a.name.localeCompare(b.name));}
-function chooseSearch(id,kind='map'){$('searchResults').hidden=true;$('search').setAttribute('aria-expanded','false');$('search').value='';$('directory').hidden=true;if(kind!=='map'){window.Hunt?.open(kind,Number(id));return;}window.Hunt?.close();selectMap(id,{focus:true});}
+function chooseSearch(id,kind='map'){closeSearch();activeSearchResults=[];$('search').value='';$('directory').hidden=true;if(kind!=='map'){window.Hunt?.open(kind,Number(id));return;}window.Hunt?.close();selectMap(id,{focus:true});}
 function openDirectory(){const opening=$('directory').hidden;$('directory').hidden=!opening;if(opening){window.Hunt?.close();renderDirectory();$('directorySearch').focus();}}
 function renderDirectory(){const q=$('directorySearch').value.trim().toLowerCase(),group=$('directoryGroup').value;const list=(q?findMaps(q):[...maps].sort((a,b)=>a.name.localeCompare(b.name)||a.id-b.id)).filter(m=>group==='all'||m.group===group);$('directoryCounter').textContent=`${fmt(list.length)} מתוך ${fmt(maps.length)} רשומות · כל מפה נשמרת לפי מזהה ייחודי`;
   $('directoryGrid').innerHTML=list.map(m=>`<button type="button" class="directory-card" data-id="${m.id}"><img loading="lazy" decoding="async" src="${esc(m.minimap||m.image)}" alt="" data-map="${m.id}"><span class="card-info">${eng(m.name)}<small>${esc(groupLabel(m))} · ${m.id}</small>${m.scope!=='world'?`<small>${esc(scopeLabels[m.scope])}</small>`:''}</span></button>`).join('')||'<p class="no-results">אין מפות שמתאימות לסינון הזה.</p>';
@@ -265,14 +295,25 @@ function submitRoute(e){if(e)e.preventDefault();const from=routeMap($('routeFrom
   let html=`<p class="route-summary">${route.steps.length===0?'כבר נמצאים במפת היעד.':`${route.steps.length} מעברים · ${serviceCount?serviceCount+' מהם מותנים':'דרך שערים עם יעד מתועד'}`}</p>`;
   if(serviceCount)html+='<p class="route-warning">המסלול כולל כניסות מותנות. יש לעמוד בתנאים שמופיעים בכל שלב; לא נבדקו הדמות, המשימות או הערוץ שלך.</p>';
   if(ids.some(id=>['event','system','unavailable'].includes(byId.get(id).scope)))html+='<p class="route-warning">המסלול עובר ברשומות אירוע או מערכת. קיום החיבור בקובץ אינו מבטיח כניסה במשחק.</p>';
-  html+=ids.map((id,i)=>{const step=route.steps[i],m=byId.get(id);return `<div class="route-step"><span class="step-number">${i+1}</span><button type="button" data-route-map="${id}">${eng(m.name)}${step?`<small>${step.service?esc(serviceLabel(step.service)):esc(`שער ${step.p.number} · ${directionLabel(step.p,m)} · ${portalTypeLabel(step.p,m)}`)}</small>${step.service?`<small>${esc(serviceCondition(step.service))}</small>`:''}`:'<small>מפת היעד</small>'}</button></div>`;}).join('');
+  html+=ids.map((id,i)=>{const step=route.steps[i],m=byId.get(id),gate=step?.p||(step?.service?m.portals.find(p=>supplementForGate(p,m)?.id===step.service.id):null);return `<div class="route-step"><span class="step-number">${i+1}</span><div class="route-step-content"><button type="button" data-route-map="${id}">${eng(m.name)}${step?`<small>${step.service?esc(serviceLabel(step.service)):esc(`שער ${step.p.number} · ${directionLabel(step.p,m)} · ${portalTypeLabel(step.p,m)}`)}</small>${step.service?`<small>${esc(serviceCondition(step.service))}</small>`:''}`:'<small>מפת היעד</small>'}</button>${gate?`<button type="button" class="route-locate" data-route-scene="${id}" data-route-gate="${esc(gate.key)}">${icon('pin')}הצגת שער היציאה ${gate.number}</button>`:''}</div></div>`;}).join('');
   html+='<button type="button" id="clearRoute" class="clear-route">ניקוי המסלול</button>';$('routeResult').innerHTML=html;
   if(ids.length>1)fitRoute(ids);toast(route.steps.length?`נמצא מסלול עם ${route.steps.length} מעברים`:'זו כבר מפת המוצא');
 }
 function drawRoute(){const layer=$('routeLayer');layer.replaceChildren();if(!route)return;for(const s of route.steps){const a=byId.get(s.from),b=byId.get(s.to);layer.append(svgEl('path',{d:edgePath(a,b),class:`route-edge ${s.service?'service':''}`}));}const ids=[route.from,...route.steps.map(s=>s.to)];ids.forEach((id,i)=>{const m=byId.get(id),g=svgEl('g',{transform:`translate(${m.x+19},${m.y-20})`});g.append(svgEl('circle',{class:'route-dot',r:17}),svgEl('text',{class:'route-number'},i+1));layer.append(g);});}
 function fitRoute(ids){const ms=ids.map(id=>byId.get(id)),r=$('mapCanvas').getBoundingClientRect();const minX=Math.min(...ms.map(m=>m.x))-100,maxX=Math.max(...ms.map(m=>m.x))+100,minY=Math.min(...ms.map(m=>m.y))-100,maxY=Math.max(...ms.map(m=>m.y))+100;world.k=Math.min((r.width-90)/(maxX-minX),(r.height-185)/(maxY-minY),1.6);world.k=Math.max(.07,world.k);world.x=(r.width-(minX+maxX)*world.k)/2;world.y=100+(r.height-150-(minY+maxY)*world.k)/2;applyWorld();$('mapIntro').classList.add('is-hidden');}
 
-function openScene(id,gateKey=null){sceneId=Number(id);const m=byId.get(sceneId);if(!m)return;selectedGate=gateKey;const gate=m.portals.find(p=>p.key===gateKey);sceneKind=gate?displayKind(gate,m):'cross';$('sceneTitle').textContent=m.name;$('sceneRegion').textContent=groupLabel(m);$('sceneImage').setAttribute('href',m.image);$('sceneImage').setAttribute('width',m.width||3000);$('sceneImage').setAttribute('height',m.height||1500);$('originalImage').href=m.originalImage||m.image;if(!$('sceneDialog').open)$('sceneDialog').showModal();setSceneLayer('portals',[]);requestAnimationFrame(()=>{fitScene();if(gate)setTimeout(()=>pickGate(gate.key,false),30);});}
+const loadedSceneImages=new Set();
+function loadSceneImage(retry=false){
+  const m=byId.get(sceneId);if(!m)return;
+  const image=$('sceneImage'),status=$('sceneImageStatus'),requestedMap=sceneId;
+  if(!retry&&loadedSceneImages.has(m.image)&&image.getAttribute('href')===m.image){status.hidden=true;return;}
+  status.hidden=false;status.dataset.state='loading';$('sceneImageMessage').textContent='טוענים את תמונת המפה…';$('sceneImageRetry').hidden=true;
+  image.style.visibility='hidden';$('sceneCanvas').setAttribute('aria-busy','true');
+  image.onload=()=>{if(sceneId!==requestedMap)return;loadedSceneImages.add(m.image);image.style.visibility='';status.hidden=true;$('sceneCanvas').setAttribute('aria-busy','false');};
+  image.onerror=()=>{if(sceneId!==requestedMap)return;status.dataset.state='error';$('sceneImageMessage').textContent='תמונת המפה לא נטענה. השערים והמיקומים עדיין זמינים ברשימה.';$('sceneImageRetry').hidden=false;$('sceneCanvas').setAttribute('aria-busy','false');};
+  image.setAttribute('href',retry?`${m.image}?retry=${Date.now()}`:m.image);
+}
+function openScene(id,gateKey=null){const m=byId.get(Number(id));if(!m)return;sceneId=m.id;selectedGate=gateKey;const gate=m.portals.find(p=>p.key===gateKey);sceneKind=gate?displayKind(gate,m):'cross';$('sceneTitle').textContent=m.name;$('sceneRegion').textContent=groupLabel(m);$('sceneImage').setAttribute('width',m.width||3000);$('sceneImage').setAttribute('height',m.height||1500);loadSceneImage();$('originalImage').href=m.originalImage||m.image;if(!$('sceneDialog').open)$('sceneDialog').showModal();setSceneLayer('portals',[]);requestAnimationFrame(()=>{fitScene();if(gate)pickGate(gate.key,false);});}
 function fitScene(){const m=byId.get(sceneId);if(!m)return;const r=$('sceneCanvas').getBoundingClientRect(),w=m.width||3000,h=m.height||1500;scene.k=Math.min((r.width-48)/w,(r.height-60)/h);scene.x=(r.width-w*scene.k)/2;scene.y=(r.height-h*scene.k)/2;applyScene();}
 function applyScene(){const m=byId.get(sceneId);if(!m)return;$('sceneViewport').setAttribute('transform',`translate(${scene.x},${scene.y}) scale(${scene.k})`);for(const pin of portalPinElements.values()){pin.querySelector('circle').setAttribute('r',12/scene.k);pin.querySelector('circle').setAttribute('stroke-width',1.7/scene.k);pin.querySelector('text').setAttribute('font-size',11/scene.k);}for(const pin of entityPinElements.values()){pin.querySelector('circle').setAttribute('r',(pin.classList.contains('boss')?14:11)/scene.k);pin.querySelector('circle').setAttribute('stroke-width',1.7/scene.k);pin.querySelector('text').setAttribute('font-size',10/scene.k);}document.querySelectorAll('.internal-path').forEach(p=>{p.setAttribute('stroke-width',2/scene.k);p.setAttribute('stroke-dasharray',`${6/scene.k} ${5/scene.k}`);});}
 function zoomScene(factor,cx,cy){const r=$('sceneCanvas').getBoundingClientRect();cx??=r.width/2;cy??=r.height/2;const k=Math.max(.015,Math.min(3,scene.k*factor)),ratio=k/scene.k;scene.x=cx-(cx-scene.x)*ratio;scene.y=cy-(cy-scene.y)*ratio;scene.k=k;applyScene();}
@@ -301,6 +342,11 @@ function setSceneLayer(layer,ids=[]){
 }
 function renderSceneEntities(){
   const m=byId.get(sceneId),isNpc=sceneLayer==='npcs';
+  if(!isNpc&&!window.HuntData){
+    sceneEntityPoints=[];$('sceneSelected').innerHTML='';
+    $('sceneEntitySummary').innerHTML=window.Hunt?.catalogStatus==='unavailable'?'<p class="section-note" role="status">נתוני נקודות ההופעה לא נטענו.</p><button type="button" class="button quiet" id="sceneRetryCatalog">פתיחת הקטלוג לניסיון נוסף</button>':'<p class="section-note" role="status">טוענים את נתוני נקודות ההופעה…</p>';
+    $('scenePortalList').innerHTML='';return;
+  }
   const raw=isNpc?(m.npcs||[]).map(p=>({...p,entityId:p.id})):(window.HuntData?.mapSpawns?.[sceneId]?.points||[]).map(p=>({...p,entityId:p.mobId}));
   sceneEntityPoints=raw.filter(p=>(!sceneEntityIds.length||sceneEntityIds.includes(p.entityId))&&Number.isFinite(p.x)&&Number.isFinite(p.y)).map((p,i)=>({...p,number:i+1,key:`${sceneLayer}:${sceneId}:${i}`}));
   const uniqueIds=[...new Set(sceneEntityPoints.map(p=>p.entityId))];
@@ -348,24 +394,26 @@ function renderHuntAbout(){
   let section=$('huntingCoverage');
   if(!section){section=document.createElement('section');section.id='huntingCoverage';$('sourcesList').insertAdjacentElement('beforebegin',section);}
   const stats=data.meta.stats,dropMeta=data.dropData?.meta||{};
-  section.innerHTML=`<h3>חיפוש פריטים, מפלצות ודמויות</h3><p>הקטלוג כולל ${fmt(stats.items)} פריטים, ${fmt(stats.monsters)} רשומות מפלצת ו־${fmt(stats.npcs)} רשומות דמות. ${fmt(stats.spawnPoints)} נקודות הופעה מסומנות ב־${fmt(stats.mapsWithSpawns)} מפות. ${fmt(stats.npcPlacements)} מיקומי דמויות נרשמו ב־${fmt(stats.mapsWithNpcs)} מפות.</p><p>שמות כפולים נשמרים בנפרד לפי מזהה. לדמות או לבוס ללא מיקום מתועד לא ניתנה כתובת משוערת. המלצת הציד מבוססת על נקודות הופעה, ולא על תדירות הופעה, סיכוי נפילה או פריטים בשעה.</p><p>תיעוד הפריטים מכסה כרגע ${fmt(dropMeta.acceptedRelationships||0)} קשרים בין ${fmt(dropMeta.coveredItemIds||0)} פריטים לבין ${fmt(dropMeta.coveredMonsterIds||0)} מזהי מפלצת. נכללו רק דיווחים שסומנו בקלאסיק, ללא שיעורי הנפילה של גרסאות אחרות. זהו מאגר קהילתי חלקי; אין תאריך או גרסת תצפית לכל שורה, ולא כל דיווח נבדק מחדש בעדכון הנוכחי.</p><p><a class="source-link" href="https://ms-classic.com/drops" target="_blank" rel="noopener noreferrer">טבלת תצפיות הנפילה</a><a class="source-link" href="https://maplelandhub.com/classic/en/monster/700000" target="_blank" rel="noopener noreferrer">תצפיות נוספות של בוס הפטרייה</a></p><p class="copyright" dir="ltr" lang="en">${esc(dropMeta.attribution||'')} ${esc(dropMeta.license||'')} <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" rel="noopener noreferrer">License</a></p><div class="coverage-downloads"><a href="hunt-data.json" download="classic-hunt-data.json" class="button quiet">הורדת קטלוג ומיקומים</a><a href="drop-data.json" download="classic-drop-observations.json" class="button quiet">הורדת תצפיות הנפילה</a></div><h3>מקורות המפות והמעברים</h3>`;
+  section.innerHTML=`<h3>חיפוש פריטים, מפלצות ודמויות</h3><p>הקטלוג כולל ${fmt(stats.items)} פריטים, ${fmt(stats.monsters)} רשומות מפלצת ו־${fmt(stats.npcs)} רשומות דמות. ${fmt(stats.spawnPoints)} נקודות הופעה מסומנות ב־${fmt(stats.mapsWithSpawns)} מפות. ${fmt(stats.npcPlacements)} מיקומי דמויות נרשמו ב־${fmt(stats.mapsWithNpcs)} מפות.</p><p>שמות כפולים נשמרים בנפרד לפי מזהה. לדמות או לבוס ללא מיקום מתועד לא ניתנה כתובת משוערת. המלצת הציד מבוססת על נקודות הופעה, ולא על תדירות הופעה, סיכוי נפילה או פריטים בשעה.</p>${window.Hunt?.dropStatus==='unavailable'?'<p class="route-warning">תיעוד הנפילות לא נטען בביקור הזה. אפשר לנסות שוב בחלונית החיפוש והציד; אין להסיק מכך שלפריטים אין נפילות מתועדות.</p>':`<p>תיעוד הפריטים מכסה כרגע ${fmt(dropMeta.acceptedRelationships||0)} קשרים בין ${fmt(dropMeta.coveredItemIds||0)} פריטים לבין ${fmt(dropMeta.coveredMonsterIds||0)} מזהי מפלצת. נכללו רק דיווחים שסומנו בקלאסיק, ללא שיעורי הנפילה של גרסאות אחרות. זהו מאגר קהילתי חלקי; אין תאריך או גרסת תצפית לכל שורה, ולא כל דיווח נבדק מחדש בעדכון הנוכחי.</p>`}<p><a class="source-link" href="https://ms-classic.com/drops" target="_blank" rel="noopener noreferrer">טבלת תצפיות הנפילה</a><a class="source-link" href="https://maplelandhub.com/classic/en/monster/700000" target="_blank" rel="noopener noreferrer">תצפיות נוספות של בוס הפטרייה</a></p><p class="copyright" dir="ltr" lang="en">${esc(dropMeta.attribution||'')} ${esc(dropMeta.license||'')} <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" rel="noopener noreferrer">License</a></p><div class="coverage-downloads"><a href="hunt-data.json" download="classic-hunt-data.json" class="button quiet">הורדת קטלוג ומיקומים</a><a href="drop-data.json" download="classic-drop-observations.json" class="button quiet">הורדת תצפיות הנפילה</a></div><h3>מקורות המפות והמעברים</h3>`;
 }
 function bindEvents(){
-  $('search').addEventListener('input',renderSearch);$('search').addEventListener('keydown',e=>{if(e.key==='Escape'){$('searchResults').hidden=true;$('search').blur();}if(e.key==='Enter' && activeSearchResults.length){e.preventDefault();const result=activeSearchResults[Math.max(0,searchIndex)];chooseSearch(result.id,result.kind);}});
-  $('searchResults').addEventListener('click',e=>{const b=e.target.closest('[data-id]');if(b)chooseSearch(b.dataset.id,b.dataset.kind);});document.addEventListener('click',e=>{if(!e.target.closest('.search-wrap')){$('searchResults').hidden=true;$('search').setAttribute('aria-expanded','false');}});
+  $('search').addEventListener('input',renderSearch);$('search').addEventListener('focus',()=>{if($('search').value.trim())renderSearch();});$('search').addEventListener('keydown',handleSearchKey);
+  $('searchResults').addEventListener('click',e=>{const b=e.target.closest('[data-id]');if(b)chooseSearch(b.dataset.id,b.dataset.kind);});document.addEventListener('click',e=>{if(!e.target.closest('.search-wrap'))closeSearch();});
   document.addEventListener('keydown',e=>{if(e.key==='/'&&!['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)&&!$('sceneDialog').open&&!$('aboutDialog').open){e.preventDefault();$('search').focus();}});
   document.querySelectorAll('[data-region]').forEach(b=>b.addEventListener('click',()=>{currentRegion=b.dataset.region;document.querySelectorAll('[data-region]').forEach(btn=>btn.classList.toggle('active',btn===b));updateVisibleNodes();fitWorld();$('directory').hidden=true;}));
   $('zoomIn').addEventListener('click',()=>zoomWorld(1.35));$('zoomOut').addEventListener('click',()=>zoomWorld(1/1.35));$('fitMap').addEventListener('click',fitWorld);$('labelsToggle').addEventListener('click',()=>{showAllLabels=!showAllLabels;$('labelsToggle').setAttribute('aria-pressed',String(showAllLabels));applyWorld();});
   $('directoryToggle').addEventListener('click',openDirectory);$('closeDirectory').addEventListener('click',()=>$('directory').hidden=true);$('directorySearch').addEventListener('input',renderDirectory);$('directoryGroup').addEventListener('change',renderDirectory);$('directoryGrid').addEventListener('click',e=>{const card=e.target.closest('[data-id]');if(card){$('directory').hidden=true;selectMap(card.dataset.id,{focus:true});}});
   $('routeToggle').addEventListener('click',()=>{if($('routePanel').hidden)openRoute();else{$('routePanel').hidden=true;$('routeToggle').setAttribute('aria-pressed','false');}});$('closeRoute').addEventListener('click',()=>{$('routePanel').hidden=true;$('routeToggle').setAttribute('aria-pressed','false');});$('routeForm').addEventListener('submit',submitRoute);
-  $('routeResult').addEventListener('click',e=>{const map=e.target.closest('[data-route-map]');if(map)selectMap(map.dataset.routeMap,{focus:true,scroll:false});if(e.target.id==='clearRoute'){route=null;drawRoute();$('routeResult').innerHTML='';}});
+  $('routeResult').addEventListener('click',e=>{const gate=e.target.closest('[data-route-scene]');if(gate){openScene(Number(gate.dataset.routeScene),gate.dataset.routeGate);return;}const map=e.target.closest('[data-route-map]');if(map)selectMap(map.dataset.routeMap,{focus:true,scroll:false});if(e.target.id==='clearRoute'){route=null;drawRoute();$('routeResult').innerHTML='';}});
   $('mapDetails').addEventListener('click',e=>{const tab=e.target.closest('[data-tab]');if(tab){detailsTab=tab.dataset.tab;renderPortalContent();return;}const b=e.target.closest('[data-action]');if(!b)return;const m=byId.get(activeId),p=m.portals.find(p=>p.key===b.dataset.gate);switch(b.dataset.action){case'open-scene':openScene(m.id);break;case'map-monsters':openSpawns(m.id);break;case'map-npcs':openNpcs(m.id);break;case'route-from':openRoute();$('routeFrom').value=mapLabel(m);$('routeTo').focus();break;case'route-to':{const old=routeMap($('routeFrom').value);openRoute();if(!old||old.id===m.id)$('routeFrom').value=mapLabel(byId.get(10001000)||maps[0]);$('routeTo').value=mapLabel(m);$('routeFrom').focus();break;}case'portal-go':if(p?.kind==='cross')selectMap(p.to,{focus:true});else if(p)openScene(m.id,p.key);break;case'locate':if(p)openScene(m.id,p.key);break;case'incoming':selectMap(b.dataset.from,{focus:true});break;case'incoming-scene':openScene(Number(b.dataset.from),b.dataset.gate);break;case'service-target':if(b.dataset.target)selectMap(b.dataset.target,{focus:true});else toast('למעבר הזה אין יעד קבוע. הפרטים מופיעים בתנאי השירות.');break;}});
   $('closeScene').addEventListener('click',()=>$('sceneDialog').close());$('sceneFit').addEventListener('click',fitScene);$('sceneZoomIn').addEventListener('click',()=>zoomScene(1.4));$('sceneZoomOut').addEventListener('click',()=>zoomScene(1/1.4));document.querySelectorAll('#sceneFilters button').forEach(b=>b.addEventListener('click',()=>{sceneKind=b.dataset.kind;selectedGate=null;renderScenePins();renderSceneSidebar();}));
   $('scenePortalList').addEventListener('click',e=>{const entity=e.target.closest('[data-entity-key]');if(entity){pickEntity(entity.dataset.entityKey,true);return;}const b=e.target.closest('[data-gate]');if(b)pickGate(b.dataset.gate,true);});$('sceneSelected').addEventListener('click',e=>{const b=e.target.closest('[data-scene-travel]');if(b){selectMap(b.dataset.sceneTravel);openScene(b.dataset.sceneTravel);}});
   $('sceneLayers').addEventListener('click',e=>{const b=e.target.closest('[data-layer]');if(b)setSceneLayer(b.dataset.layer,[]);});
-  $('sceneEntitySummary').addEventListener('click',e=>{if(e.target.id==='sceneShowAll')setSceneLayer(sceneLayer,[]);});
-  window.addEventListener('hunt-ready',()=>{renderDetails();if($('search').value)renderSearch();renderHuntAbout();});
-  const about=()=>$('aboutDialog').showModal();$('aboutButton').addEventListener('click',about);$('coverageButton').addEventListener('click',about);$('closeAbout').addEventListener('click',()=>$('aboutDialog').close());$('aboutDialog').addEventListener('click',e=>{if(e.target===$('aboutDialog')){const r=$('aboutDialog').getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)$('aboutDialog').close();}});
+  $('sceneImageRetry').addEventListener('click',()=>loadSceneImage(true));
+  $('sceneEntitySummary').addEventListener('click',e=>{if(e.target.id==='sceneShowAll')setSceneLayer(sceneLayer,[]);if(e.target.id==='sceneRetryCatalog'){$('sceneDialog').close();window.Hunt?.open('monster');}});
+  window.addEventListener('hunt-unavailable',()=>{if($('sceneDialog').open&&sceneLayer==='monsters')setSceneLayer(sceneLayer,sceneEntityIds);});
+  window.addEventListener('hunt-ready',()=>{renderDetails();if($('search').value)renderSearch();renderHuntAbout();if($('sceneDialog').open&&sceneLayer!=='portals')setSceneLayer(sceneLayer,sceneEntityIds);});
+  const about=()=>{renderHuntAbout();$('aboutDialog').showModal();};$('aboutButton').addEventListener('click',about);$('coverageButton').addEventListener('click',about);$('closeAbout').addEventListener('click',()=>$('aboutDialog').close());$('aboutDialog').addEventListener('click',e=>{if(e.target===$('aboutDialog')){const r=$('aboutDialog').getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)$('aboutDialog').close();}});
   document.querySelector('.brand').addEventListener('click',e=>{e.preventDefault();currentRegion='world';document.querySelectorAll('[data-region]').forEach(b=>b.classList.toggle('active',b.dataset.region==='world'));updateVisibleNodes();fitWorld();});
   enablePanZoom($('worldSvg'),'world');enablePanZoom($('sceneSvg'),'scene');let resizeTimer;window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{fitWorld();if($('sceneDialog').open)fitScene();},180);});window.addEventListener('hashchange',()=>{const id=location.hash.match(/map=(\d+)/);if(id)selectMap(Number(id[1]),{focus:true,hash:false});});
 }

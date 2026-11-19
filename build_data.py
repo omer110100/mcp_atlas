@@ -9,21 +9,17 @@ return-map metadata, a reciprocal connection, or the order of quest maps.
 from __future__ import annotations
 
 import collections
-from datetime import datetime
+from datetime import datetime, timezone
 import hashlib
 import json
 import math
 from pathlib import Path
-import shutil
-from zoneinfo import ZoneInfo
 
 
 ROOT = Path(__file__).resolve().parent
 SOURCE = ROOT / "source-data"
 DIST = ROOT / "dist"
-RESEARCH = Path("/workspace/scratch/80d69134b64f/research_sources")
-SERVICE_RESEARCH = Path("/workspace/scratch/80d69134b64f/research_v2/service_connections.json")
-ASSET_MANIFEST = RESEARCH / "asset_manifest.json"
+ASSET_MANIFEST = SOURCE / "asset-manifest.json"
 COMMIT = "8ec33d9a51855ddcf84edf1230793bf927c1da55"
 RAW_BASE = f"https://raw.githubusercontent.com/ohmi69/osms_datamine_dashboard/{COMMIT}/"
 DATA_URL = "https://osmsdataexplorer.com/data/api/v1/maps.json"
@@ -59,24 +55,28 @@ def read(path: Path):
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def seed_sources():
-    """Copy only when absent, so subsequent rebuilds keep the immutable snapshot."""
-    SOURCE.mkdir(parents=True, exist_ok=True)
+def prepare_output():
+    """Rebuild only from the source snapshot included in this checkout."""
+    required = ("maps.json", "meta.json", "portals-raw.json", "maps-raw.json",
+                "map-manifest.json", "service_connections.json", "asset-manifest.json")
+    missing = [name for name in required if not (SOURCE / name).is_file()]
+    if missing:
+        raise FileNotFoundError("Missing pinned source files: " + ", ".join(missing))
     DIST.mkdir(parents=True, exist_ok=True)
-    copies = {
-        "maps.json": RESEARCH / "api_maps.json",
-        "meta.json": RESEARCH / "api_meta.json",
-        "README.md": RESEARCH / "api_README.md",
-        "LICENSE": RESEARCH / "api_LICENSE",
-        "portals-raw.json": RESEARCH / "osms_portals.json",
-        "maps-raw.json": RESEARCH / "osms_maps.json",
-        "map-manifest.json": RESEARCH / "osms_map_manifest.json",
-        "service_connections.json": SERVICE_RESEARCH,
-    }
-    for target, origin in copies.items():
-        destination = SOURCE / target
-        if not destination.exists():
-            shutil.copyfile(origin, destination)
+
+
+def snapshot_local_deadline(utc_text):
+    """Use the reviewed local time for this immutable event snapshot.
+
+    This avoids an operating-system timezone-database dependency on Windows.
+    A future deadline must be reviewed explicitly, including its DST offset.
+    """
+    reviewed = {"2026-12-09T23:59:00Z": "2026-12-10T01:59:00+02:00"}
+    if utc_text not in reviewed:
+        raise ValueError(f"Review the Israel-local time for new deadline: {utc_text}")
+    local_time = datetime.fromisoformat(reviewed[utc_text])
+    assert local_time.astimezone(timezone.utc) == datetime.fromisoformat(utc_text.replace("Z", "+00:00"))
+    return local_time.isoformat()
 
 
 def group_for(m):
@@ -341,19 +341,14 @@ def separate_group_boundaries(maps):
 
 
 def main():
-    seed_sources()
+    prepare_output()
     raw_maps = read(SOURCE / "maps.json")
     metadata = read(SOURCE / "meta.json")
     raw_portals = read(SOURCE / "portals-raw.json")
     internal_maps = read(SOURCE / "maps-raw.json")
     image_hashes = read(SOURCE / "map-manifest.json")
     services_source = read(SOURCE / "service_connections.json")
-    saved_assets = SOURCE / "asset-manifest.json"
-    if ASSET_MANIFEST.exists():
-        manifest = read(ASSET_MANIFEST)
-        saved_assets.write_text(json.dumps(manifest, ensure_ascii=False), encoding="utf-8")
-    else:
-        manifest = read(saved_assets) if saved_assets.exists() else {}
+    manifest = read(ASSET_MANIFEST)
     assets = manifest.get("maps", manifest)
     npc_lookup = internal_maps.get("npc_lookup", {})
     assert hashlib.sha256((SOURCE / "maps.json").read_bytes()).hexdigest() == metadata["files"]["maps.json"]["sha256"]
@@ -422,8 +417,7 @@ def main():
         service = dict(edge, label=edge["label_he"], condition=edge["condition_he"],
                        routeAllowed=edge["route_allowed"], sourceUrls=edge["source_urls"])
         if edge.get("active_until_utc"):
-            local_time = datetime.fromisoformat(edge["active_until_utc"].replace("Z", "+00:00")).astimezone(ZoneInfo("Asia/Jerusalem"))
-            service["activeUntilLocal"] = local_time.isoformat()
+            service["activeUntilLocal"] = snapshot_local_deadline(edge["active_until_utc"])
             if edge["id"] == "moon-bunny-entry":
                 service["condition"] = "רמה 11 ומעלה, קבוצה של 3. ערוצים 20 עד 30 בווינדיה ו-7 עד 10 בזניט. זמין עד 10 בדצמבר 2026 בשעה 01:59 לפי שעון ישראל."
         services.append(service)
@@ -463,12 +457,12 @@ def main():
     assert (stats["cross"], stats["internal"], stats["unknown"], stats["pairs"]) == (694, 357, 385, 621)
     assert sum(g["count"] for g in groups) == len(maps)
     assert all(0 <= m["x"] <= 3100 and 0 <= m["y"] <= 2350 for m in maps)
-    (DIST / "atlas-data.json").write_text(json.dumps(atlas, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    (DIST / "atlas-data.json").write_text(json.dumps(atlas, ensure_ascii=False, separators=(",", ":")), encoding="utf-8", newline="\n")
     audit = {"stats": stats, "groups": [{"id": g["id"], "count": g["count"]} for g in groups],
              "imagesWithDimensions": sum(m["width"] is not None for m in maps),
              "minNodeDistance": round(min(math.hypot(a["x"] - b["x"], a["y"] - b["y"])
                                            for i, a in enumerate(maps) for b in maps[i + 1:]), 2)}
-    (SOURCE / "build-audit.json").write_text(json.dumps(audit, ensure_ascii=False, indent=2), encoding="utf-8")
+    (SOURCE / "build-audit.json").write_text(json.dumps(audit, ensure_ascii=False, indent=2), encoding="utf-8", newline="\n")
     print(json.dumps(audit, ensure_ascii=False))
 
 

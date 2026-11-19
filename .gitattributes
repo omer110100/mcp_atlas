@@ -1,0 +1,12 @@
+* text=auto
+*.py text eol=lf
+*.mjs text eol=lf
+*.js text eol=lf
+*.css text eol=lf
+*.html text eol=lf
+*.md text eol=lf
+# Archived source bytes are used for provenance hashes.
+source-data/** -text
+dist/*-data.json -text
+*.png binary
+*.webp binary
