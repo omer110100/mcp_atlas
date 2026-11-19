@@ -101,7 +101,7 @@ for(const {m,p}of internal){detailsAction(m.id,'portal-go',p.key);if(run('sceneI
 check('all357 internal portal clicks stay on source map and select gate',internalFailures.length===0,internalFailures);
 detailsAction(10002071,'portal-go','10002071:9');
 check('documented Hollow script card exposes its verified target',get('sceneSelected').innerHTML.includes('data-scene-travel="10006060"'));
-fire('sceneSelected','click',{target:{closest:()=>({dataset:{sceneTravel:'10006060'}})}});
+fire('sceneSelected','click',{target:{closest:()=>({dataset:{sceneTravel:'10006060',travelGate:'10002071:9'}})}});
 check('documented Hollow destination button opens correct map',run('activeId===10006060&&sceneId===10006060'));
 const unknown=atlas.maps.flatMap(m=>m.portals.filter(p=>p.kind==='unknown').map(p=>({m,p}))).find(({m,p})=>m.id===10000000&&p.name==='in03');
 detailsAction(unknown.m.id,'portal-go',unknown.p.key);
@@ -134,6 +134,31 @@ get('sceneImage').onload();
 check('map image successful retry clears busy and error state',get('sceneImageStatus').hidden&&get('sceneImage').style.visibility===''&&get('sceneCanvas').getAttribute('aria-busy')==='false');
 run('openScene(-999)');
 check('invalid scene ID cannot corrupt current scene state',run('sceneId===10001000'));
+
+
+// Journey state, boundaries, detours and scripted transitions.
+get('routeFrom').value='Ellinia [10002000]';get('routeTo').value='Forgotten Hollow [10006000]';run('submitRoute();openRouteStep(0)');
+check('journey opens at first exit with previous disabled',run('navigationIndex===0&&selectedGate===route.steps[0].p.key')&&get('sceneNavPrevious').disabled);
+fire('sceneNavNext','click');
+check('next opens next source and highlights its exit',run('navigationIndex===1&&sceneId===route.steps[1].from&&selectedGate===navigationGate().key'));
+fire('sceneNavPrevious','click');
+check('previous restores exact step',run('navigationIndex===0&&sceneId===route.from'));
+run('travelScenePortal(navigationGate().key)');
+check('taking required portal advances route progress',run('navigationIndex===1&&navigationFollowing'));
+run('openScene(10001000)');
+check('free exploration preserves route position and offers return',run('navigationIndex===1&&!navigationFollowing')&&!get('sceneNavReturn').hidden);
+fire('sceneNavReturn','click');
+check('return restores saved exit without resetting journey',run('navigationIndex===1&&navigationFollowing&&selectedGate===navigationGate().key'));
+run('openRouteStep(route.steps.findIndex(s=>s.service));travelScenePortal(navigationGate().key)');
+check('documented scripted portal advances within guide',run('navigationFollowing&&sceneId===10006060'));
+run('openRouteStep(route.steps.length)');
+check('destination has completion state and no next step',get('sceneNavNext').disabled&&run('sceneId===route.to&&selectedGate===null'));
+run('openRouteStep(999);openRouteStep(-1)');
+check('invalid journey steps leave progress intact',run('navigationIndex===route.steps.length'));
+get('routeTo').value='Ellinia [10002000]';run('submitRoute();openRouteStep(0)');
+check('same-map route completes with both controls disabled',get('sceneNavNext').disabled&&get('sceneNavPrevious').disabled);
+get('routeTo').value='Forgotten Hollow [10006000]';run('submitRoute()');
+check('replacing route invalidates old guide',!run('navigationActive()')&&get('sceneNavigation').hidden);
 
 const report={checkedAt:new Date().toISOString(),method:'Node VM with lightweight DOM contract stubs; no browser, no rendering, no network checks',appSha256:crypto.createHash('sha256').update(source).digest('hex'),results,failures:results.filter(r=>!r.passed)};
 process.exitCode=report.failures.length?1:0;
