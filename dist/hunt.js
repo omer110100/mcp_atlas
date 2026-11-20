@@ -11,7 +11,8 @@
   const labels = {get item(){return L('פריטים','Items');}, get monster(){return L('מפלצות','Monsters');}, get boss(){return L('בוסים','Bosses');}, get npc(){return L('דמויות','NPCs');}};
   const singular = {get item(){return L('פריט','item');}, get monster(){return L('מפלצת','monster');}, get boss(){return L('בוס','boss');}, get npc(){return L('דמות','NPC');}};
   const state = {tab:'item', query:'', selected:null, originId:null, originText:null, rank:'points', targets:null, limit:72, documented:false, compare:[], compareOpen:false, basket:[], basketOpen:false, levelMin:'', levelMax:'', creatureType:'regular'};
-  const MAX_BASKET=8;
+  const MAX_BASKET=8, RESULTS_PER_PAGE=6;
+  Object.assign(state,{detailTab:'maps',resultPage:0,resultQuery:''});
   const routeCache = new Map();
   let data = null, dropData = {links:[],meta:{}}, loading = null, visible = false, index = [];
   let catalogFailed = false, dropFailed = false, dropLoading = false, opener = null, pendingDetailFocus = false;
@@ -47,6 +48,7 @@
     panel.addEventListener('click', onPanelClick);
     panel.addEventListener('change', onPanelChange);
     panel.addEventListener('input', onPanelInput);
+    panel.addEventListener('keydown', onDetailKeydown);
     panel.addEventListener('error', e => {
       if (e.target.tagName !== 'IMG') return;
       const fallback = e.target.dataset.fallback;
@@ -92,7 +94,7 @@
   function open(kind,id) {
     if (!Object.hasOwn(labels,kind)) return;
     const changed=state.selected?.kind!==kind || state.selected?.id!==Number(id);
-    if(changed){state.compare=[];state.compareOpen=false;state.targets=null;state.rank='points';}
+    if(changed){state.compare=[];state.compareOpen=false;state.targets=null;state.rank='points';state.detailTab='maps';state.resultPage=0;state.resultQuery='';}
     if (kind !== state.tab) state.query = '';
     state.tab = kind; state.basketOpen=false;
     state.selected = id == null ? null : {kind,id:Number(id)};
@@ -103,7 +105,7 @@
     if (!state.selected) $('huntSearch')?.focus(); else if (data) focusDetail();
   }
   function openBasket() {
-    if(!state.basketOpen){state.compare=[];state.compareOpen=false;}
+    if(!state.basketOpen){state.compare=[];state.compareOpen=false;state.resultPage=0;state.resultQuery='';}
     state.basketOpen=true;state.selected=null;pendingDetailFocus=true;
     show();if($('huntBody'))$('huntBody').scrollTop=0;if(data)focusDetail();
   }
@@ -119,7 +121,7 @@
     renderFn();
     if (wasInside) {
       let next=(id && $(id)) || (target && body.querySelector(`[data-hunt-target="${Number(target)}"]`)) || (action && [...body.querySelectorAll(`[data-hunt-action="${action}"]`)].find(el=>(map==null||el.dataset.map===map)&&(entityId==null||el.dataset.id===entityId)&&(kind==null||el.dataset.kind===kind))) || $('huntEntityTitle') || $('huntSearch');
-      if(next?.disabled)next=$('huntEntityTitle')||$('huntSearch');
+      if(next?.disabled||next?.closest('[hidden]'))next=$('huntEntityTitle')||$('huntSearch');
       next?.focus({preventScroll:true});
     }
     body.scrollTop=scroll;
@@ -197,6 +199,7 @@
   function render() {
     const panel = ensurePanel(); if (!panel || !visible) return;
     refreshPanelLanguage(panel);
+    panel.dataset.view=state.selected?'detail':state.basketOpen?'basket':'catalog';
     renderBasketBar();
     panel.querySelectorAll('[data-hunt-tab]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.huntTab===state.tab)));
     $('huntSearch').placeholder = L(`שם ${singular[state.tab]} או מזהה…`,`${singular[state.tab]} name or ID…`);
@@ -209,7 +212,9 @@
     if(state.basketOpen)renderBasket();else if (state.selected) renderDetail(); else renderCatalog();
   }
   function onPanelInput(e) {
-    if(e.target.id==='huntSearch'){
+    if(e.target.id==='huntResultSearch'){
+      state.resultQuery=e.target.value.slice(0,200);state.resultPage=0;updateResultVisibility(currentResultRows());
+    }else if(e.target.id==='huntSearch'){
       state.query=e.target.value.slice(0,200);state.selected=null;state.basketOpen=false;pendingDetailFocus=false;state.limit=72;render();$('huntBody').scrollTop=0;
     }else if(e.target.id==='huntLevelMin'||e.target.id==='huntLevelMax'){
       state[e.target.id==='huntLevelMin'?'levelMin':'levelMax']=e.target.value.slice(0,8);state.limit=72;preserveView(renderCatalog);
@@ -299,7 +304,7 @@
     state.compare=state.compare.filter(id=>candidates.some(c=>c.map.id===id));if(!state.compare.length)state.compareOpen=false;
     const recommendation=state.rank==='points'?ranked.find(c=>!['event','system','unavailable'].includes(c.map.scope))?.map.id:null;
     $('huntBody').innerHTML=`<button type="button" class="hunt-back" data-hunt-action="catalog">${L('חזרה לחיפוש','Back to search')}</button><div class="hunt-basket-heading"><h3 id="huntEntityTitle" tabindex="-1">${L('סל הציד שלכם','Your hunt basket')}</h3>${goals.length?`<button type="button" class="button quiet" data-hunt-action="basket-clear">${L('ניקוי הסל','Clear basket')}</button>`:''}</div><p class="hunt-note">${L(`עד ${MAX_BASKET} פריטים ומפלצות. הסל נשמר לביקור הזה בלבד. מפות מדורגות תחילה לפי מספר המטרות שיש להן עדות במפה, ואז לפי המיון שבחרתם.`,`Up to ${MAX_BASKET} items and monsters, kept for this visit only. Maps rank first by the number of goals with recorded evidence, then by your selected sort order.`)}</p>
-      ${goals.length?`<ul class="hunt-basket-goals">${goals.map(goal=>`<li>${iconImage(goal.entry)}<div><button type="button" class="hunt-text-button" data-hunt-open="${goal.kind}" data-id="${goal.id}">${en(goal.entry.name)}</button><small>${singular[goal.kind]} · ${goal.id}</small>${goal.note?`<p class="hunt-condition">${esc(goal.note)}</p>`:''}</div><button type="button" class="button quiet" data-hunt-action="basket-toggle" data-kind="${goal.kind}" data-id="${goal.id}" aria-label="${esc(L(`הסרת ${goal.entry.name} מסל הציד`,`Remove ${goal.entry.name} from hunt basket`))}">${L('הסרה','Remove')}</button></li>`).join('')}</ul><p class="hunt-note">${L('עדות לפריט היא דיווח נפילה ממפלצת עם נקודת הופעה מתועדת במפה. היא אינה הבטחה לנפילה או לנוכחות מפלצת כרגע. נקודות משותפות לכמה מטרות נספרות פעם אחת.','Evidence for an item means a reported drop from a monster with a recorded spawn point on that map. It does not guarantee a drop or a monster being present now. Spawn points shared by several goals are counted once.')}</p>${goals.some(goal=>goal.kind==='item')&&dropFailed?dropUnavailable():''}${originControls(true)}${comparisonSection(candidates)}<div class="hunt-results-heading"><h4>${L(`${fmt(ranked.length)} מפות עם עדות למטרה אחת לפחות`,`${fmt(ranked.length)} maps with evidence for at least one goal`)}</h4></div>${comparisonToolbar(ranked.length)}<div class="hunt-candidates">${ranked.map((candidate,i)=>candidateCard(candidate,i,recommendation)).join('')}</div>${goals.some(goal=>goal.kind==='item')&&!dropFailed?dropAttribution():''}${!ranked.length?`<p class="hunt-empty">${L('לא נמצאה מפת הופעה מתועדת למטרות שניתן לזהות. זה אינו מוכיח שהמטרות אינן במשחק.','No recorded spawn map was found for the goals that could be resolved. This does not prove the targets are absent from the game.')}</p>`:''}`:`<p class="hunt-empty">${L('פתחו פריט, מפלצת או בוס ובחרו הוספה לסל הציד. כאן תוכלו למצוא מפות עם עדות לכמה מטרות יחד.','Open an item, monster or boss and choose Add to hunt basket. Find maps with recorded evidence for multiple goals here.')}</p><button type="button" class="button primary" data-hunt-action="catalog">${L('בחירת מטרות','Choose goals')}</button>`}`;
+      ${goals.length?`<ul class="hunt-basket-goals">${goals.map(goal=>`<li>${iconImage(goal.entry)}<div><button type="button" class="hunt-text-button" data-hunt-open="${goal.kind}" data-id="${goal.id}">${en(goal.entry.name)}</button><small>${singular[goal.kind]} · ${goal.id}</small>${goal.note?`<p class="hunt-condition">${esc(goal.note)}</p>`:''}</div><button type="button" class="button quiet" data-hunt-action="basket-toggle" data-kind="${goal.kind}" data-id="${goal.id}" aria-label="${esc(L(`הסרת ${goal.entry.name} מסל הציד`,`Remove ${goal.entry.name} from hunt basket`))}">${L('הסרה','Remove')}</button></li>`).join('')}</ul><p class="hunt-note">${L('עדות לפריט היא דיווח נפילה ממפלצת עם נקודת הופעה מתועדת במפה. היא אינה הבטחה לנפילה או לנוכחות מפלצת כרגע. נקודות משותפות לכמה מטרות נספרות פעם אחת.','Evidence for an item means a reported drop from a monster with a recorded spawn point on that map. It does not guarantee a drop or a monster being present now. Spawn points shared by several goals are counted once.')}</p>${goals.some(goal=>goal.kind==='item')&&dropFailed?dropUnavailable():''}${originControls(true)}${comparisonSection(candidates)}<div class="hunt-results-pane" ${state.compareOpen?'hidden':''}><div class="hunt-results-heading"><h4>${L(`${fmt(ranked.length)} מפות עם עדות למטרה אחת לפחות`,`${fmt(ranked.length)} maps with evidence for at least one goal`)}</h4></div>${comparisonToolbar(ranked.length)}${resultsView(ranked,(candidate,i)=>candidateCard(candidate,i,recommendation,false,ranked.length>1))}${goals.some(goal=>goal.kind==='item')&&!dropFailed?dropAttribution():''}${!ranked.length?`<p class="hunt-empty">${L('לא נמצאה מפת הופעה מתועדת למטרות שניתן לזהות. זה אינו מוכיח שהמטרות אינן במשחק.','No recorded spawn map was found for the goals that could be resolved. This does not prove the targets are absent from the game.')}</p>`:''}</div>`:`<p class="hunt-empty">${L('פתחו פריט, מפלצת או בוס ובחרו הוספה לסל הציד. כאן תוכלו למצוא מפות עם עדות לכמה מטרות יחד.','Open an item, monster or boss and choose Add to hunt basket. Find maps with recorded evidence for multiple goals here.')}</p><button type="button" class="button primary" data-hunt-action="catalog">${L('בחירת מטרות','Choose goals')}</button>`}`;
     announce(L(`${goals.length} מטרות בסל. ${ranked.length} מפות מתועדות.`,`${goals.length} basket goals. ${ranked.length} recorded maps.`));
   }
   function entityStatus(entry) {
@@ -309,11 +314,68 @@
   }
   function entityHeading(entry,kind) {
     return `<button type="button" class="hunt-back" data-hunt-action="catalog">${L('חזרה לחיפוש','Back to search')}</button>
-      <div class="hunt-entity-heading">${iconImage(entry,'hunt-icon-large')}<div><span class="hunt-eyebrow">${singular[kind]}</span><h3 id="huntEntityTitle" tabindex="-1">${en(entry.name)}</h3><p>${L('מזהה','ID')} ${entry.id}${entry.level!=null?` · ${L('רמה','Level')} ${entry.level}`:''}</p></div></div>${kind!=='npc'?basketButton(kind,entry.id):''}`;
+      <div class="hunt-entity-hero"><div class="hunt-entity-heading">${iconImage(entry,'hunt-icon-large')}<div><span class="hunt-eyebrow">${singular[kind]}</span><h3 id="huntEntityTitle" tabindex="-1">${en(entry.name)}</h3><p>${L('מזהה','ID')} ${entry.id}${entry.level!=null?` · ${L('רמה','Level')} ${entry.level}`:''}</p></div></div>${kind!=='npc'?basketButton(kind,entry.id):''}</div>`;
+  }
+  function detailSections(entry,kind,maps,information,rewards='') {
+    const tabs=[['maps',L('מפות ומיקומים','Maps & locations'),maps],['info',kind==='item'?L('מקורות נפילה','Drop sources'):L('מידע ומקורות','Details & sources'),information]];
+    if(kind!=='item'&&kind!=='npc')tabs.push(['drops',L('שלל מתועד','Recorded drops'),rewards||`<p class="hunt-empty">${L('אין במקורות שנכללו תיעוד נפילה למפלצת הזו. אין להסיק מכך שאינה מפילה פריטים.','The included sources have no drop records for this monster. This does not mean it drops no items.')}</p>`]);
+    if(!tabs.some(([key])=>key===state.detailTab))state.detailTab='maps';
+    return entityHeading(entry,kind)+`<div class="hunt-detail-tabs" role="tablist" aria-label="${L('פרטי הרשומה','Entry details')}">${tabs.map(([key,label])=>`<button id="huntDetailTab-${key}" type="button" role="tab" data-hunt-action="detail-tab" data-section="${key}" aria-selected="${state.detailTab===key}" aria-controls="huntDetail-${key}" tabindex="${state.detailTab===key?'0':'-1'}">${label}</button>`).join('')}</div>`+tabs.map(([key,,content])=>`<section id="huntDetail-${key}" class="hunt-detail-section" role="tabpanel" tabindex="0" aria-labelledby="huntDetailTab-${key}" ${state.detailTab===key?'':'hidden'}>${content}</section>`).join('');
+  }
+  function onDetailKeydown(e) {
+    const tab=e.target.closest('[data-section]');if(!tab||tab.getAttribute('role')!=='tab')return;
+    const keys=['ArrowLeft','ArrowRight','Home','End'];if(!keys.includes(e.key))return;
+    const tabs=[...$('huntBody').querySelectorAll('[data-section]')],index=tabs.indexOf(tab);
+    const rtl=window.AtlasI18n?.language!=='en',delta=(e.key==='ArrowRight'?1:-1)*(rtl?-1:1);
+    const next=e.key==='Home'?0:e.key==='End'?tabs.length-1:(index+delta+tabs.length)%tabs.length;
+    e.preventDefault();changeDetailTab(tabs[next].dataset.section);
+  }
+  function changeDetailTab(section) {
+    const selected=$(`huntDetailTab-${section}`);
+    if(!state.selected||!selected)return;
+    state.detailTab=section;
+    const body=$('huntBody');
+    for(const tab of body.querySelectorAll('[data-section]')){
+      const active=tab===selected;
+      tab.setAttribute('aria-selected',String(active));
+      tab.setAttribute('tabindex',active?'0':'-1');
+      $(tab.getAttribute('aria-controls')).hidden=!active;
+    }
+    body.scrollTop=0;
+    selected.focus({preventScroll:true});
+  }
+  function currentResultRows() {
+    return state.selected?.kind==='npc'?npcLocations(npcsById.get(state.selected.id)):sortCandidates(activeCandidates());
+  }
+  function resultWindow(rows) {
+    const query=norm(state.resultQuery),sharedMatches=new Set(query?(window.MapSearch?.search?.(query,atlasMaps().length)||[]).map(map=>Number(map.id)):[]);
+    const matches=rows.filter(row=>!query||sharedMatches.has(Number(row.map.id))||norm(`${row.map.name} ${row.map.name_he||''} ${D(row.map.name)} ${row.map.id}`).includes(query));
+    const pages=Math.max(1,Math.ceil(matches.length/RESULTS_PER_PAGE));
+    state.resultPage=Math.max(0,Math.min(state.resultPage,pages-1));
+    return {matches,pages,visible:new Set(matches.slice(state.resultPage*RESULTS_PER_PAGE,(state.resultPage+1)*RESULTS_PER_PAGE).map(row=>Number(row.map.id)))};
+  }
+  function resultCount(matches,pages) {
+    if(!matches.length)return L('אין מפות שמתאימות לחיפוש','No maps match your search');
+    const count=matches.length===1?L('מפה אחת','1 map'):L(`${fmt(matches.length)} מפות`,`${fmt(matches.length)} maps`);
+    return count+(pages>1?L(` · עמוד ${state.resultPage+1} מתוך ${pages}`,` · Page ${state.resultPage+1} of ${pages}`):'');
+  }
+  function resultsView(rows,card) {
+    if(!rows.length)return '';
+    const {matches,pages,visible}=resultWindow(rows);
+    return `${rows.length>1?`<div class="hunt-result-tools"><label for="huntResultSearch" class="hunt-sr-only">${L('חיפוש במפות האלה','Search these maps')}</label><input id="huntResultSearch" type="search" maxlength="200" value="${esc(state.resultQuery)}" placeholder="${L('סינון מפות לפי שם או מזהה…','Filter maps by name or ID…')}" dir="auto" aria-controls="huntResultList"></div>`:''}<nav class="hunt-result-pages" aria-label="${L('עמודי תוצאות המפות','Map result pages')}"><button id="huntPagePrevious" type="button" class="button quiet" data-hunt-action="result-previous" ${pages<=1?'hidden':''} ${state.resultPage===0?'disabled':''}>${L('הקודם','Previous')}</button><p id="huntResultCount" class="hunt-result-count" tabindex="-1">${resultCount(matches,pages)}</p><button id="huntPageNext" type="button" class="button quiet" data-hunt-action="result-next" ${pages<=1?'hidden':''} ${state.resultPage>=pages-1?'disabled':''}>${L('הבא','Next')}</button></nav><div id="huntResultList" class="hunt-candidates">${rows.map((row,i)=>card(row,i).replace('<article ',`<article ${visible.has(Number(row.map.id))?'':'hidden '}`)).join('')}</div><p id="huntResultEmpty" class="hunt-empty" ${matches.length?'hidden':''}>${L('נסו שם מפה אחר או מחקו את החיפוש כדי להציג את כל המפות.','Try another map name or clear the search to show all maps.')}</p>`;
+  }
+  function updateResultVisibility(rows) {
+    const {matches,pages,visible}=resultWindow(rows);
+    $('huntBody').querySelectorAll('[data-hunt-map]').forEach(card=>{card.hidden=!visible.has(Number(card.dataset.huntMap));});
+    if($('huntResultCount'))$('huntResultCount').textContent=resultCount(matches,pages);
+    if($('huntResultEmpty'))$('huntResultEmpty').hidden=!!matches.length;
+    if($('huntPagePrevious')){$('huntPagePrevious').disabled=state.resultPage===0;$('huntPagePrevious').hidden=pages<=1;}
+    if($('huntPageNext')){$('huntPageNext').disabled=state.resultPage>=pages-1;$('huntPageNext').hidden=pages<=1;}
+    announce(resultCount(matches,pages));
   }
   function originControls(withRank=true) {
     const m=getMap(state.originId);
-    return `<div class="hunt-controls"><label>${L('מאיפה יוצאים?','Where are you starting?')}<input id="huntOrigin" list="mapOptions" value="${esc(m?mapLabel(m):state.originText||'')}" autocomplete="off" dir="auto" placeholder="${L('שם מפה בעברית, באנגלית או מזהה','Map name in Hebrew, English or ID')}" aria-invalid="${!m}" ${m?'':'aria-describedby="huntOriginNote"'}></label><div class="hunt-origin-actions"><button type="button" class="button quiet" data-hunt-action="origin-active">${L('מהמקום הנבחר','Use selected map')}</button>${window.AtlasPersonal?.setOrigin?`<button type="button" class="button quiet" data-hunt-action="origin-save" ${m?'':'disabled'}>${m&&savedOrigin()===m.id?L('✓ מפת המוצא השמורה','✓ Saved starting map'):L('שמירה כמפת מוצא','Save starting map')}</button>`:''}</div>${withRank?`<label>${L('סדר המפות','Sort maps')}<select id="huntRank"><option value="points" ${state.rank==='points'?'selected':''}>${L('מספר נקודות היעד','Target spawn points')}</option><option value="share" ${state.rank==='share'?'selected':''}>${L('חלק מנקודות ההופעה','Share of spawn points')}</option><option value="distance" ${state.rank==='distance'?'selected':''}>${L('מעברים במסלול המשוקלל','Passages on weighted route')}</option></select></label>`:''}</div><p id="huntOriginNote" class="hunt-note" ${m?'hidden':''}>${m?'':originNote()}</p>`;
+    return `<details id="huntRouteOptions" class="hunt-route-options" ${m?'':'open'}><summary><span>${L('מוצא ומיון','Starting map & sort')}</span><span id="huntOriginSummary">${esc(m?m.name:L('בחרו מפת מוצא','Choose starting map'))}</span></summary><div class="hunt-controls"><label>${L('מאיפה יוצאים?','Where are you starting?')}<input id="huntOrigin" list="mapOptions" value="${esc(m?mapLabel(m):state.originText||'')}" autocomplete="off" dir="auto" placeholder="${L('שם מפה בעברית, באנגלית או מזהה','Map name in Hebrew, English or ID')}" aria-invalid="${!m}" ${m?'':'aria-describedby="huntOriginNote"'}></label><div class="hunt-origin-actions"><button type="button" class="button quiet" data-hunt-action="origin-active">${L('מהמקום הנבחר','Use selected map')}</button>${window.AtlasPersonal?.setOrigin?`<button type="button" class="button quiet" data-hunt-action="origin-save" ${m?'':'disabled'}>${m&&savedOrigin()===m.id?L('✓ מפת המוצא השמורה','✓ Saved starting map'):L('שמירה כמפת מוצא','Save starting map')}</button>`:''}</div>${withRank?`<label>${L('סדר המפות','Sort maps')}<select id="huntRank"><option value="points" ${state.rank==='points'?'selected':''}>${L('מספר נקודות היעד','Target spawn points')}</option><option value="share" ${state.rank==='share'?'selected':''}>${L('חלק מנקודות ההופעה','Share of spawn points')}</option><option value="distance" ${state.rank==='distance'?'selected':''}>${L('מעברים במסלול המשוקלל','Passages on weighted route')}</option></select></label>`:''}</div><p id="huntOriginNote" class="hunt-note" ${m?'hidden':''}>${m?'':originNote()}</p></details>`;
   }
   function originNote(){return state.originText?.trim()?L('לא נמצאה מפת מוצא חד-משמעית. בחרו מפה מהרשימה או הזינו מזהה מפה.','No unique starting map found. Select a map from the list or enter its ID.'):L('בחרו מפת מוצא מהרשימה כדי להשוות מסלולים.','Choose a starting map from the list to compare routes.');}
   function hasUnresolved(id) { return (dropData.unresolved||[]).some(l=>Number(l.itemId)===Number(id)); }
@@ -349,14 +411,15 @@
     const recommendation=state.rank==='points'?normal?.map.id:null;
     state.compare=state.compare.filter(id=>candidates.some(c=>c.map.id===id));
     if(!state.compare.length)state.compareOpen=false;
-    $('huntBody').innerHTML=entityHeading(entry,kind)+lead+originControls(true)+comparisonSection(candidates)+
-      `<div class="hunt-results-heading"><h4>${ranked.length===1?L('מפה אחת עם נקודות יעד מתועדות','1 map with recorded target spawn points'):L(`${fmt(ranked.length)} מפות עם נקודות יעד מתועדות`,`${fmt(ranked.length)} maps with recorded target spawn points`)}</h4></div>
-      <p class="hunt-note">${L('האחוז הוא חלק מנקודות ההופעה במפה. הוא אינו סיכוי לנפילת פריט, תדירות הופעה או מספר המפלצות החיות כרגע. הדירוג אינו אומדן לפריטים בשעה.','The percentage is the share of recorded spawn points on the map. It is not a drop chance, spawn rate or live monster count. Rankings do not estimate items per hour.')}</p>
+    const maps=originControls(true)+comparisonSection(candidates)+
+      `<div class="hunt-results-pane" ${state.compareOpen?'hidden':''}><div class="hunt-results-heading hunt-sr-only"><h4>${ranked.length===1?L('מפה אחת עם נקודות יעד מתועדות','1 map with recorded target spawn points'):L(`${fmt(ranked.length)} מפות עם נקודות יעד מתועדות`,`${fmt(ranked.length)} maps with recorded target spawn points`)}</h4></div>
+      ${kind==='item'?`<p class="hunt-note">${L(`${targets.length} מפלצות נבחרו. אפשר לשנות בלשונית מקורות נפילה.`,`${targets.length} monsters selected. Change them in Drop sources.`)}</p>`:''}
       ${!ranked.length?`<p class="hunt-empty">${targets.length?L('אין במאגר מפת הופעה מתועדת למזהה הזה. אין להסיק מכך שהמפלצת או הבוס אינם במשחק.','No spawn map is recorded for this ID. This does not mean the monster or boss is absent from the game.'):L('סמנו לפחות מפלצת אחת כדי להציג מפות.','Select at least one monster to see maps.')}</p>`:''}
-      ${comparisonToolbar(ranked.length)}<div class="hunt-candidates">${ranked.map((c,i)=>candidateCard(c,i,recommendation,kind==='boss')).join('')}</div>
-      ${kind!=='item'?rewardLinks(id):''}
+      ${comparisonToolbar(ranked.length)}${resultsView(ranked,(c,i)=>candidateCard(c,i,recommendation,kind==='boss',ranked.length>1))}</div>`;
+    const information=lead+`<p class="hunt-note">${L('האחוז הוא חלק מנקודות ההופעה במפה. הוא אינו סיכוי לנפילת פריט, תדירות הופעה או מספר המפלצות החיות כרגע. הדירוג אינו אומדן לפריטים בשעה.','The percentage is the share of recorded spawn points on the map. It is not a drop chance, spawn rate or live monster count. Rankings do not estimate items per hour.')}</p>
       <details class="hunt-explainer"><summary>${L('איך נקבע סדר המפות?','How are maps ranked?')}</summary><p>${L('המיון הראשי משתמש במספר נקודות ההופעה המתועדות של היעד. בשוויון משווים את חלקן מכל נקודות המפה, ואחריו את מספר מעברי ההליכה מהמוצא. אפשר לבחור מיון אחר.','The default ranking uses recorded target spawn points, then their share of all map spawn points, then walking transitions from your starting map. You can choose another sort order.')}</p><p>${L('מספר נקודות אינו קיבולת. תקרת המפלצות היא אומדן לשחקן יחיד ומשותפת לכל סוגי המפלצות במפה. תזמוני שרת, שחקנים נוספים ותנאי משימות עשויים לשנות את המצב בפועל.','Spawn point count is not capacity. The monster cap is a single-player estimate shared by all monster types on the map. Server timing, other players and quest conditions can change what happens in game.')}</p><p>${L('המרחק מוצג במספר מעברי מפה דרך קישורי הליכה מתועדים, ולא בזמן. ייתכן שנדרש שירות נסיעה או תנאי כניסה שאינם נכללים במסלול ההליכה.','Distance counts map transitions along recorded walking connections, not travel time. Travel services or entry requirements may be needed and are not included in walking routes.')}</p></details>
       ${sourceLink(entry.sourceUrl,L('הרשומה במאגר המקור','Entry in the source database'))}${kind==='item'?dropAttribution():''}`;
+    $('huntBody').innerHTML=detailSections(entry,kind,maps,information,kind!=='item'?rewardLinks(id):'');
     announce(L(`${fmt(ranked.length)} מפות עם נקודות יעד מתועדות.`,`${fmt(ranked.length)} ${ranked.length===1?'map':'maps'} with recorded target spawn points.`));
   }
   function sourceLink(url,label) {const u=safeUrl(url);return u?`<a class="hunt-source-link" href="${esc(u)}" target="_blank" rel="noopener noreferrer">${esc(label)}</a>`:'';}
@@ -366,7 +429,7 @@
     if(dropFailed)return dropUnavailable();
     const found=[...new Set((dropData.links||[]).filter(l=>Number(l.mobId)===mobId).map(l=>Number(l.itemId)))].map(id=>itemsById.get(id)).filter(Boolean);
     if(!found.length)return '';
-    return `<details class="hunt-explainer"><summary>${found.length===1?L('פריט אחד עם תיעוד נפילה ממפלצת זו','1 item with a recorded drop from this monster'):L(`${fmt(found.length)} פריטים עם תיעוד נפילה ממפלצת זו`,`${fmt(found.length)} items with recorded drops from this monster`)}</summary><div class="hunt-rewards">${found.map(item=>`<button class="hunt-reward" type="button" data-hunt-open="item" data-id="${item.id}">${iconImage(item)}${en(item.name)}</button>`).join('')}</div></details>`;
+    return `<div class="hunt-recorded-drops"><h4 class="hunt-section-title">${found.length===1?L('פריט אחד עם תיעוד נפילה ממפלצת זו','1 item with a recorded drop from this monster'):L(`${fmt(found.length)} פריטים עם תיעוד נפילה ממפלצת זו`,`${fmt(found.length)} items with recorded drops from this monster`)}</h4><div class="hunt-rewards">${found.map(item=>`<button class="hunt-reward" type="button" data-hunt-open="item" data-id="${item.id}">${iconImage(item)}${en(item.name)}</button>`).join('')}</div>${dropAttribution()}</div>`;
   }
   function distanceTo(mapId) {
     if(!getMap(state.originId))return null;
@@ -406,17 +469,20 @@
     const [label,description]=definitions[kind];
     return `<details class="hunt-metric-help"><summary aria-label="${label}"><span aria-hidden="true">ⓘ</span><span class="hunt-sr-only">${label}</span></summary><p>${description}</p></details>`;
   }
-  function candidateCard(c,i,recommended,boss=false) {
+  function candidateCard(c,i,recommended,boss=false,canCompare=true) {
     const note=scopeNote(c.map), compared=state.compare.includes(c.map.id);
     return `<article class="hunt-map-card ${c.map.id===recommended?'hunt-recommended':''}" data-hunt-map="${c.map.id}" aria-label="${esc(c.map.name)}"><div class="hunt-map-top"><span class="hunt-rank-number">${i+1}</span><div><span class="hunt-recommend-label" ${c.map.id===recommended?'':'hidden'}>${c.coveredGoals?L('החפיפה המתועדת המובילה בין המטרות','Best recorded overlap between goals'):L('הכי הרבה נקודות הופעה מתועדות','Most recorded spawn points')}</span><button type="button" class="hunt-map-name" data-hunt-action="map" data-map="${c.map.id}">${en(c.map.name)}</button><small>${L('מזהה מפה','Map ID')} ${c.map.id}</small></div></div>
       ${c.coveredGoals?`<div class="hunt-goal-coverage"><strong>${L(`עדות ל־${c.coveredGoals.length} מתוך ${c.goalCount} מטרות`,`Evidence for ${c.coveredGoals.length} of ${c.goalCount} goals`)}</strong><p>${c.coveredGoals.map(goal=>en(goal.entry.name)).join(' · ')}</p></div>`:''}
+      <p class="hunt-distance">${walkDistanceText(c.distance)}</p>${note?`<p class="hunt-condition">${esc(note)}</p>`:''}
+      <details class="hunt-map-details"><summary><span><strong>${fmt(c.count)}</strong> ${L('נקודות יעד','target points')} · <strong>${pct(c.share)}</strong> ${L('מנקודות המפה','of map points')}</span><span>${L('כל הנתונים','Full data')}</span></summary>
       <div class="hunt-map-stats"><div><strong>${fmt(c.count)}</strong>${c.count===1?L('נקודת יעד','target point'):L('נקודות יעד','target points')}${metricHelp('points')}</div><div><strong>${pct(c.share)}</strong>${L('חלק מנקודות ההופעה','share of spawn points')}${metricHelp('share')}</div><div><strong>${fmt(c.total)}</strong>${c.total===1?L('נקודה במפה','map point'):L('נקודות במפה','map points')}${metricHelp('total')}</div></div>
-      <div class="hunt-map-meta"><div class="hunt-capacity"><p>${c.capacity!=null?L(`תקרת מפלצות משוערת לשחקן יחיד: ${fmt(c.capacity)}`,`Estimated single-player monster cap: ${fmt(c.capacity)}`):L('תקרת מפלצות: לא פורסמה במקור','Monster cap: not published by the source')}</p>${metricHelp('capacity')}</div><p class="hunt-distance">${walkDistanceText(c.distance)}</p>${note?`<p class="hunt-condition">${esc(note)}</p>`:''}</div>
+      <div class="hunt-map-meta"><div class="hunt-capacity"><p>${c.capacity!=null?L(`תקרת מפלצות משוערת לשחקן יחיד: ${fmt(c.capacity)}`,`Estimated single-player monster cap: ${fmt(c.capacity)}`):L('תקרת מפלצות: לא פורסמה במקור','Monster cap: not published by the source')}</p>${metricHelp('capacity')}</div></div>
       ${boss?`<div class="hunt-boss-points"><span>${L('נקודת הופעה רשומה בתמונת המקור','Recorded spawn point in the source image')}</span>${c.points.map(p=>`<bdi dir="ltr">x ${p.x} · y ${p.y}</bdi>`).join('')}</div>`:''}
-      <div class="hunt-map-actions"><button type="button" class="button primary" data-hunt-action="positions" data-map="${c.map.id}" data-mobs="${c.ids.join(',')}" aria-label="${boss?L('הצגת נקודת הבוס במפה','Show boss spawn point on'):L('הצגת נקודות ההופעה במפה','Show spawn points on')} ${esc(c.map.name)}">${boss?L('הצגת נקודת הבוס','Show boss spawn point'):L('הצגת נקודות ההופעה','Show spawn points')}</button><button type="button" class="button quiet" data-hunt-action="route" data-map="${c.map.id}" aria-label="${L('תכנון מסלול למפה','Plan a route to')} ${esc(c.map.name)}">${L('תכנון מסלול','Plan route')}</button><button type="button" class="button quiet hunt-compare-toggle" data-hunt-action="compare-toggle" data-map="${c.map.id}" aria-pressed="${compared}" aria-label="${esc(compared?L(`הסרת ${c.map.name} מההשוואה`,`Remove ${c.map.name} from comparison`):L(`הוספת ${c.map.name} להשוואה`,`Add ${c.map.name} to comparison`))}" ${state.compare.length===3&&!compared?'disabled':''}>${compared?L('✓ בהשוואה · הסרה','✓ Comparing · Remove'):L('הוספה להשוואה','Add to comparison')}</button></div></article>`;
+      </details>
+      <div class="hunt-map-actions"><button type="button" class="button primary" data-hunt-action="positions" data-map="${c.map.id}" data-mobs="${c.ids.join(',')}" aria-label="${boss?L('הצגת נקודת הבוס במפה','Show boss spawn point on'):L('הצגת נקודות ההופעה במפה','Show spawn points on')} ${esc(c.map.name)}">${boss?L('מיקום הבוס','Boss location'):L('מיקומים במפה','Locations')}</button><button type="button" class="button quiet" data-hunt-action="route" data-map="${c.map.id}" aria-label="${L('תכנון מסלול למפה','Plan a route to')} ${esc(c.map.name)}">${L('מסלול','Route')}</button>${canCompare?`<button type="button" class="button quiet hunt-compare-toggle" data-hunt-action="compare-toggle" data-map="${c.map.id}" aria-pressed="${compared}" aria-label="${esc(compared?L(`הסרת ${c.map.name} מההשוואה`,`Remove ${c.map.name} from comparison`):L(`הוספת ${c.map.name} להשוואה`,`Add ${c.map.name} to comparison`))}" ${state.compare.length===3&&!compared?'disabled':''}>${compared?L('✓ בהשוואה','✓ Comparing'):L('השוואה +','Compare +')}</button>`:''}</div></article>`;
   }
   function comparisonToolbar(candidateCount) {
-    if(!candidateCount)return '';
+    if(candidateCount<2)return '';
     return `<div class="hunt-compare-toolbar"><span>${state.compare.length?L(`${state.compare.length} מתוך 3 מפות נבחרו`,`${state.compare.length} of 3 maps selected`):L('בחרו עד 3 מפות להשוואה','Choose up to 3 maps to compare')}</span><button id="huntCompareOpen" type="button" class="button ${state.compare.length?'primary':'quiet'}" data-hunt-action="compare-open" aria-expanded="${state.compareOpen}" aria-controls="huntComparison" ${state.compare.length?'':'disabled'}>${state.compareOpen?L('סגירת ההשוואה','Close comparison'):L('השוואת המפות','Compare maps')}</button>${state.compare.length?`<button type="button" class="button quiet" data-hunt-action="compare-clear">${L('ניקוי','Clear')}</button>`:''}</div>`;
   }
   function comparisonSection(candidates) {
@@ -471,9 +537,11 @@
   }
   function renderNpc(npc) {
     const places=npcLocations(npc);
-    $('huntBody').innerHTML=entityHeading(npc,'npc')+originControls(false)+`<div class="hunt-results-heading"><h4>${places.length===1?L('מפה אחת מתועדת לדמות הזו','1 recorded map for this NPC'):L(`${fmt(places.length)} מפות מתועדות לדמות הזו`,`${fmt(places.length)} recorded maps for this NPC`)}</h4></div><p class="hunt-note">${L('כל המיקומים שייכים למזהה הדמות שנבחר. דמויות בעלות אותו שם נשמרות בנפרד.','All locations belong to the selected NPC ID. NPCs with the same name are listed separately.')}</p>
+    const maps=originControls(false)+`<div class="hunt-results-heading hunt-sr-only"><h4>${places.length===1?L('מפה אחת מתועדת לדמות הזו','1 recorded map for this NPC'):L(`${fmt(places.length)} מפות מתועדות לדמות הזו`,`${fmt(places.length)} recorded maps for this NPC`)}</h4></div>
       ${!places.length?`<p class="hunt-empty">${L('אין במאגר מפת מיקום מתועדת לדמות הזו. אין להסיק מכך שהיא אינה במשחק.','No location map is recorded for this NPC. This does not mean the NPC is absent from the game.')}</p>`:''}
-      <div class="hunt-candidates">${places.map(({map,points,distance},i)=>`<article class="hunt-map-card" data-hunt-map="${map.id}" aria-label="${esc(map.name)}"><div class="hunt-map-top"><span class="hunt-rank-number">${i+1}</span><div><button type="button" class="hunt-map-name" data-hunt-action="map" data-map="${map.id}" ${getMap(map.id)?'':'disabled'}>${en(map.name)}</button><small>${L('מזהה מפה','Map ID')} ${map.id}</small></div></div><div class="hunt-map-meta"><p>${points.length===1?L('נקודת מיקום מתועדת אחת במפה','1 recorded location on the map'):points.length?L(`${fmt(points.length)} נקודות מיקום מתועדות במפה`,`${fmt(points.length)} recorded locations on the map`):L('המפה רשומה במקור, אך אין בה קואורדינטות מתועדות לדמות.','The source lists this map, but no NPC coordinates are recorded.')}</p><p class="hunt-distance">${walkDistanceText(distance)}</p>${scopeNote(map)?`<p class="hunt-condition">${esc(scopeNote(map))}</p>`:''}</div><div class="hunt-map-actions"><button type="button" class="button primary" data-hunt-action="npc-positions" data-map="${map.id}" data-npc="${npc.id}" aria-label="${L('הצגת מיקום הדמות במפה','Show NPC location on')} ${esc(map.name)}" ${points.length&&getMap(map.id)?'':'disabled'}>${L('פתיחה וסימון מיקום הדמות','Open and highlight NPC')}</button><button type="button" class="button quiet" data-hunt-action="route" data-map="${map.id}" aria-label="${L('תכנון מסלול למפה','Plan a route to')} ${esc(map.name)}" ${getMap(map.id)?'':'disabled'}>${L('תכנון מסלול','Plan route')}</button></div></article>`).join('')}</div>${sourceLink(npc.sourceUrl,L('הדמות במאגר המקור','NPC in the source database'))}`;
+      ${resultsView(places,({map,points,distance},i)=>`<article class="hunt-map-card" data-hunt-map="${map.id}" aria-label="${esc(map.name)}"><div class="hunt-map-top"><span class="hunt-rank-number">${i+1}</span><div><button type="button" class="hunt-map-name" data-hunt-action="map" data-map="${map.id}" ${getMap(map.id)?'':'disabled'}>${en(map.name)}</button><small>${L('מזהה מפה','Map ID')} ${map.id}</small></div></div><div class="hunt-map-meta"><p>${points.length===1?L('נקודת מיקום מתועדת אחת במפה','1 recorded location on the map'):points.length?L(`${fmt(points.length)} נקודות מיקום מתועדות במפה`,`${fmt(points.length)} recorded locations on the map`):L('המפה רשומה במקור, אך אין בה קואורדינטות מתועדות לדמות.','The source lists this map, but no NPC coordinates are recorded.')}</p><p class="hunt-distance">${walkDistanceText(distance)}</p>${scopeNote(map)?`<p class="hunt-condition">${esc(scopeNote(map))}</p>`:''}</div><div class="hunt-map-actions"><button type="button" class="button primary" data-hunt-action="npc-positions" data-map="${map.id}" data-npc="${npc.id}" aria-label="${L('הצגת מיקום הדמות במפה','Show NPC location on')} ${esc(map.name)}" ${points.length&&getMap(map.id)?'':'disabled'}>${L('פתיחה וסימון מיקום הדמות','Open and highlight NPC')}</button><button type="button" class="button quiet" data-hunt-action="route" data-map="${map.id}" aria-label="${L('תכנון מסלול למפה','Plan a route to')} ${esc(map.name)}" ${getMap(map.id)?'':'disabled'}>${L('תכנון מסלול','Plan route')}</button></div></article>`)}`;
+    const information=`<p class="hunt-note">${L('כל המיקומים שייכים למזהה הדמות שנבחר. דמויות בעלות אותו שם נשמרות בנפרד.','All locations belong to the selected NPC ID. NPCs with the same name are listed separately.')}</p>${sourceLink(npc.sourceUrl,L('הדמות במאגר המקור','NPC in the source database'))}`;
+    $('huntBody').innerHTML=detailSections(npc,'npc',maps,information);
     announce(L(`${fmt(places.length)} מפות מתועדות לדמות הזו.`,`${fmt(places.length)} recorded ${places.length===1?'map':'maps'} for this NPC.`));
   }
   function parseOrigin(value) {
@@ -486,6 +554,8 @@
   function updateOrigin(value) {
     const map=parseOrigin(value); state.originId=map?.id??null; state.originText=map?mapLabel(map):value;
     const input=$('huntOrigin'), note=$('huntOriginNote');
+    if($('huntOriginSummary'))$('huntOriginSummary').textContent=map?map.name:L('בחרו מפת מוצא','Choose starting map');
+    if(!map&&$('huntRouteOptions'))$('huntRouteOptions').open=true;
     if(input){input.value=state.originText;input.setAttribute('aria-invalid',String(!map));if(map)input.removeAttribute('aria-describedby');else input.setAttribute('aria-describedby','huntOriginNote');}
     if(note){note.hidden=!!map;note.textContent=map?'':originNote();}
     updateOriginSave();
@@ -512,6 +582,7 @@
       const badge=card.querySelector('.hunt-recommend-label');if(badge)badge.hidden=row.map.id!==recommended;
       if(container.children[i]!==card)container.insertBefore(card,container.children[i]||null);
     });
+    state.resultPage=0;updateResultVisibility(rows);
     if(active?.isConnected && document.activeElement!==active)active.focus({preventScroll:true});
     const comparison=$('huntComparison');if(comparison&&kind!=='npc'){comparison.innerHTML=comparisonContent(rows);}
     body.scrollTop=scroll;
@@ -524,7 +595,7 @@
     if(e.target.id==='huntOrigin')updateOrigin(e.target.value);
     if(e.target.id==='huntCreatureType'&&['regular','all','boss'].includes(e.target.value)){state.creatureType=e.target.value;state.limit=72;preserveView(renderCatalog);}
     if(e.target.matches('[data-hunt-target]')){
-      const id=Number(e.target.dataset.huntTarget);if(e.target.checked)state.targets.add(id);else state.targets.delete(id);preserveView(renderDetail);
+      const id=Number(e.target.dataset.huntTarget);if(e.target.checked)state.targets.add(id);else state.targets.delete(id);state.resultPage=0;preserveView(renderDetail);
     }
   }
   function onPanelClick(e) {
@@ -536,6 +607,13 @@
     const mid=Number(button.dataset.map);
     switch(button.dataset.huntAction){
       case'close':close();break;
+      case'detail-tab':changeDetailTab(button.dataset.section);break;
+      case'result-next':case'result-previous':{
+        const rows=currentResultRows(),{pages}=resultWindow(rows);
+        state.resultPage=Math.max(0,Math.min(pages-1,state.resultPage+(button.dataset.huntAction==='result-next'?1:-1)));
+        updateResultVisibility(rows);
+        const count=$('huntResultCount');count?.focus({preventScroll:true});count?.scrollIntoView?.({block:'nearest',behavior:'auto'});break;
+      }
       case'catalog':state.selected=null;state.basketOpen=false;pendingDetailFocus=false;render();$('huntBody').scrollTop=0;$('huntSearch')?.focus();break;
       case'basket-open':openBasket();break;
       case'basket-toggle':toggleBasket(button.dataset.kind,Number(button.dataset.id));break;
@@ -563,7 +641,7 @@
       }
       case'map':close({restoreFocus:false});window.Atlas?.selectMap(mid,{focus:true});if(window.AtlasShell)window.AtlasShell.catalogClosed();else $('huntToggle')?.focus({preventScroll:true});break;
       case'route':
-        if(!getMap(state.originId)){$('huntOrigin')?.focus();if($('huntOriginNote'))$('huntOriginNote').hidden=false;announce(originNote());return;}
+        if(!getMap(state.originId)){if($('huntRouteOptions'))$('huntRouteOptions').open=true;$('huntOrigin')?.focus();if($('huntOriginNote'))$('huntOriginNote').hidden=false;announce(originNote());return;}
         {const goal=routeGoal();close({restoreFocus:false});if(goal)window.Atlas?.planTo(mid,Number(state.originId),{goal});else window.Atlas?.planTo(mid,Number(state.originId));$(window.AtlasShell?'startRoute':'routeTo')?.focus({preventScroll:true});break;}
       case'positions':window.Atlas?.openSpawns(mid,button.dataset.mobs.split(',').map(Number));break;
       case'npc-positions':window.Atlas?.openNpcs(mid,[Number(button.dataset.npc)]);break;

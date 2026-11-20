@@ -6,7 +6,7 @@ V3 changes the application layout and route ranking. The map and catalogue data 
 
 The V2 baseline is commit `64f207cdcc80029b38a662a1e2c15985e49ec680`, saved as branch `backup/v2-legacy-design` and tag `v2.0.0-backup`. V3 work belongs to `feat/v3-app-shell`. These references are not a production rollout record.
 
-The retained support URL is `https://buymeacoffee.com/omerlabinsky`. Support is an ordinary optional external link, with no embedded donation script or automatic outbound request.
+The primary support URL is `https://paypal.me/omerLabinsky`. Buy Me a Coffee remains available at `https://buymeacoffee.com/omerlabinsky` as a secondary option in About and below a route. Both are optional direct external links, with no embedded payment script or automatic outbound request. The primary mobile icon is a heart and its accessible name identifies PayPal.
 
 No source-coordinate transformation, new package, account service, database or migration is required for this upgrade. Existing data downloads, catalogue browsing, hunting comparisons, notes, collections, saved routes, backup import/export, multi-stop journeys and language/theme preferences remain part of the application.
 
@@ -147,3 +147,48 @@ Main behavior risks are changed route ranking and reorganized navigation surface
 - New checks: `tests/explorer.cjs`, `tests/v3-routing.cjs`, `tests/v3-route-tools.cjs`.
 - Updated checks and runner: `tests/atlas-behavior.cjs`, `tests/atlas-graph.cjs`, `tests/hunt.cjs`, `tests/personal.cjs`, `tests/run.cjs`.
 - Architecture and evidence: `docs/V3-APP-SHELL.md`.
+
+## PayPal support follow-up
+
+Prepared locally after the V3 release: PayPal is primary in the top bar, route footer and About. Buy Me a Coffee remains secondary in the latter two surfaces. The owner-provided `https://paypal.me/omerLabinsky` opened the PayPal profile for Omer Labinsky; no payment was initiated.
+
+Changed files: `dist/app-shell.js`, `dist/experience.js`, `dist/experience.css`, `dist/route-tools.js`, `dist/route-tools.css`, `dist/index.html` and this document. Existing experience, route-tools and preference suites passed 49 checks in total; `npm run verify` and `git diff --check` passed. Hebrew/English desktop and 375-pixel mobile views were inspected; all five support links have the intended HTTPS destination and safe external-link attributes. No browser warning/error was observed. This follow-up is not yet committed or published; deployment needs separate owner approval under the supplied rules.
+
+## Popup and navigation follow-up — 2026-11-20
+
+This candidate extends the PayPal change. Its baseline is released V3 commit `fd5dd43f776f2a8ff734723d751c7d197b5f13f2` on `feat/v3-app-shell`. At completion of local QA it was uncommitted and unpublished. The owner subsequently explicitly approved commit/push and deployment on 2026-11-20; actual release evidence belongs in the separate operational receipt.
+
+### Behavior and presentation
+
+- Stop navigation is available in both the map guide (including compact mode) and the sticky route controls. It clears the active/saved journey, route URL, exclusions, progress and image-prefetch queue. The open map, selected NPC/monster details, planner inputs, notes and favorites remain available.
+- Monster, boss, item and NPC details use separate map, information/source and applicable drop tabs. Map results are filtered and paged six at a time; a single location omits redundant search, comparison and paging controls. Comparison replaces the result list and returns to the same page/filter. Existing data warnings and provenance are preserved.
+- Route steps and longer map/scene lists are paged five at a time. A current-step action returns to the active navigation page; actual progress follows automatically. Map previews, raw coordinates and route sharing tools use disclosures. Passage conditions and route warnings remain visible.
+- A newly submitted route starts at the top of the results and receives usable keyboard focus. Reopening an existing route no longer forces its edit form open. Informational toasts cannot intercept clicks.
+- About has four keyboard-accessible tabs. Appearance, personal library, notes, welcome/help/release and postcard browsing retain close/header controls while content scrolls internally. Library tab changes preserve focus. The source-map canvas is excluded from modal wrapping.
+
+### Verification of the combined candidate
+
+- `npm run test:app`: **561 checks, 0 failures**, across 16 suites. Includes six new stop-navigation contracts, seven hunt checks and 17 drawer contracts. These use Node VM/DOM stubs, not browser rendering.
+- `npm run verify`: passed pinned hashes/counts, source/data contracts, 3,354 image references, syntax, HTML dependencies and static HTTP checks.
+- `git diff --check`: passed. Data, packages, backend and production configuration are unchanged; no rebuild was necessary for this UI-only follow-up.
+- Browser: desktop 1280-pixel and mobile 375×812 layouts; Hebrew/English; midnight, parchment and aurora themes inspected. This was a representative set of flows, not an exhaustive theme/language/device matrix or physical-device test.
+- Actually stopped a compact guide at Ellinia: scene remained open, route markers/result/URL disappeared, focus returned to the scene close control; reload did not restore the stopped route. Stopping before opening a scene expanded the planner and focused its origin input.
+- A 15-map route displayed five rows, advanced to rows 6–10 and returned to the current step. Submission reset scroll to zero and focused the guide action. Scene portal filtering handled no matches/clear, and the Magic Library portal opened its real target.
+- Slime's 52 maps displayed six results across nine pages. Filtering, empty results, drop-item navigation, map comparison/return and hidden-page focus fallback were exercised. Stumpy's single map omitted redundant controls; its action highlighted the recorded boss location. Grendel's source-backed scene details and coordinates remained accessible.
+- About keyboard tabs, nested help/Escape return, source/download links, optional PayPal/BMAC controls, personal backup tab and the note form's attached Save control were checked. Mobile catalogue document/body widths did not overflow. No warning/error was captured in the final inspected browser session.
+
+Screenshots outside Git: `work/atlas-popups-desktop.png`, `work/atlas-popups-mobile.png`, `work/atlas-popups-about-mobile.png`, `work/atlas-popup-stop-mobile.png` (relative to the parent workspace).
+
+### Changed files and release boundary
+
+| Area | Files |
+| --- | --- |
+| Core navigation and shell | `dist/app.js`, `dist/app-shell.js`, `dist/app-shell.css` |
+| Hunting catalogue | `dist/hunt.js`, `dist/hunt-enhancements.css` |
+| Shared dialogs and compact drawers | `dist/dialog-layout.js`, `dist/dialog-layout.css`, `dist/drawer-layout.js`, `dist/drawer-layout.css` (new) |
+| Library, translation and integration | `dist/library.js`, `dist/translations.js`, `dist/index.html` |
+| Pending PayPal support | `dist/experience.js`, `dist/experience.css`, `dist/route-tools.js`, `dist/route-tools.css` |
+| Checks | `tests/atlas-behavior.cjs`, `tests/hunt.cjs`, `tests/drawer-layout.cjs` (new), `tests/run.cjs` |
+| Documentation | `docs/V3-APP-SHELL.md` |
+
+The owner approved publishing this reviewed feature-branch candidate to the existing Maple Atlas service, retaining the current release image for rollback. The main risk is UI regression in a less common flow/browser; archived data and routing calculations are unchanged. Preflight revalidated healthy V3 image `sha256:2fdbf9a3776c77802b035445fb342a533ddca937c0d46f4739aac5e5d188c62b` as the rollback baseline, with more than 45 GB free. Exact GitHub CI, isolated nginx checks, origin/public asset checks and browser smoke remain release gates recorded in the operational receipt. No full screen-reader, physical mobile/Safari or live-game validation is claimed.

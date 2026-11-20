@@ -12,6 +12,7 @@ const suites=[
   ['v3-routing.cjs','Weighted routes, exclusions and reachability'],
   ['journey.cjs','Multi-stop planning and confirmed arrival portals'],
   ['atlas-behavior.cjs','Search, portal actions and entity scenes'],
+  ['drawer-layout.cjs','Compact route and map lists, focus and navigation progress'],
   ['atlas-graph.cjs','Graph, selection and region filters'],
   ['hunt.cjs','Item, monster and NPC catalog behavior'],
   ['personal.cjs','Saved journeys, sharing and personal map library'],

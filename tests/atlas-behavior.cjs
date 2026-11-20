@@ -300,6 +300,22 @@ run(`planJourney({from:10001000,to:10004000,stops:[],services:false,step:1,avoid
 get('routeFrom').value='not a valid map';run('submitRoute({preventDefault(){}})');
 check('invalid submitted form preserves active route, exclusions and navigation progress',run('route===detourBeforeInvalidForm&&JSON.stringify(getJourney())===recipeBeforeInvalidForm'));
 
+// Stopping a guide returns to exploration without losing the current map or draft.
+run(`globalThis.stopSaves=[];globalThis.cancelledPrefetch=[];window.AtlasPersonal.saveJourney=()=>stopSaves.push(getJourney());window.AtlasRouteTools={prefetch:value=>cancelledPrefetch.push(value)};
+planJourney({from:10002003,to:10004057,stops:[],services:false,step:1,avoidMaps:[10002050],goal:{kind:'hunt',targets:[{kind:'boss',id:700007}],monsterIds:[700007]}},{show:true});setCompactNavigation(true);
+globalThis.stoppedMap=sceneId;globalThis.stoppedDraft=[$('routeFrom').value,$('routeTo').value];`);
+fire('routeResult','click',{target:{id:'clearRoute',closest:()=>null}});
+check('stopping an active compact guide keeps its map open and removes route state',run('route===null&&getJourney()===null&&!navigationActive()&&!navigationFollowing&&!compactNavigation&&sceneId===stoppedMap&&navigationIndex===0&&routeChoices===null&&pendingRouteGoal===null&&Object.keys(routeExclusions).length===0')&&get('sceneDialog').open&&get('sceneNavigation').hidden);
+check('stopping removes route pin emphasis and restores focus to the map controls',run('selectedGate===null&&[...portalPinElements.values()].every(pin=>!pin.classList.contains("route-required")&&!pin.classList.contains("route-arrival"))')&&document.activeElement===get('closeScene'));
+check('stopping cancels image prefetch and persists an empty journey while retaining planner inputs',run('cancelledPrefetch.at(-1)===null&&stopSaves.at(-1)===null&&JSON.stringify(stoppedDraft)===JSON.stringify([$("routeFrom").value,$("routeTo").value])')&&get('routeResult').innerHTML===''&&get('routeShareBox').hidden&&get('routeShareUrl').value==='');
+run('openRouteStep(1)');
+check('ended navigation cannot advance and the next plan starts without old exclusions',run('sceneId===stoppedMap&&stopNavigation()===false&&planJourney({from:10001000,to:10002000,stops:[],services:false,step:0})&&!getJourney().avoidMaps&&!navigationActive()&&navigationIndex===0'));
+for(const [kind,open] of [['monster','openSpawns(10001005,[])'],['NPC','openNpcs(10002003,[])']]){
+  run(`planJourney({from:10001000,to:10002000,stops:[],services:false,step:0});${open};pickEntity(sceneEntityPoints[0].key,false);globalThis.stoppedEntity=selectedEntity;globalThis.stoppedEntityDetails=$('sceneSelected').innerHTML;stopNavigation();`);
+  check(`stopping while inspecting a ${kind} keeps its selected marker and details`,run('selectedEntity===stoppedEntity&&$("sceneSelected").innerHTML===stoppedEntityDetails&&route===null')&&get('sceneSelected').innerHTML.length>0);
+}
+run('planJourney({from:10001000,to:10002000,stops:[],services:false,step:0})');
+
 // Deferred extension scripts can subscribe before the atlas finishes loading.
 // Their view decorations must survive the core renderer's later language refresh.
 run('sceneId=null;renderRouteResult()');

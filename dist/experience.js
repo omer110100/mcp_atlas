@@ -15,7 +15,7 @@
   const labels={
     tools:['כלים למסע','Journey tools'],welcome:['מאיפה מתחילים?','Start exploring'],shortcuts:['קיצורי מקלדת','Keyboard shortcuts'],news:['מה חדש','What’s new'],newBadge:['חדש','New'],
     report:['דיווח על בעיה','Report a problem'],reportHelp:['פתיחת טיוטת דיווח ב־GitHub; הדיווח לא נשלח אוטומטית.','Open a draft on GitHub; nothing is submitted automatically.'],
-    support:['תמיכה באטלס','Support the atlas'],supportNote:['נהנים מהאטלס? אפשר לתמוך בפרויקט, לבחירתכם.','Finding the atlas useful? Supporting the project is optional.'],
+    support:['תמיכה דרך PayPal','Support via PayPal'],supportNote:['נהנים מהאטלס? אפשר לתמוך בפרויקט, לבחירתכם.','Finding the atlas useful? Supporting the project is optional.'],
     readability:['נוח יותר לקרוא','Comfortable reading'],readabilityToggle:['טקסט מרווח וכפתורים גדולים יותר','Roomier text and larger controls'],readabilityHelp:['יותר מקום לקריאה, בלי לשנות את המפה או את מיקומי השערים.','More room to read, with map and portal positions preserved.'],
     resetWidth:['איפוס רוחב חלונית הפרטים','Reset details panel width'],view:['תצוגת האטלס','Atlas view'],map:['מפה','Map'],list:['גלויות','Postcards'],search:['חיפוש','Search'],route:['מסלול','Route'],places:['המקומות שלי','My places'],
     welcomeEyebrow:['כל עולם מתחיל בשער','Every world begins with a portal'],welcomeTitle:['לאן יוצאים היום?','Where are we headed?'],welcomeIntro:['חפשו מקום, תכננו מסלול או מצאו את מפת הציד הבאה שלכם.','Find a place, plan a route, or choose your next hunting map.'],
@@ -37,7 +37,7 @@
   const tools=element('section',{id:'experienceTools',class:'experience-tools','data-xp-aria':'tools'},`
     <div class="experience-utility"><button type="button" data-xp-action="welcome">${label('welcome')}</button><button type="button" data-xp-action="shortcuts">${label('shortcuts')}</button><button type="button" data-xp-action="news">${label('news')} <span class="experience-new" data-xp-label="newBadge"></span></button></div>
     <a id="experienceReport" class="experience-report" href="https://github.com/omer110100/mcp_atlas/issues/new" target="_blank" rel="noopener noreferrer" data-xp-title="reportHelp">${label('report')} <span aria-hidden="true">↗</span></a>
-    <div class="experience-support"><p data-xp-label="supportNote"></p><a href="https://buymeacoffee.com/omerlabinsky" target="_blank" rel="noopener noreferrer"><span aria-hidden="true">☕</span>${label('support')} <span aria-hidden="true">↗</span></a></div>`);
+    <div class="experience-support"><p data-xp-label="supportNote"></p><div class="experience-support-links"><a class="support-primary" href="https://paypal.me/omerLabinsky" target="_blank" rel="noopener noreferrer">${label('support')} <span aria-hidden="true">↗</span></a><a href="https://buymeacoffee.com/omerlabinsky" target="_blank" rel="noopener noreferrer"><span aria-hidden="true">☕</span><bdi dir="ltr">Buy Me a Coffee</bdi> <span aria-hidden="true">↗</span></a></div></div>`);
   $('sidePanel').insertBefore(tools,document.querySelector('.panel-footer'));
   const viewToggle=element('div',{class:'experience-view',role:'group','data-xp-aria':'view'},`<button type="button" data-xp-view="map" aria-pressed="true">${icon('map')}${label('map')}</button><button type="button" data-xp-view="list" aria-pressed="false">${icon('list')}${label('list')}</button>`);
   document.querySelector('.map-topbar').append(viewToggle);

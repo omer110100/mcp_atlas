@@ -489,6 +489,28 @@ function setCompactNavigation(enabled){
   if(navigationActive()&&navigationFollowing&&compactNavigation){const gate=navigationGate();if(gate)sceneKind=displayKind(gate,byId.get(sceneId));setSceneLayer('portals',[]);}
   requestAnimationFrame(fitNavigationScene);
 }
+function stopNavigation(){
+  if(!route)return false;
+  const keepScene=$('sceneDialog').open;
+  const selectedRouteExit=navigationFollowing&&selectedGate===navigationGate()?.key;
+  window.AtlasRouteTools?.prefetch(null);
+  route=null;navigationRoute=null;navigationIndex=0;navigationFollowing=false;compactNavigation=false;
+  routeChoices=null;pendingRouteGoal=null;pendingGoalDestination=null;routeExclusions={};
+  if(selectedRouteExit)selectedGate=null;
+  $('routeResult').innerHTML='';$('routeRestoreNote').textContent='';$('routeShareBox').hidden=true;$('routeShareUrl').value='';
+  renderRouteAlternatives();renderRouteGoal();
+  window.AtlasPersonal?.saveJourney();
+  renderSceneNavigation();drawRoute();
+  if(keepScene){
+    if(sceneLayer==='portals')renderSceneSelected();
+    requestAnimationFrame(()=>{fitScene();$('closeScene').focus({preventScroll:true});});
+  }else{
+    window.AtlasShell?.showDrawer('route');
+    requestAnimationFrame(()=>$('routeFrom').focus({preventScroll:true}));
+  }
+  notifyView();toast(L('הניווט הופסק. אפשר להמשיך לחקור את המפה.','Navigation stopped. You can keep exploring the map.'));
+  return true;
+}
 function rerouteFromScene(){
   if(!navigationActive()||!byId.has(sceneId))return false;
   const destination=route.to,stops=AtlasJourney.remainingStops(route,navigationIndex),goal=route.goal,candidate=findRoute(sceneId,destination,routeUsesServices,stops,routeExclusions);
@@ -685,7 +707,7 @@ function bindEvents(){
   $('zoomIn').addEventListener('click',()=>zoomWorld(1.35));$('zoomOut').addEventListener('click',()=>zoomWorld(1/1.35));$('fitMap').addEventListener('click',fitWorld);$('labelsToggle').addEventListener('click',()=>{showAllLabels=!showAllLabels;$('labelsToggle').setAttribute('aria-pressed',String(showAllLabels));applyWorld();});
   $('directoryToggle').addEventListener('click',openDirectory);$('closeDirectory').addEventListener('click',()=>{$('directory').hidden=true;window.AtlasShell?.catalogClosed();});$('directorySearch').addEventListener('input',renderDirectory);$('directoryGroup').addEventListener('change',renderDirectory);$('directoryGrid').addEventListener('click',e=>{const card=e.target.closest('[data-id]');if(card){$('directory').hidden=true;window.AtlasShell?.catalogClosed({restoreFocus:false});selectMap(card.dataset.id,{focus:true});}});
   $('routeToggle').addEventListener('click',()=>{if($('routePanel').hidden)openRoute();else{$('routePanel').hidden=true;$('routeToggle').setAttribute('aria-pressed','false');}});$('closeRoute').addEventListener('click',()=>{$('routePanel').hidden=true;$('routeToggle').setAttribute('aria-pressed','false');});$('routeForm').addEventListener('submit',submitRoute);
-  $('routeResult').addEventListener('click',e=>{if(e.target.id==='shareRoute'){window.AtlasPersonal?.share();return;}if(e.target.id==='restartRoute'){openRouteStep(0);return;}if(e.target.id==='startRoute'){openRouteStep(navigationActive()?navigationIndex:0);return;}const gate=e.target.closest('[data-route-scene]');if(gate){const index=gate.dataset.routeIndex!==undefined?Number(gate.dataset.routeIndex):route?.steps.findIndex((s,i)=>s.from===Number(gate.dataset.routeScene)&&navigationGate(i)?.key===gate.dataset.routeGate);openRouteStep(index);return;}const map=e.target.closest('[data-route-map]');if(map)selectMap(map.dataset.routeMap,{focus:true,scroll:false});if(e.target.id==='clearRoute'){window.AtlasRouteTools?.prefetch(null);route=null;navigationRoute=null;navigationIndex=0;routeChoices=null;pendingRouteGoal=null;pendingGoalDestination=null;renderRouteAlternatives();renderRouteGoal();window.AtlasPersonal?.saveJourney();renderSceneNavigation();drawRoute();$('routeResult').innerHTML='';$('routeRestoreNote').textContent='';$('routeShareBox').hidden=true;}});
+  $('routeResult').addEventListener('click',e=>{if(e.target.id==='shareRoute'){window.AtlasPersonal?.share();return;}if(e.target.id==='restartRoute'){openRouteStep(0);return;}if(e.target.id==='startRoute'){openRouteStep(navigationActive()?navigationIndex:0);return;}const gate=e.target.closest('[data-route-scene]');if(gate){const index=gate.dataset.routeIndex!==undefined?Number(gate.dataset.routeIndex):route?.steps.findIndex((s,i)=>s.from===Number(gate.dataset.routeScene)&&navigationGate(i)?.key===gate.dataset.routeGate);openRouteStep(index);return;}const map=e.target.closest('[data-route-map]');if(map)selectMap(map.dataset.routeMap,{focus:true,scroll:false});if(e.target.id==='clearRoute')stopNavigation();});
   $('mapDetails').addEventListener('click',e=>{const tab=e.target.closest('[data-tab]');if(tab){detailsTab=tab.dataset.tab;renderPortalContent();return;}const b=e.target.closest('[data-action]');if(!b)return;const m=byId.get(activeId),p=m.portals.find(p=>p.key===b.dataset.gate);switch(b.dataset.action){case'favorite':window.AtlasPersonal?.toggle(m.id);break;case'open-scene':openScene(m.id);break;case'map-monsters':openSpawns(m.id);break;case'map-npcs':openNpcs(m.id);break;case'route-from':openRoute();$('routeFrom').value=mapLabel(m);$('routeTo').focus();break;case'route-to':{const old=routeMap($('routeFrom').value);openRoute();if(!old||old.id===m.id){const origin=defaultRouteOrigin();$('routeFrom').value=mapLabel(origin&&origin.id!==m.id?origin:byId.get(10001000)||maps[0]);}$('routeTo').value=mapLabel(m);$('routeFrom').focus();break;}case'portal-go':if(p?.kind==='cross')selectMap(p.to,{focus:true});else if(p)openScene(m.id,p.key);break;case'locate':if(p)openScene(m.id,p.key);break;case'incoming':selectMap(b.dataset.from,{focus:true});break;case'incoming-scene':openScene(Number(b.dataset.from),b.dataset.gate);break;case'service-target':if(b.dataset.target)selectMap(b.dataset.target,{focus:true});else toast(L("למעבר הזה אין יעד קבוע. הפרטים מופיעים בתנאי השירות.","This passage has no fixed destination. See its requirements for details."));break;}});
   $('sceneNavCompact').addEventListener('click',()=>setCompactNavigation(!compactNavigation));
   $('sceneNavReroute').addEventListener('click',rerouteFromScene);
@@ -711,7 +733,7 @@ async function init(){
     $('mapCount').textContent=maps.length;$('mapOptions').innerHTML=maps.map(m=>`<option value="${esc(mapLabel(m))}"></option>`).join('');renderDirectoryGroups();
     window.MapSearch?.init({maps,groupLabel,groupTerms:m=>{const g=groupId(m.group);return `${g?.he||''} ${g?.en||''} ${window.AtlasTranslations?.[g?.he]||''}`;}});
     buildWorld();renderAbout();renderRouteStops();bindEvents();const hash=location.hash.match(/map=(\d+)/);selectMap(hash&&byId.has(Number(hash[1]))?Number(hash[1]):10001000,{hash:false,scroll:false,reveal:!!hash,remember:!!hash});$('loading').hidden=true;requestAnimationFrame(()=>{fitWorld();if(hash)centerOnMap(byId.get(activeId));});
-    window.Atlas={get data(){return atlas},findRoute,reachable,selectMap,openScene,openSpawns,openNpcs,planTo,planJourney,getJourney,addStop,swapRouteEnds,openRoute,openRouteStep,setCompactNavigation,zoomScene,fitScene,getContext,describeMap,get activeMap(){return activeId},get currentRoute(){return route},fitWorld};
+    window.Atlas={get data(){return atlas},findRoute,reachable,selectMap,openScene,openSpawns,openNpcs,planTo,planJourney,getJourney,addStop,swapRouteEnds,openRoute,openRouteStep,setCompactNavigation,stopNavigation,zoomScene,fitScene,getContext,describeMap,get activeMap(){return activeId},get currentRoute(){return route},fitWorld};
     window.AtlasPersonal?.init({maps:byId,version:`${atlas.meta.version||''}:${atlas.meta.asOf}`,escape:esc,notice:toast,
       getRoute:()=>route,getStep:()=>navigationActive()?navigationIndex:0,getServices:()=>routeUsesServices,
       refresh:renderDetails,select:id=>selectMap(id,{focus:true}),

@@ -4,7 +4,7 @@
   const $=id=>document.getElementById(id);
   const L=(he,en)=>window.AtlasI18n?.text(he,en)??he;
   const escape=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const COFFEE='https://buymeacoffee.com/omerlabinsky';
+  const PAYPAL='https://paypal.me/omerLabinsky',COFFEE='https://buymeacoffee.com/omerlabinsky';
   let generation=0,lastPrefetch=null,ready=false;
   const cached=new Set(),activeImages=new Set();
   function prefetch(route){
@@ -80,7 +80,7 @@
     const share=$('shareRoute');if(share)share.textContent=L('העתק קישור למסלול','Copy route link');
     if(!$('copyRouteDiscord')){
       const button=document.createElement('button');button.type='button';button.id='copyRouteDiscord';button.className='button quiet';button.textContent=L('העתק טקסט לדיסקורד','Copy for Discord');host.querySelector('.route-secondary-actions')?.append(button);
-      const footer=document.createElement('div');footer.className='route-tools-footer';footer.innerHTML=`<p id="routeToolsStatus" role="status" aria-live="polite"></p><textarea id="routeCopyFallback" readonly hidden aria-label="${L('טקסט המסלול להעתקה','Route text to copy')}" dir="auto"></textarea><a href="${COFFEE}" target="_blank" rel="noopener noreferrer">${L('המסלול חסך לך זמן? אפשר לתמוך בפרויקט ☕','Did this route save you time? Support the project ☕')}</a>`;host.append(footer);host.querySelector('.route-tools')?.append($('routeToolsStatus'));
+      const footer=document.createElement('div');footer.className='route-tools-footer';footer.innerHTML=`<p id="routeToolsStatus" role="status" aria-live="polite"></p><textarea id="routeCopyFallback" readonly hidden aria-label="${L('טקסט המסלול להעתקה','Route text to copy')}" dir="auto"></textarea><p class="route-support-note">${L('המסלול חסך לך זמן? אפשר לתמוך בפרויקט, לבחירתכם.','Did this route save you time? Supporting the project is optional.')}</p><div class="route-support-links"><a class="button primary" href="${PAYPAL}" target="_blank" rel="noopener noreferrer"><bdi dir="ltr">PayPal</bdi><span aria-hidden="true">↗</span></a><a href="${COFFEE}" target="_blank" rel="noopener noreferrer"><bdi dir="ltr">Buy Me a Coffee</bdi> <span aria-hidden="true">↗</span></a></div>`;host.append(footer);host.querySelector('.route-tools')?.append($('routeToolsStatus'));
     }
     const excluded=(route.avoidMaps?.length||0)+(route.avoidEdges?.length||0);
     if(excluded&&!$('clearRouteAvoids')){const button=document.createElement('button');button.id='clearRouteAvoids';button.type='button';button.className='button quiet';button.textContent=L(`ניקוי ${excluded} מעקפים`,`Clear ${excluded} detours`);host.querySelector('.route-tools')?.append(button);}

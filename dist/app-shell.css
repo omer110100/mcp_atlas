@@ -200,7 +200,7 @@ html.atlas-shell .about-dialog .panel-footer {display: none;}
 html.atlas-shell .about-dialog .experience-tools {margin: 24px 0 0; padding-inline: 0;}
 html.atlas-shell .directory,html.atlas-shell .hunt-panel {position: fixed; z-index: 45; inset: var(--shell-top) 20px 20px; max-height: none;}
 html.atlas-shell .directory {width: auto; overflow-y: auto; overscroll-behavior: contain; background: var(--panel);}
-html.atlas-shell .toast {z-index: 90; bottom: 22px; max-width: calc(100vw - 32px);}
+html.atlas-shell .toast {z-index: 90; bottom: 22px; max-width: calc(100vw - 32px); pointer-events: none;}
 html.atlas-shell .scene-image-status {max-width: calc(100vw - 40px);}
 
 @media (max-width: 1400px) {
@@ -289,3 +289,16 @@ html.atlas-shell .scene-image-status {max-width: calc(100vw - 40px);}
   html.atlas-shell .side-panel {transition: none;}
 }
 html.atlas-shell[data-motion="off"] .side-panel {transition: none;}
+
+/* Ending a journey stays visible even in the compact game companion. */
+.shell-navigation-heading {display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;}
+.shell-navigation-heading>span {font-size:13px;color:var(--muted);}
+html.atlas-shell .navigation-stop {flex:none;min-height:40px;padding:8px 12px;font-size:14px;border-color:var(--line);background:var(--panel-2);color:var(--ink);}
+.navigation-stop::before {content:'';width:9px;height:9px;flex:none;border-radius:2px;background:currentColor;}
+html.atlas-shell .navigation-stop:hover {border-color:var(--gold);background:var(--accent-soft);}
+.shell-guide-actions {position:sticky;top:0;z-index:5;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;margin-block:12px;padding-block:4px;background:var(--panel);}
+.shell-guide-actions>.button {font-size:14px;min-height:44px;}
+html.atlas-shell[data-companion="on"] .shell-navigation-heading>span {display:none;}
+html.atlas-shell[data-companion="on"] #shellCompanionTitle {text-align:start;font-size:16px;overflow-wrap:anywhere;}
+html.atlas-shell[data-companion="on"] .shell-navigation-heading {align-items:flex-start;margin-bottom:0;}
+html.atlas-shell[data-companion="on"] #sceneNavStop {font-size:13px;min-height:40px;padding:8px 10px;}

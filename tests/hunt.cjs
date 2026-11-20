@@ -5,7 +5,7 @@
 const fs=require('fs'),vm=require('vm'),assert=require('assert');
 const path=require('node:path');
 const base=path.resolve(__dirname,'..','dist')+path.sep;
-const source=fs.readFileSync(base+'hunt.js','utf8').replace('window.Hunt={searchAll,open,close,','window.Hunt={_test:{state,boot,retryDrops,render,renderDetail,renderCatalog,buildCandidates,sortCandidates,npcLocations,onPanelChange,onPanelClick,onPanelInput,parseOrigin,walkDistanceText,comparisonContent,comparisonAccess,toggleComparison,resolvedBasket,basketCandidates,routeGoal,levelFilter},searchAll,open,close,');
+const source=fs.readFileSync(base+'hunt.js','utf8').replace('window.Hunt={searchAll,open,close,','window.Hunt={_test:{state,boot,retryDrops,render,renderDetail,renderCatalog,buildCandidates,sortCandidates,npcLocations,onPanelChange,onPanelClick,onPanelInput,onDetailKeydown,preserveView,parseOrigin,walkDistanceText,comparisonContent,comparisonAccess,toggleComparison,resolvedBasket,basketCandidates,routeGoal,levelFilter},searchAll,open,close,');
 const rawAtlas=JSON.parse(fs.readFileSync(base+'atlas-data.json'));
 const rawHunt=JSON.parse(fs.readFileSync(base+'hunt-data.json'));
 const rawDrops=JSON.parse(fs.readFileSync(base+'drop-data.json'));
@@ -358,6 +358,92 @@ function report(){
     assert(html.includes('<details class="hunt-metric-help"><summary aria-label="About spawn points">'));
     assert(html.includes('not an item drop chance'));assert(html.includes('not a live monster count'));assert(html.includes('single-player estimate'));
     explained.setLanguage('he');assert(explained.nodes.huntBody.innerHTML.includes('על תקרת המפלצות'));
+  });
+  await check('bounded map pages keep all 35 item locations reachable without losing comparison',async()=>{
+    const paged=makeHarness({language:'en'});await paged.H._test.boot();paged.H.open('item',1092002);
+    const all=paged.H._test.buildCandidates([...paged.H._test.state.targets]).map(c=>c.map.id),seen=[];
+    const visible=()=>paged.nodes.huntBody.querySelectorAll('[data-hunt-map]').filter(card=>!card.hidden).map(card=>Number(card.dataset.huntMap));
+    assert.equal(visible().length,6);assert.equal(paged.nodes.huntPagePrevious.disabled,true);
+    paged.H._test.toggleComparison(visible()[0]);const compared=plain(paged.H._test.state.compare);
+    for(let page=0;page<6;page++){
+      assert(visible().length<=6);seen.push(...visible());
+      if(page<5){paged.action('result-next');assert.equal(paged.doc.activeElement.id,'huntResultCount');}
+    }
+    assert.equal(new Set(seen).size,35);assert.deepEqual(seen.sort((a,b)=>a-b),all.sort((a,b)=>a-b));
+    assert.equal(paged.nodes.huntPageNext.disabled,true);paged.action('result-next');assert.equal(paged.H._test.state.resultPage,5);
+    paged.action('compare-open');assert(paged.nodes.huntBody.innerHTML.includes('class="hunt-results-pane" hidden'));assert.equal(paged.H._test.state.resultPage,5);
+    paged.action('compare-open');assert(!paged.nodes.huntBody.innerHTML.includes('class="hunt-results-pane" hidden'));assert.equal(paged.H._test.state.resultPage,5);
+    assert.deepEqual(plain(paged.H._test.state.compare),compared);paged.action('result-previous');assert.equal(paged.H._test.state.resultPage,4);
+  });
+  await check('map filtering finds a location outside the first page and recovers from empty results',async()=>{
+    const paged=makeHarness({language:'en'});await paged.H._test.boot();paged.H.open('item',1092002);
+    const list=paged.H._test.sortCandidates(paged.H._test.buildCandidates([...paged.H._test.state.targets]));
+    const target=list.at(-1).map.id,input=paged.nodes.huntResultSearch,origin=paged.nodes.huntOrigin,writes=paged.nodes.huntBody.writes;
+    const visible=()=>paged.nodes.huntBody.querySelectorAll('[data-hunt-map]').filter(card=>!card.hidden);
+    input.value=String(target);input.focus();paged.H._test.onPanelInput({target:input});
+    assert.deepEqual(visible().map(c=>Number(c.dataset.huntMap)),[target]);assert.equal(paged.nodes.huntPageNext.disabled,true);
+    assert.equal(paged.nodes.huntPagePrevious.hidden,true);assert.equal(paged.nodes.huntPageNext.hidden,true);assert.equal(paged.nodes.huntResultCount.textContent,'1 map');
+    assert.equal(paged.doc.activeElement,input);assert.equal(paged.nodes.huntOrigin,origin);assert.equal(paged.nodes.huntBody.writes,writes);
+    input.value='<no map>';paged.H._test.onPanelInput({target:input});assert.equal(visible().length,0);assert.equal(paged.nodes.huntResultEmpty.hidden,false);
+    input.value='';paged.H._test.onPanelInput({target:input});assert.equal(visible().length,6);assert.equal(paged.nodes.huntResultEmpty.hidden,true);
+    assert.equal(paged.nodes.huntPagePrevious.hidden,false);assert.equal(paged.nodes.huntPageNext.hidden,false);
+    paged.action('result-next');paged.nodes.huntRank.value='share';paged.H._test.onPanelChange({target:paged.nodes.huntRank});
+    assert.equal(paged.H._test.state.resultPage,0);assert.equal(visible().length,6);
+    assert.deepEqual(visible().map(c=>Number(c.dataset.huntMap)),plain(paged.H._test.sortCandidates(paged.H._test.buildCandidates([...paged.H._test.state.targets])).slice(0,6).map(c=>c.map.id)));
+  });
+  await check('monster details separate maps, evidence and drops with correct focus and language persistence',async()=>{
+    const detail=makeHarness({language:'en'});await detail.H._test.boot();detail.H.open('monster',2);
+    const mapsPanel=detail.nodes['huntDetail-maps'], search=detail.nodes.huntResultSearch, writes=detail.nodes.huntBody.writes;
+    assert.equal(detail.nodes.huntPanel.dataset.view,'detail');assert.equal(detail.nodes['huntDetail-maps'].hidden,false);assert.equal(detail.nodes['huntDetail-info'].hidden,true);assert.equal(detail.nodes['huntDetail-drops'].hidden,true);
+    detail.action('detail-tab',{section:'info'});assert.equal(detail.nodes['huntDetail-maps'].hidden,true);assert.equal(detail.nodes['huntDetail-info'].hidden,false);assert.equal(detail.doc.activeElement.id,'huntDetailTab-info');
+    detail.action('detail-tab',{section:'drops'});assert.equal(detail.nodes['huntDetail-drops'].hidden,false);assert.equal(detail.nodes['huntDetailTab-drops'].getAttribute('aria-selected'),'true');
+    assert.equal(detail.nodes.huntBody.writes,writes);assert.equal(detail.nodes['huntDetail-maps'],mapsPanel);assert.equal(detail.nodes.huntResultSearch,search);
+    assert.equal(detail.nodes['huntDetailTab-maps'].getAttribute('tabindex'),'-1');assert.equal(detail.nodes['huntDetail-drops'].getAttribute('tabindex'),'0');
+    detail.setLanguage('he');assert.equal(detail.H._test.state.detailTab,'drops');assert.equal(detail.nodes['huntDetail-drops'].hidden,false);
+    detail.H.open('npc',313);assert.equal(detail.H._test.state.detailTab,'maps');assert(!detail.nodes.huntBody.innerHTML.includes('id="huntDetailTab-drops"'));
+    detail.action('catalog');assert.equal(detail.nodes.huntPanel.dataset.view,'catalog');assert.equal(detail.doc.activeElement.id,'huntSearch');
+  });
+  await check('detail tabs support arrow, Home and End keys in both reading directions',async()=>{
+    const detail=makeHarness({language:'en'});await detail.H._test.boot();detail.H.open('monster',2);
+    let prevented=0;
+    const press=key=>detail.H._test.onDetailKeydown({target:detail.nodes[`huntDetailTab-${detail.H._test.state.detailTab}`],key,preventDefault(){prevented++;}});
+    press('ArrowRight');assert.equal(detail.H._test.state.detailTab,'info');press('End');assert.equal(detail.H._test.state.detailTab,'drops');press('Home');assert.equal(detail.H._test.state.detailTab,'maps');
+    detail.setLanguage('he');press('ArrowLeft');assert.equal(detail.H._test.state.detailTab,'info');press('ArrowRight');assert.equal(detail.H._test.state.detailTab,'maps');
+    assert.equal(prevented,5);assert.equal(detail.doc.activeElement.id,'huntDetailTab-maps');
+  });
+  await check('NPC and basket map lists share bounded pages and reset the prior entity filter',async()=>{
+    const paged=makeHarness({language:'en'});await paged.H._test.boot();paged.H.open('item',1092002);
+    paged.nodes.huntResultSearch.value='no match';paged.H._test.onPanelInput({target:paged.nodes.huntResultSearch});
+    paged.action('basket-toggle',{kind:'item',id:1092002});paged.H.openBasket();assert.equal(paged.H._test.state.resultQuery,'');
+    assert.equal(paged.nodes.huntBody.querySelectorAll('[data-hunt-map]').filter(card=>!card.hidden).length,6);
+    const npc=paged.H.data.npcs.slice().sort((a,b)=>paged.H._test.npcLocations(b).length-paged.H._test.npcLocations(a).length)[0];
+    paged.H.open('npc',npc.id);const expected=paged.H._test.npcLocations(npc).length,seen=new Set();
+    for(let page=0;page<Math.ceil(expected/6);page++){
+      const cards=paged.nodes.huntBody.querySelectorAll('[data-hunt-map]').filter(card=>!card.hidden);assert(cards.length<=6);cards.forEach(c=>seen.add(c.dataset.huntMap));paged.action('result-next');
+    }
+    assert.equal(seen.size,expected);
+  });
+  await check('restoring focus skips controls inside a hidden result page',async()=>{
+    const focused=makeHarness();await focused.H._test.boot();focused.H.open('item',1092002);
+    const control=focused.nodes.huntBody.querySelector('[data-hunt-action="compare-toggle"]');control.focus();
+    focused.H._test.preserveView(()=>{
+      focused.H._test.renderDetail();
+      const replacement=focused.nodes.huntBody.querySelector('[data-hunt-action="compare-toggle"]');
+      const hiddenCard=focused.nodes.huntBody.querySelector(`[data-hunt-map="${replacement.dataset.map}"]`);
+      hiddenCard.hidden=true;hiddenCard.appendChild(replacement);
+    });
+    assert.equal(focused.doc.activeElement.id,'huntEntityTitle');
+  });
+  await check('single-map entries omit redundant filtering, comparison and paging controls',async()=>{
+    const single=makeHarness({language:'en'});await single.H._test.boot();
+    const monster=single.H.data.monsters.find(entry=>single.H._test.buildCandidates([entry.id]).length===1);assert(monster);
+    single.H.open(monster.isBoss?'boss':'monster',monster.id);
+    assert.equal(single.nodes.huntBody.querySelectorAll('[data-hunt-map]').filter(card=>!card.hidden).length,1);
+    assert(!single.nodes.huntBody.innerHTML.includes('id="huntResultSearch"'));assert(!single.nodes.huntBody.innerHTML.includes('class="hunt-compare-toolbar"'));assert(!single.nodes.huntBody.innerHTML.includes('data-hunt-action="compare-toggle"'));
+    assert.equal(single.nodes.huntPagePrevious.hidden,true);assert.equal(single.nodes.huntPageNext.hidden,true);
+    assert(single.nodes.huntBody.innerHTML.includes('tabindex="-1">1 map</p>'));
+    single.setLanguage('he');assert(single.nodes.huntBody.innerHTML.includes('tabindex="-1">מפה אחת</p>'));
+    assert(single.nodes.huntBody.innerHTML.includes('data-hunt-action="positions"'));assert(single.nodes.huntBody.innerHTML.includes('data-hunt-action="route"'));
   });
   report();
 })().catch(error=>{results.push({name:'hunt test setup',passed:false,error:error.stack||error.message});report();});

@@ -10,10 +10,10 @@
   let savedDrawer=null, syncQueued=false;
   const popoverOpeners=new WeakMap();
   const labels={
-    route:['תכנון מסלול','Plan a route'],details:['פרטי מפה','Map details'],fold:['קיפול החלונית','Collapse panel'],
+    stop:['עצירת ניווט','Stop navigation'],navigating:['ניווט פעיל','Active navigation'],route:['תכנון מסלול','Plan a route'],details:['פרטי מפה','Map details'],fold:['קיפול החלונית','Collapse panel'],
     expand:['פתיחת החלונית','Open panel'],sheet:['שינוי גובה החלונית','Change panel height'],
     min:['ממוזער','Minimized'],half:['חצי מסך','Half screen'],full:['מסך מלא','Full screen'],
-    support:['תמיכה בפרויקט','Support the project'],appearance:['עיצוב ושפה','Appearance & language'],
+    support:['תמיכה · PayPal','Support · PayPal'],appearance:['עיצוב ושפה','Appearance & language'],
     places:['המקומות שלי','My places'],about:['אודות ומקורות','About & sources'],
     tools:['עוד דרכים לחקור','More ways to explore'],legend:['מקרא','Legend'],
     portals:['שערים','Portals'],monsters:['מפלצות','Monsters'],npcs:['דמויות','NPCs'],
@@ -35,7 +35,7 @@
   const glyph=(path)=>`<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${path}</svg>`;
   const icons={
     fold:glyph('<path d="m14 6-6 6 6 6"/>'),route:glyph('<circle cx="6" cy="6" r="2"/><circle cx="18" cy="18" r="2"/><path d="M8 6h6a4 4 0 0 1 0 8H9a3 3 0 0 0 0 6h5"/>'),
-    coffee:glyph('<path d="M5 8h12v7a5 5 0 0 1-5 5h-2a5 5 0 0 1-5-5ZM17 9h2a3 3 0 0 1 0 6h-2M8 3v2m4-2v2m4-2v2"/>'),
+    heart:glyph('<path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8Z"/>'),
     star:glyph('<path d="m12 3 2.7 5.6 6.2.9-4.5 4.4 1.1 6.2-5.5-2.9-5.5 2.9 1.1-6.2-4.5-4.4 6.2-.9z"/>'),
     settings:glyph('<path d="M4 7h16M4 17h16"/><circle cx="9" cy="7" r="3"/><circle cx="16" cy="17" r="3"/>'),
     about:glyph('<circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-10v.1"/>'),
@@ -54,7 +54,7 @@
   const search=document.querySelector('.search-wrap'),regions=document.querySelector('.region-nav');
   search.querySelector('kbd').textContent='Ctrl K';
   start.append(brand,search);
-  const support=el('a',{class:'shell-support',href:'https://buymeacoffee.com/omerlabinsky',target:'_blank',rel:'noopener noreferrer','data-shell-title':'support'},icons.coffee+label('support'));
+  const support=el('a',{class:'shell-support',href:'https://paypal.me/omerLabinsky',target:'_blank',rel:'noopener noreferrer','data-shell-title':'support'},icons.heart+label('support'));
   const extras=el('details',{class:'shell-explore-tools',id:'shellExploreTools'},`<summary>${label('tools')}<span aria-hidden="true">＋</span></summary><div class="shell-explore-actions"></div>`);
   const extraActions=extras.querySelector('div');
   for(const id of ['huntToggle','directoryToggle'])extraActions.append($(id));
@@ -147,11 +147,17 @@
   const navigationExtra=navigationMore.querySelector('div');
   for(const id of ['sceneNavInstruction','sceneNavError','sceneNavGoal','sceneNavBreadcrumb','sceneNavStep'])navigationExtra.append($(id));
   sceneNavigation.append(navigationMore);
-  const companionTitle=el('strong',{id:'shellCompanionTitle',dir:'auto'});sceneNavigation.prepend(companionTitle);
+  const navigationHeading=el('div',{class:'shell-navigation-heading'},`<span data-shell-label="navigating"></span>`);
+  const companionTitle=el('strong',{id:'shellCompanionTitle',dir:'auto'});navigationHeading.prepend(companionTitle);
+  const stopButton=el('button',{type:'button',id:'sceneNavStop',class:'button quiet navigation-stop','data-shell-label':'stop'});
+  stopButton.addEventListener('click',()=>window.Atlas?.stopNavigation());navigationHeading.append(stopButton);sceneNavigation.prepend(navigationHeading);
   const companionRequirements=el('details',{id:'shellCompanionRequirements',class:'shell-companion-requirements',hidden:''},'<summary data-shell-label="requirements"></summary><p></p>');
-  companionTitle.after(companionRequirements);
-  const companionButton=el('button',{type:'button',id:'shellCompanionToggle',class:'button quiet full','data-shell-label':'game'});
-  $('routeResult').before(companionButton);companionButton.hidden=true;
+  navigationHeading.after(companionRequirements);
+  const companionButton=el('button',{type:'button',id:'shellCompanionToggle',class:'button quiet','data-shell-label':'game'});
+  const guideActions=el('div',{class:'shell-guide-actions'});
+  const routeStop=el('button',{type:'button',id:'shellRouteStop',class:'button quiet navigation-stop','data-shell-label':'stop'});
+  routeStop.addEventListener('click',()=>window.Atlas?.stopNavigation());guideActions.append(companionButton,routeStop);
+  $('routeResult').before(guideActions);guideActions.hidden=true;
   companionButton.addEventListener('click',()=>{const context=window.Atlas?.getContext();window.Atlas?.openRouteStep?.(context?.route?.index||0);window.Atlas?.setCompactNavigation?.(true);});
 
   const controls=document.querySelector('.map-controls'),legend=document.querySelector('.map-legend');
@@ -177,7 +183,7 @@
     drawerMode=mode;drawerOpen=true;if(sheetHeight==='min')sheetHeight='half';
     renderDrawer();content.scrollTo({top:0,behavior:'auto'});
   }
-  function activateDrawer(mode){if(mode==='route'&&window.Atlas?.openRoute){routeFields.open=true;window.Atlas.openRoute();}else showDrawer(mode);}
+  function activateDrawer(mode){if(mode==='route'&&window.Atlas?.openRoute){if(!window.Atlas.currentRoute)routeFields.open=true;window.Atlas.openRoute();}else showDrawer(mode);}
   function closeDrawer(){
     drawerOpen=false;sheetHeight='min';renderDrawer();
     if(panel.contains(document.activeElement))toggle.focus({preventScroll:true});
@@ -267,14 +273,18 @@
     mapDetails.hidden=scene.open;sceneSidebar.hidden=!scene.open;
     const context=window.Atlas?.getContext?.();
     const currentRoute=window.Atlas?.currentRoute;
-    if(currentRoute&&currentRoute!==lastCollapsedRoute){routeFields.open=false;lastCollapsedRoute=currentRoute;}
+    if(currentRoute&&currentRoute!==lastCollapsedRoute){
+      const submittedHere=$('routeForm').contains(document.activeElement);
+      routeFields.open=false;lastCollapsedRoute=currentRoute;content.scrollTo({top:0,behavior:'auto'});
+      if(submittedHere)requestAnimationFrame(()=>$('startRoute')?.focus({preventScroll:true}));
+    }
     if(!currentRoute)routeFields.open=true;
     for(const {host,disclosure}of routeDisclosures)disclosure.hidden=host.hidden||!host.textContent.trim();
     const currentStep=currentRoute?.steps[context?.step||0],service=currentStep?.service;
     companionRequirements.hidden=!companion||!service||service.walkable===true;
     companionRequirements.querySelector('p').textContent=service?window.AtlasI18n?.data(service.condition||service.condition_he||'')||L('בדקו את תנאי הכניסה בפרטי המפה.','Check the entrance requirements in map details.'):'';
     companionTitle.textContent=context?.sceneMap?.name||'';
-    companionButton.hidden=!window.Atlas?.currentRoute;
+    guideActions.hidden=!currentRoute;
     syncPolicy();syncDetailTabs();
     if(companion&&(!scene.open||!context?.route))setCompanion(false);
     if(companion)setCompanion(true);

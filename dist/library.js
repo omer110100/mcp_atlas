@@ -112,7 +112,7 @@
       const noteButton=event.target.closest('[data-library-note]');if(noteButton){openNote(Number(noteButton.dataset.libraryNote));return;}
       const target=event.target.closest('[data-library-tab],[data-library-action],[data-library-route],[data-library-route-update],[data-library-map],[data-library-group-remove],[data-library-remove]');if(!target)return;
       if(target.dataset.libraryRemove){removeSaved(target.dataset.libraryRemove,target.dataset.libraryName);return;}
-      if(target.dataset.libraryTab){tab=target.dataset.libraryTab;pending=null;previewSequence++;render();}
+      if(target.dataset.libraryTab){tab=target.dataset.libraryTab;pending=null;previewSequence++;render();[...$('libraryNav').querySelectorAll('[data-library-tab]')].find(button=>button.dataset.libraryTab===tab)?.focus({preventScroll:true});}
       if(target.dataset.libraryMap){dialog.close();api.select(Number(target.dataset.libraryMap));}
       if(target.dataset.libraryRoute!==undefined){const route=state.routes[Number(target.dataset.libraryRoute)];if(route){dialog.close();personal().restoreJourney(route.recipe);}}
       if(target.dataset.libraryRouteUpdate!==undefined){const i=Number(target.dataset.libraryRouteUpdate),recipe=personal().captureJourney();if(state.routes[i]&&recipe)mutate(()=>state.routes[i].recipe=store.recipe(recipe));}

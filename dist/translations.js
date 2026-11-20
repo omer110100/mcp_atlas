@@ -1,6 +1,16 @@
 'use strict';
 // Static shell and English annotations for the pinned dataset. Source JSON stays unchanged.
 window.AtlasTranslations={
+  "המדריך לאטלס": "Your atlas guide",
+  "אודות האטלס": "About the atlas",
+  "נושאי המידע": "Information sections",
+  "בקצרה": "Overview",
+  "איך משתמשים": "How to use",
+  "נתונים ומקורות": "Data & sources",
+  "כלים ותמיכה": "Tools & support",
+  "מה חדש בנתונים?": "What changed in the data?",
+  "עזרה, קיצורי דרך ותמיכה בפרויקט — במקום אחד.": "Help, shortcuts and project support in one place.",
+  "נתוני ציד ותצפיות נפילה": "Hunting data & drop observations",
   "המסלול משקלל מרחקים מתועדים וסוגי מעבר. זמן ההליכה הוא אומדן, ותנאי הכניסה אינם נבדקים במשחק.": "Routes weigh recorded distances and passage types. Walking time is an estimate; in-game entry requirements are not checked.",
   "אי ההתחלה": "Maple Island",
   "אימות עצמאי של 608 קשרים מכוונים בין 321 מפות. הקשרים תואמים במלואם לתת-הקבוצה המקבילה במאגר המקור.": "Independent verification of 608 directed connections across 321 maps. Every connection matches the corresponding subset of the source dataset.",

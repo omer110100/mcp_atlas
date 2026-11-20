@@ -24,3 +24,8 @@
 
 .route-tools>[role=status]{font-size:14px;line-height:1.6;color:var(--gold)}
 .route-tools>[role=status]:empty{display:none}
+
+.route-support-note{margin:0;font-size:14px;line-height:1.6;color:var(--muted)}
+.route-support-links{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px}
+.route-support-links a{min-height:44px;display:inline-flex;align-items:center;gap:8px}
+.route-support-links a:not(.primary){text-decoration:underline;text-underline-offset:4px}

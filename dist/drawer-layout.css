@@ -1,0 +1,74 @@
+/* Compact drawers reuse theme tokens and native disclosure/keyboard behavior. */
+html.atlas-shell :is(.route-step,.portal-card,.entity-location-card,.map-occupant,.drawer-pager,.drawer-current-step,.drawer-filter-empty,.clear-route)[hidden] {display:none!important;}
+.drawer-pager {display:grid;gap:8px;margin-block:10px 8px;min-width:0;grid-column:1/-1;}
+.drawer-page-controls {display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:6px;min-width:0;}
+.drawer-page-controls button,.drawer-current-step,.drawer-filter-empty button {min-height:40px;padding:7px 11px;border:1px solid var(--shell-border);border-radius:9px;background:var(--panel-2);color:var(--ink);font:inherit;font-size:13px;cursor:pointer;}
+.drawer-page-controls button:disabled {opacity:.4;cursor:default;}
+.drawer-page-status {text-align:center;color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums;}
+.drawer-current-step {justify-self:start;color:var(--gold);background:transparent;}
+.drawer-list-filter {display:block;margin:0;min-width:0;}
+.drawer-filter-caption {position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0;}
+.drawer-list-filter input {display:block;width:100%;min-width:0;min-height:42px;margin:0;padding:8px 12px;border:1px solid var(--shell-border);border-radius:10px;background:var(--input-surface);color:var(--ink);font:inherit;font-size:14px;text-align:start;}
+.drawer-filter-empty {margin:0;padding:12px;border-radius:10px;background:var(--panel-2);font-size:13px;color:var(--muted);}
+.drawer-filter-empty span {display:block;margin-bottom:8px;}
+.drawer-route-options,.drawer-map-preview {border:1px solid var(--shell-border);border-radius:12px;background:var(--panel-2);overflow:hidden;}
+.drawer-route-options {margin-block:12px;}
+.drawer-route-options>summary,.drawer-map-preview>summary,.drawer-selected-source>summary {cursor:pointer;min-height:42px;padding:10px 12px;color:var(--muted);font-size:13px;line-height:1.5;}
+.drawer-route-options>.route-secondary-actions {padding:0 10px;margin-top:2px;display:grid;grid-template-columns:1fr 1fr;gap:7px;}
+.drawer-route-options .route-secondary-actions .button {font-size:13px;padding:8px;min-height:42px;}
+.drawer-route-options>.route-tools {margin:8px 10px;}
+.drawer-route-options>.route-tools-footer {padding:0 10px 10px;}
+html.atlas-shell #routeToolsStatus:empty {display:none;}
+html.atlas-shell #routeResult>.route-summary {font-size:14px;padding:9px 11px;line-height:1.55;margin-block:10px;}
+html.atlas-shell #routeResult>.route-step {padding-block:10px;}
+html.atlas-shell #routeResult .route-step-content>button:first-child bdi {font-size:15px;line-height:1.4;}
+html.atlas-shell #routeResult .route-step small {line-height:1.5;}
+html.atlas-shell #routeResult .route-locate {margin-top:5px;min-height:36px;}
+html.atlas-shell .shell-guide-actions {margin-block:8px;}
+html.atlas-shell .shell-guide-actions>.button {font-size:13px;padding:8px;}
+html.atlas-shell .map-detail-head {padding:14px 18px 10px;}
+html.atlas-shell .map-detail-head h2 {font-size:22px;margin-block:5px;}
+html.atlas-shell .map-breadcrumb,html.atlas-shell .map-street {font-size:12px;}
+html.atlas-shell .map-detail-head .favorite-toggle {margin-top:9px;min-height:36px;padding:6px 9px;font-size:12px;}
+html.atlas-shell .map-detail-head .tag-row {margin-top:8px;}
+.drawer-map-preview {margin:0 18px 10px;}
+html.atlas-shell .drawer-map-preview .map-preview {display:block;float:none;width:calc(100% - 16px);height:140px;margin:0 8px 8px;border-radius:8px;}
+html.atlas-shell .detail-actions {height:auto;margin:0;padding:0 18px 12px;flex-direction:row;}
+html.atlas-shell .detail-actions .button {flex:1;min-width:0;min-height:42px;font-size:13px;}
+html.atlas-shell .shell-map-tabs {margin:0 18px 10px;}
+html.atlas-shell .shell-map-tabs button {min-height:40px;font-size:13px;padding:7px 5px;}
+html.atlas-shell .map-population {margin:0 18px;}
+html.atlas-shell .map-quick-facts {gap:5px;margin-bottom:8px;}
+html.atlas-shell .map-quick-facts>span {font-size:11px;padding:4px 7px;}
+html.atlas-shell .portal-tabs {margin-inline:18px;}
+html.atlas-shell .portal-tabs button {font-size:12px;min-height:42px;}
+html.atlas-shell .portal-content {padding:8px 18px 12px;}
+html.atlas-shell .portal-card {padding:8px;gap:7px;margin-bottom:6px;}
+html.atlas-shell .portal-main bdi {font-size:15px;line-height:1.35;}
+html.atlas-shell .portal-main .portal-meta {font-size:12px;line-height:1.45;margin-top:4px;}
+html.atlas-shell .map-occupant-grid {overflow:visible;max-height:none;padding:0;}
+html.atlas-shell .map-occupant {min-height:54px;padding:7px;gap:8px;}
+html.atlas-shell .map-occupant bdi {font-size:14px;}
+html.atlas-shell .map-occupant small {font-size:12px;}
+html.atlas-shell .scene-sidebar {padding:14px 18px;}
+html.atlas-shell .scene-sidebar .scene-filters {gap:5px;margin-bottom:10px;}
+html.atlas-shell .scene-selected {padding:10px 12px;margin-block:8px;font-size:12px;line-height:1.55;}
+html.atlas-shell .scene-selected>bdi {font-size:16px;margin:3px 0 6px;}
+html.atlas-shell .scene-selected>.button {margin-top:7px;min-height:40px;}
+.drawer-selected-source {margin-top:8px;border-top:1px solid var(--shell-border);}
+.drawer-selected-source>summary {padding:7px 0;min-height:34px;font-size:11px;}
+html.atlas-shell .drawer-selected-source bdi {font-size:13px;margin-block:4px;overflow-wrap:anywhere;}
+html.atlas-shell .entity-location-card {min-height:52px;padding:8px;gap:8px;margin-bottom:5px;}
+html.atlas-shell .entity-location-card bdi {font-size:14px;}
+html.atlas-shell .entity-location-card small {font-size:12px;}
+html.atlas-shell .original-image {margin-block:12px;font-size:12px;}
+html.atlas-shell[data-readability="comfortable"] .drawer-list-filter input {font-size:16px;}
+html.atlas-shell[data-readability="comfortable"] :is(.drawer-page-controls button,.drawer-current-step,.portal-main .portal-meta,.map-occupant small) {font-size:14px;line-height:1.6;}
+html.atlas-shell[data-readability="comfortable"] :is(.portal-main bdi,.map-occupant bdi,.entity-location-card bdi) {font-size:16px;line-height:1.6;}
+@media(max-width:780px){
+  .drawer-list-filter input {font-size:16px;}
+  html.atlas-shell .map-detail-head h2 {font-size:21px;}
+  html.atlas-shell .scene-sidebar {padding:12px 14px;}
+  html.atlas-shell .drawer-map-preview .map-preview {height:120px;}
+  html.atlas-shell .map-occupant-grid {grid-template-columns:minmax(0,1fr);}
+}
