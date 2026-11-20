@@ -143,7 +143,7 @@
     const params=new URLSearchParams(location.hash.slice(1));
     const hasContext=params.has('map')||params.has('route')||!!window.Atlas?.currentRoute;
     if(state.view==='list'&&!hasContext)setView('list');
-    if(!state.welcomeSeen&&!hasContext&&!document.querySelector('dialog[open]'))showWelcome();
+    if(document.documentElement.dataset.appVersion!=='3'&&!window.AtlasShell&&!state.welcomeSeen&&!hasContext&&!document.querySelector('dialog[open]'))showWelcome();
   }
   window.addEventListener('atlas-ready',onReady,{once:true});
   render();if(window.Atlas)onReady();

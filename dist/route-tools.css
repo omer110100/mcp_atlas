@@ -1,0 +1,26 @@
+.route-summary{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.trip-condition{font-size:14px;color:var(--ink);background:color-mix(in srgb,var(--gold,#e9bd78) 18%,transparent);border:1px solid var(--gold,#e9bd78);padding:3px 8px;border-radius:20px}
+.route-tools{display:grid;gap:10px;margin:12px 0}
+.route-estimate{font-size:14px;color:var(--text-muted,var(--muted))}
+.route-estimate summary{cursor:pointer;min-height:32px;display:flex;align-items:center}
+.route-estimate p{line-height:1.65}
+.route-tools-footer{display:grid;gap:10px;margin-block:16px}
+.route-tools-footer a{font-size:14px;line-height:1.6;color:var(--text-muted,var(--muted))}
+.route-tools-footer textarea{width:100%;min-height:140px;resize:vertical}
+.route-tools-footer [role=status]:empty{display:none}
+.route-detour{align-self:start;position:relative}
+.route-detour summary{list-style:none;cursor:pointer;width:32px;height:36px;display:grid;place-items:center;font-weight:bold;border-radius:10px}
+.route-detour summary:hover,.route-detour[open] summary{background:var(--panel-2)}
+.route-detour>div{position:absolute;z-index:6;inset-inline-end:0;top:38px;width:min(240px,65vw);padding:8px;border:1px solid var(--line);border-radius:12px;background:var(--panel,#172a36);box-shadow:0 12px 32px #0004;display:grid;gap:5px}
+.route-detour button{font-size:14px;min-height:40px;text-align:start;padding:8px;border-radius:6px}
+.route-detour small{font-size:13px;padding:4px;line-height:1.5}
+.route-step:has(.route-detour){grid-template-columns:28px minmax(0,1fr) 32px}
+.route-pin-label{paint-order:stroke;stroke:var(--bg,#071a28);fill:var(--ink,#eef5ed);font-weight:700;pointer-events:none}
+#scenePins .route-arrival .route-pin-label{fill:var(--arrival-label,#a6d6ff)}
+#scenePins .route-required .route-pin-label{fill:var(--gold,#e9bd78)}
+[data-theme=parchment]{--arrival-label:#174e76}
+@media(prefers-reduced-motion:reduce){.scene-pin.route-required{animation:none!important}}
+[data-motion=off] .scene-pin.route-required{animation:none!important}
+
+.route-tools>[role=status]{font-size:14px;line-height:1.6;color:var(--gold)}
+.route-tools>[role=status]:empty{display:none}

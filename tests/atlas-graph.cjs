@@ -103,7 +103,7 @@ run('world.k=.1;currentRegion="maple";applyWorld();');
 check('explicit region view is not subjected to world overview label suppression',run('[...nodeElements.values()].every(node=>node.querySelector("text").style.visibility!=="hidden")'));
 get('mapCanvas').bounds={width:1000,height:700,left:0,top:0,right:1000,bottom:700};
 run('currentRegion="world";applyWorld();');
-check('wide canvases retain the existing full town-label overview',run('[...nodeElements.values()].every(node=>node.querySelector("text").style.visibility!=="hidden")'));
+check('wide distant overviews also suppress collisions while retaining selected map and hit targets',run('nodeElements.get(activeId).querySelector("text").style.visibility!=="hidden"&&maps.filter(map=>map.major).every(map=>nodeElements.get(map.id).style.display!=="none")&&[...nodeElements.values()].some(node=>node.querySelector("text").style.visibility==="hidden")'));
 check('unavailable SVG metrics fall back to finite conservative label bounds',run('(()=>{const map=byId.get(activeId),box=worldLabelBox(map,{textContent:map.name,getBBox(){throw new Error("metrics unavailable")}});return Object.values(box).every(Number.isFinite)&&box.right>box.left&&box.bottom>box.top;})()'));
 check('map type summaries distinguish source-backed town hunting and archive records',run('describeMap(10001000).category==="town"&&describeMap(10001005).category==="hunting"&&describeMap(90040003).category==="archive"&&describeMap(-1)===null'));
 const report={checkedAt:new Date().toISOString(),method:'Node VM with lightweight DOM contract stubs; no browser, no rendering, no network checks',appSha256:crypto.createHash('sha256').update(source).digest('hex'),results,failures:results.filter(r=>!r.passed)};

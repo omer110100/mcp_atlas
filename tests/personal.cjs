@@ -66,7 +66,8 @@ function setup({saved,hash='',storageBlocked=false,writeBlocked=false,clipboardB
   check('changed route topology resets stored progress',setup({saved:altered}).resumed[0]===0);
   const malformedJourney=fresh.stored();malformedJourney.journey.step=-1;
   check('invalid stored progress is rejected before route callback',setup({saved:malformedJourney}).restored.length===0);
-  const shared=setup({hash:'#route=1,3&services=1&step=2&data=test-v1',saved:altered});
+  check('legacy shared links reset progress after routing-engine change',setup({hash:'#route=1,3&step=2&data=test-v1'}).resumed[0]===0);
+  const shared=setup({hash:'#route=1,3&services=1&step=2&data=test-v1&engine=3',saved:altered});
   check('explicit shared route takes precedence over saved route',shared.restored.length===1&&shared.resumed[0]===2&&shared.restored[0].services);
   shared.el('routeRestoreNote').textContent='';shared.events.get('atlas-languagechange')();
   check('language switch never resurrects a dismissed restore notice',shared.el('routeRestoreNote').textContent==='');
@@ -105,7 +106,7 @@ function setup({saved,hash='',storageBlocked=false,writeBlocked=false,clipboardB
   check('unrelated storage events do not refresh this application',tabA.refreshes()===unchangedRefresh);
   tabB.personal.visit(9);tabA.click('clearRecent');
   check('clear recent removes latest history without removing favorite maps or journey',tabA.stored().recent.length===0&&tabA.stored().favorites.includes(8)&&tabA.stored().journey.step===1);
-  const routeLinked=setup({hash:'#route=1,3&services=1&step=1&data=test-v1'});
+  const routeLinked=setup({hash:'#route=1,3&services=1&step=1&data=test-v1&engine=3'});
   const hashForMap=new URLSearchParams(routeLinked.personal.mapHash(2).slice(1));
   check('selecting another map preserves shared route parameters',hashForMap.get('map')==='2'&&hashForMap.get('route')==='1,3'&&hashForMap.get('step')==='1');
   check('ordinary map selection creates a simple map deep link',mapLinked.personal.mapHash(3)==='#map=3');

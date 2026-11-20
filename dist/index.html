@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="he" dir="rtl" data-theme="midnight" data-motion="on">
+<html lang="he" dir="rtl" data-theme="midnight" data-motion="on" data-app-version="3">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -7,31 +7,37 @@
   <meta name="description" content="אטלס אינטראקטיבי למייפלסטורי קלאסיק: כל רשומות המפות בגרסה 2.0.0, שערים, מקומות נסתרים וניווט בין מפות.">
   <title>אטלס מייפלסטורי קלאסיק</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath fill='%23e9bd78' d='M32 3l6 16 13-5-3 14 12 5-18 12-9 16-3-20-22-8 13-5-3-14 10 5z'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=expedition-2">
-  <link rel="stylesheet" href="hunt.css?v=expedition-2">
-  <link rel="stylesheet" href="navigation.css?v=expedition-2">
-  <link rel="stylesheet" href="controls.css?v=expedition-2">
-  <link rel="stylesheet" href="personal.css?v=expedition-2">
-  <link rel="stylesheet" href="map-search.css?v=expedition-2">
-  <link rel="stylesheet" href="themes.css?v=expedition-2">
-  <link rel="stylesheet" href="library.css?v=expedition-2">
-  <link rel="stylesheet" href="hunt-enhancements.css?v=expedition-2">
-  <link rel="stylesheet" href="experience.css?v=expedition-2">
-  <link rel="stylesheet" href="atmosphere.css?v=expedition-2">
-  <link rel="stylesheet" href="journey.css?v=expedition-2">
-  <link rel="stylesheet" href="map-info.css?v=expedition-2">
-  <script defer src="translations.js?v=expedition-2"></script>
-  <script defer src="i18n.js?v=expedition-2"></script>
-  <script defer src="appearance.js?v=expedition-2"></script>
-  <script defer src="map-search.js?v=expedition-2"></script>
-  <script defer src="personal.js?v=expedition-2"></script>
-  <script defer src="journey.js?v=expedition-2"></script>
-  <script defer src="library-store.js?v=expedition-2"></script>
-  <script defer src="library.js?v=expedition-2"></script>
-  <script defer src="app.js?v=expedition-2"></script>
-  <script defer src="hunt.js?v=expedition-2"></script>
-  <script defer src="experience.js?v=expedition-2"></script>
-  <script defer src="map-info.js?v=expedition-2"></script>
+  <link rel="stylesheet" href="styles.css?v=app-shell-3">
+  <link rel="stylesheet" href="hunt.css?v=app-shell-3">
+  <link rel="stylesheet" href="navigation.css?v=app-shell-3">
+  <link rel="stylesheet" href="controls.css?v=app-shell-3">
+  <link rel="stylesheet" href="personal.css?v=app-shell-3">
+  <link rel="stylesheet" href="map-search.css?v=app-shell-3">
+  <link rel="stylesheet" href="themes.css?v=app-shell-3">
+  <link rel="stylesheet" href="library.css?v=app-shell-3">
+  <link rel="stylesheet" href="hunt-enhancements.css?v=app-shell-3">
+  <link rel="stylesheet" href="experience.css?v=app-shell-3">
+  <link rel="stylesheet" href="atmosphere.css?v=app-shell-3">
+  <link rel="stylesheet" href="journey.css?v=app-shell-3">
+  <link rel="stylesheet" href="map-info.css?v=app-shell-3">
+  <link rel="stylesheet" href="route-tools.css?v=app-shell-3">
+  <link rel="stylesheet" href="explorer.css?v=app-shell-3">
+  <link rel="stylesheet" href="app-shell.css?v=app-shell-3">
+  <script defer src="translations.js?v=app-shell-3"></script>
+  <script defer src="i18n.js?v=app-shell-3"></script>
+  <script defer src="appearance.js?v=app-shell-3"></script>
+  <script defer src="map-search.js?v=app-shell-3"></script>
+  <script defer src="personal.js?v=app-shell-3"></script>
+  <script defer src="journey.js?v=app-shell-3"></script>
+  <script defer src="library-store.js?v=app-shell-3"></script>
+  <script defer src="library.js?v=app-shell-3"></script>
+  <script defer src="app.js?v=app-shell-3"></script>
+  <script defer src="hunt.js?v=app-shell-3"></script>
+  <script defer src="experience.js?v=app-shell-3"></script>
+  <script defer src="map-info.js?v=app-shell-3"></script>
+  <script defer src="route-tools.js?v=app-shell-3"></script>
+  <script defer src="explorer.js?v=app-shell-3"></script>
+  <script defer src="app-shell.js?v=app-shell-3"></script>
 </head>
 <body>
   <header class="app-header">
@@ -70,7 +76,7 @@
     <aside id="sidePanel" class="side-panel" aria-label="פרטי המקום הנבחר">
       <section id="routePanel" class="route-panel" hidden>
         <div class="section-heading"><div><span class="eyebrow">בוחרים יעד, מוצאים דרך</span><h2>המסע שלך</h2></div><button id="closeRoute" type="button" class="icon-button" aria-label="סגירת תכנון מסלול"><span class="icon" data-icon="close"></span></button></div>
-        <form id="routeForm"><label for="routeFrom">מאיפה יוצאים?</label><input id="routeFrom" list="mapOptions" required autocomplete="off" dir="auto" aria-describedby="routeFromError"><small id="routeFromError" class="field-error" role="status"></small><label for="routeTo">לאן מגיעים?</label><input id="routeTo" list="mapOptions" required autocomplete="off" dir="auto" aria-describedby="routeToError"><small id="routeToError" class="field-error" role="status"></small><datalist id="mapOptions"></datalist><div class="route-itinerary-tools"><button type="button" id="routeSwap" class="button quiet">⇄</button><button type="button" id="routeAddStop" class="button quiet">＋</button></div><div id="routeStops"></div><label class="check-row"><input id="useServices" type="checkbox"><span>לכלול כניסות דרך דמויות ומשימות</span></label><p class="route-help">המסלול ממזער מעברים בין מפות. זמן הליכה ותנאי כניסה אינם מחושבים.</p><button class="button primary full" type="submit">מצא מסלול</button></form>
+        <form id="routeForm"><label for="routeFrom">מאיפה יוצאים?</label><input id="routeFrom" list="mapOptions" required autocomplete="off" dir="auto" aria-describedby="routeFromError"><small id="routeFromError" class="field-error" role="status"></small><label for="routeTo">לאן מגיעים?</label><input id="routeTo" list="mapOptions" required autocomplete="off" dir="auto" aria-describedby="routeToError"><small id="routeToError" class="field-error" role="status"></small><datalist id="mapOptions"></datalist><div class="route-itinerary-tools"><button type="button" id="routeSwap" class="button quiet">⇄</button><button type="button" id="routeAddStop" class="button quiet">＋</button></div><div id="routeStops"></div><label class="check-row"><input id="useServices" type="checkbox"><span>לכלול כניסות דרך דמויות ומשימות</span></label><p class="route-help">המסלול משקלל מרחקים מתועדים וסוגי מעבר. זמן ההליכה הוא אומדן, ותנאי הכניסה אינם נבדקים במשחק.</p><button class="button primary full" type="submit">מצא מסלול</button></form>
         <div id="routeGoal"></div><div id="routeAlternatives"></div><p id="routeRestoreNote" class="route-restore-note" role="status"></p><p id="routeStorageStatus" class="personal-storage" role="status"></p><div id="routeResult" aria-live="polite"></div><div id="routeShareBox" class="route-share-box" hidden><label for="routeShareUrl">קישור למסלול ולשלב הנוכחי</label><input id="routeShareUrl" readonly dir="ltr" aria-describedby="routeShareHelp"><small id="routeShareHelp">המועדפים והמפות האחרונות אינם נכללים בקישור.</small></div>
       </section>
       <section id="mapDetails"><div class="detail-placeholder">בחרו מקום על המפה כדי להתחיל לחקור.</div></section>

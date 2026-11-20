@@ -296,6 +296,19 @@ check('planTo uses saved origin only when explicit origin is absent',run('planTo
 run('globalThis.beforeInvalidOrigin=route');
 check('invalid explicit origin never silently falls back to a different starting map',run('planTo(10001000,999999999)===false&&route===beforeInvalidOrigin'));
 
+run(`planJourney({from:10001000,to:10004000,stops:[],services:false,step:1,avoidMaps:[10001090]});globalThis.detourBeforeInvalidForm=route;globalThis.recipeBeforeInvalidForm=JSON.stringify(getJourney());`);
+get('routeFrom').value='not a valid map';run('submitRoute({preventDefault(){}})');
+check('invalid submitted form preserves active route, exclusions and navigation progress',run('route===detourBeforeInvalidForm&&JSON.stringify(getJourney())===recipeBeforeInvalidForm'));
+
+// Deferred extension scripts can subscribe before the atlas finishes loading.
+// Their view decorations must survive the core renderer's later language refresh.
+run('sceneId=null;renderRouteResult()');
+const decorateRouteForLanguage=()=>{get('routeResult').innerHTML+='<!-- contextual route controls -->';};
+windowListeners.get('atlas-languagechange').unshift(decorateRouteForLanguage);
+window.addEventListener('atlas-viewchange',decorateRouteForLanguage);
+changeLanguage('en');
+check('language refresh exposes the final rebuilt route to contextual modules before any scene is opened',get('routeResult').innerHTML.includes('contextual route controls')&&get('routeResult').innerHTML.includes('route-summary'));
+
 const report={checkedAt:new Date().toISOString(),method:'Node VM with lightweight DOM contract stubs; no browser, no rendering, no network checks',appSha256:crypto.createHash('sha256').update(source).digest('hex'),results,failures:results.filter(r=>!r.passed)};
 process.exitCode=report.failures.length?1:0;
 console.log(JSON.stringify({checks:results.length,failed:report.failures.length,failures:report.failures}));

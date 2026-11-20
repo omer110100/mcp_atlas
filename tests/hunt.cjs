@@ -253,7 +253,7 @@ function report(){
     switched.setLanguage('en');
     assert.equal(switched.nodes.huntBody.scrollTop,312);assert.equal(switched.doc.activeElement.id,'huntRank');
     assert.deepEqual({tab:s.tab,query:s.query,selected:plain(s.selected),originId:s.originId,originText:s.originText,rank:s.rank,targets:[...s.targets],compare:plain(s.compare),compareOpen:s.compareOpen,documented:s.documented},snapshot);
-    assert(switched.nodes.huntBody.innerHTML.includes('Compare hunting maps'));assert(switched.nodes.huntBody.innerHTML.includes('Fewest map transitions'));
+    assert(switched.nodes.huntBody.innerHTML.includes('Compare hunting maps'));assert(switched.nodes.huntBody.innerHTML.includes('Passages on weighted route'));
     switched.setLanguage('he');assert(switched.nodes.huntBody.innerHTML.includes('השוואת מפות ציד'));assert.equal(switched.doc.activeElement.id,'huntRank');
     switched.H.close();switched.setLanguage('en');assert.equal(switched.nodes.huntPanel.hidden,true);switched.H.open('item',1092002);
     assert.deepEqual(plain(s.compare),snapshot.compare);assert.equal(s.originId,snapshot.originId);

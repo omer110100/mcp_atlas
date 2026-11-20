@@ -19,7 +19,7 @@
     document.getElementById('appearanceStorage').textContent=storageOk&&window.AtlasI18n.storageOk?L('ההעדפות נשמרות בדפדפן הזה.','Preferences are saved in this browser.'):L('השמירה אינה זמינה. ההעדפות יחולו עד לסגירת הדף.','Storage is unavailable. Preferences apply until this page is closed.');
   }
   function save(){try{localStorage.setItem(KEY,JSON.stringify(state));storageOk=true;}catch{storageOk=false;}render();}
-  document.getElementById('appearanceToggle').addEventListener('click',()=>{render();dialog.showModal();});
+  document.getElementById('appearanceToggle').addEventListener('click',()=>{render();if(window.AtlasShell)window.AtlasShell.openPopover(dialog,document.getElementById('appearanceToggle'));else dialog.showModal();});
   document.getElementById('closeAppearance').addEventListener('click',()=>dialog.close());
   dialog.addEventListener('click',event=>{
     const theme=event.target.closest('[data-theme-option]')?.dataset.themeOption;

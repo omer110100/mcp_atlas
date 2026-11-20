@@ -1,6 +1,7 @@
 'use strict';
 // Static shell and English annotations for the pinned dataset. Source JSON stays unchanged.
 window.AtlasTranslations={
+  "המסלול משקלל מרחקים מתועדים וסוגי מעבר. זמן ההליכה הוא אומדן, ותנאי הכניסה אינם נבדקים במשחק.": "Routes weigh recorded distances and passage types. Walking time is an estimate; in-game entry requirements are not checked.",
   "אי ההתחלה": "Maple Island",
   "אימות עצמאי של 608 קשרים מכוונים בין 321 מפות. הקשרים תואמים במלואם לתת-הקבוצה המקבילה במאגר המקור.": "Independent verification of 608 directed connections across 321 maps. Every connection matches the corresponding subset of the source dataset.",
   "אימות שתי הכניסות הנסתרות לאזור מאליניה ומסליפיווד. יעדי התסריטים מוצגים כקשרים מתועדים נפרדים, בלי לשנות את נתוני הפורטלים המקוריים.": "Verification of both hidden entrances from Ellinia and Sleepywood. Script destinations appear as separately documented connections; original portal data is unchanged.",

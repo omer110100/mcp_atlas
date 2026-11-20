@@ -28,7 +28,7 @@
   const getMap = id => atlasMaps().find(m => Number(m.id) === Number(id));
   const mapLabel = m => `${m.name} [${m.id}]`;
   const activeMapId = () => Number(window.Atlas?.activeMap?.id ?? window.Atlas?.activeMap);
-  const defaultOrigin = () => getMap(activeMapId())?.id ?? getMap(10001000)?.id ?? atlasMaps()[0]?.id ?? null;
+  const defaultOrigin = () => getMap(window.AtlasExplorer?.getCurrentMap?.())?.id ?? getMap(activeMapId())?.id ?? getMap(10001000)?.id ?? atlasMaps()[0]?.id ?? null;
   const savedOrigin = () => getMap(window.AtlasPersonal?.getOrigin?.())?.id ?? null;
   const entityFor = (kind,id) => (kind === 'item' ? itemsById : kind === 'npc' ? npcsById : mobsById).get(Number(id));
 
@@ -70,6 +70,7 @@
     const panel = ensurePanel(); if (!panel) return;
     if (!visible) opener = document.activeElement;
     visible = true; panel.hidden = false;
+    window.AtlasShell?.showCatalog(panel);
     $('huntToggle')?.setAttribute('aria-expanded','true');
     if (state.originId == null && state.originText == null) {
       state.originId = savedOrigin() ?? defaultOrigin(); state.originText = getMap(state.originId) ? mapLabel(getMap(state.originId)) : '';
@@ -81,7 +82,8 @@
     if (!visible) return;
     visible = false; const p = $('huntPanel'); if (p) p.hidden = true;
     $('huntToggle')?.setAttribute('aria-expanded','false');
-    if (restoreFocus) {
+    if (window.AtlasShell) window.AtlasShell.catalogClosed({restoreFocus});
+    else if (restoreFocus) {
       const target = opener?.isConnected && opener!==document.body && !opener.closest('[hidden]') ? opener : $('huntToggle');
       target?.focus({preventScroll:true});
     }
@@ -311,7 +313,7 @@
   }
   function originControls(withRank=true) {
     const m=getMap(state.originId);
-    return `<div class="hunt-controls"><label>${L('מאיפה יוצאים?','Where are you starting?')}<input id="huntOrigin" list="mapOptions" value="${esc(m?mapLabel(m):state.originText||'')}" autocomplete="off" dir="auto" placeholder="${L('שם מפה בעברית, באנגלית או מזהה','Map name in Hebrew, English or ID')}" aria-invalid="${!m}" ${m?'':'aria-describedby="huntOriginNote"'}></label><div class="hunt-origin-actions"><button type="button" class="button quiet" data-hunt-action="origin-active">${L('מהמקום הנבחר','Use selected map')}</button>${window.AtlasPersonal?.setOrigin?`<button type="button" class="button quiet" data-hunt-action="origin-save" ${m?'':'disabled'}>${m&&savedOrigin()===m.id?L('✓ מפת המוצא השמורה','✓ Saved starting map'):L('שמירה כמפת מוצא','Save starting map')}</button>`:''}</div>${withRank?`<label>${L('סדר המפות','Sort maps')}<select id="huntRank"><option value="points" ${state.rank==='points'?'selected':''}>${L('מספר נקודות היעד','Target spawn points')}</option><option value="share" ${state.rank==='share'?'selected':''}>${L('חלק מנקודות ההופעה','Share of spawn points')}</option><option value="distance" ${state.rank==='distance'?'selected':''}>${L('הכי מעט מעברי מפה','Fewest map transitions')}</option></select></label>`:''}</div><p id="huntOriginNote" class="hunt-note" ${m?'hidden':''}>${m?'':originNote()}</p>`;
+    return `<div class="hunt-controls"><label>${L('מאיפה יוצאים?','Where are you starting?')}<input id="huntOrigin" list="mapOptions" value="${esc(m?mapLabel(m):state.originText||'')}" autocomplete="off" dir="auto" placeholder="${L('שם מפה בעברית, באנגלית או מזהה','Map name in Hebrew, English or ID')}" aria-invalid="${!m}" ${m?'':'aria-describedby="huntOriginNote"'}></label><div class="hunt-origin-actions"><button type="button" class="button quiet" data-hunt-action="origin-active">${L('מהמקום הנבחר','Use selected map')}</button>${window.AtlasPersonal?.setOrigin?`<button type="button" class="button quiet" data-hunt-action="origin-save" ${m?'':'disabled'}>${m&&savedOrigin()===m.id?L('✓ מפת המוצא השמורה','✓ Saved starting map'):L('שמירה כמפת מוצא','Save starting map')}</button>`:''}</div>${withRank?`<label>${L('סדר המפות','Sort maps')}<select id="huntRank"><option value="points" ${state.rank==='points'?'selected':''}>${L('מספר נקודות היעד','Target spawn points')}</option><option value="share" ${state.rank==='share'?'selected':''}>${L('חלק מנקודות ההופעה','Share of spawn points')}</option><option value="distance" ${state.rank==='distance'?'selected':''}>${L('מעברים במסלול המשוקלל','Passages on weighted route')}</option></select></label>`:''}</div><p id="huntOriginNote" class="hunt-note" ${m?'hidden':''}>${m?'':originNote()}</p>`;
   }
   function originNote(){return state.originText?.trim()?L('לא נמצאה מפת מוצא חד-משמעית. בחרו מפה מהרשימה או הזינו מזהה מפה.','No unique starting map found. Select a map from the list or enter its ID.'):L('בחרו מפת מוצא מהרשימה כדי להשוות מסלולים.','Choose a starting map from the list to compare routes.');}
   function hasUnresolved(id) { return (dropData.unresolved||[]).some(l=>Number(l.itemId)===Number(id)); }
@@ -559,10 +561,10 @@
         }else announce(L('לא ניתן לשמור את מפת המוצא כרגע.','The starting map could not be saved.'));
         break;
       }
-      case'map':close({restoreFocus:false});window.Atlas?.selectMap(mid,{focus:true});$('huntToggle')?.focus({preventScroll:true});break;
+      case'map':close({restoreFocus:false});window.Atlas?.selectMap(mid,{focus:true});if(window.AtlasShell)window.AtlasShell.catalogClosed();else $('huntToggle')?.focus({preventScroll:true});break;
       case'route':
         if(!getMap(state.originId)){$('huntOrigin')?.focus();if($('huntOriginNote'))$('huntOriginNote').hidden=false;announce(originNote());return;}
-        {const goal=routeGoal();close({restoreFocus:false});if(goal)window.Atlas?.planTo(mid,Number(state.originId),{goal});else window.Atlas?.planTo(mid,Number(state.originId));$('routeTo')?.focus({preventScroll:true});break;}
+        {const goal=routeGoal();close({restoreFocus:false});if(goal)window.Atlas?.planTo(mid,Number(state.originId),{goal});else window.Atlas?.planTo(mid,Number(state.originId));$(window.AtlasShell?'startRoute':'routeTo')?.focus({preventScroll:true});break;}
       case'positions':window.Atlas?.openSpawns(mid,button.dataset.mobs.split(',').map(Number));break;
       case'npc-positions':window.Atlas?.openNpcs(mid,[Number(button.dataset.npc)]);break;
     }

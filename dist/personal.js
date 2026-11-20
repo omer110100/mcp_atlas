@@ -19,28 +19,29 @@
   function write(){try{localStorage.setItem(KEY,JSON.stringify(state));storageOk=true;}catch{storageOk=false;}status();}
   function status(){const message=storageOk?L("נשמר בדפדפן הזה בלבד · ללא חשבון וסנכרון","Saved only in this browser \u00b7 No account or sync"):L("השמירה בדפדפן אינה זמינה כרגע. אפשר להמשיך להשתמש ולשתף קישור למסלול.","Browser storage is unavailable. You can still use the atlas and share route links.");for(const id of ['personalStorage','routeStorageStatus']){const el=document.getElementById(id);if(el)el.textContent=message;}}
   function routeSignature(route){return JSON.stringify([api.version,route.from,...route.steps.map(s=>[s.from,s.to,s.p?.key||s.service?.id||''])]);}
-  function capture(){const route=api.getRoute();return route?{from:route.from,to:route.to,stops:[...(route.stops||[])],...(route.goal?{goal:route.goal}:{}),services:api.getServices(),step:api.getStep(),signature:routeSignature(route)}:null;}
+  function capture(){const route=api.getRoute();return route?{from:route.from,to:route.to,stops:[...(route.stops||[])],...(route.avoidMaps?.length?{avoidMaps:[...route.avoidMaps]}:{}),...(route.avoidEdges?.length?{avoidEdges:[...route.avoidEdges]}:{}),...(route.goal?{goal:route.goal}:{}),services:api.getServices(),step:api.getStep(),signature:routeSignature(route)}:null;}
   function parseLink(hash){
     if(typeof hash!=='string'||hash.length>8192)return null;
     const p=new URLSearchParams(hash.replace(/^#/,''));if(!p.has('route'))return undefined;
-    const allowed=new Set(['route','services','step','data','map','stops','goal']),seen=new Set();
+    const allowed=new Set(['route','services','step','data','map','stops','goal','avoidMaps','avoidEdges','engine']),seen=new Set();
     for(const key of p.keys()){if(!allowed.has(key)||seen.has(key))return null;seen.add(key);}
     const m=/^(\d+),(\d+)$/.exec(p.get('route')),step=p.get('step')||'0',services=p.get('services')||'0';
     if(!m||!/^\d+$/.test(step)||!['0','1'].includes(services))return null;
-    let goal;try{goal=p.has('goal')?JSON.parse(p.get('goal')):undefined;}catch{return null;}
+    let goal,avoidMaps,avoidEdges;try{goal=p.has('goal')?JSON.parse(p.get('goal')):undefined;avoidMaps=p.has('avoidMaps')?JSON.parse(p.get('avoidMaps')):undefined;avoidEdges=p.has('avoidEdges')?JSON.parse(p.get('avoidEdges')):undefined;}catch{return null;}
+    if((p.has('engine')&&p.get('engine')!=='3')||(p.has('avoidMaps')&&!Array.isArray(avoidMaps))||(p.has('avoidEdges')&&!Array.isArray(avoidEdges)))return null;
     if(p.has('goal')&&(!goal||typeof goal!=='object'||Array.isArray(goal)))return null;
     const stopText=p.get('stops')||'';if(stopText&&!/^\d+(,\d+){0,7}$/.test(stopText))return null;
-    const result=recipe({from:Number(m[1]),to:Number(m[2]),stops:stopText?stopText.split(',').map(Number):[],...(goal?{goal}:{}),step:Number(step),services:services==='1'});
-    if(result)result.data=p.get('data');return result;
+    const result=recipe({from:Number(m[1]),to:Number(m[2]),stops:stopText?stopText.split(',').map(Number):[],...(goal?{goal}:{}),...(avoidMaps?{avoidMaps}:{}),...(avoidEdges?{avoidEdges}:{}),step:Number(step),services:services==='1'});
+    if(result){result.data=p.get('data');result.engine=p.get('engine');}return result;
   }
-  function linkHash(journey){return '#'+new URLSearchParams({route:`${journey.from},${journey.to}`,services:journey.services?'1':'0',step:String(journey.step),data:api.version,...(journey.stops?.length?{stops:journey.stops.join(',')}:{}),...(journey.goal?{goal:JSON.stringify(journey.goal)}:{})}).toString();}
+  function linkHash(journey){return '#'+new URLSearchParams({route:`${journey.from},${journey.to}`,services:journey.services?'1':'0',step:String(journey.step),data:api.version,engine:'3',...(journey.stops?.length?{stops:journey.stops.join(',')}:{}),...(journey.goal?{goal:JSON.stringify(journey.goal)}:{}),...(journey.avoidMaps?.length?{avoidMaps:JSON.stringify(journey.avoidMaps)}:{}),...(journey.avoidEdges?.length?{avoidEdges:JSON.stringify(journey.avoidEdges)}:{})}).toString();}
   function saveJourney(){if(!api)return;if(storageOk)read();state.journey=capture();write();if(state.journey||new URLSearchParams(location.hash.slice(1)).has('route'))history.replaceState(null,'',state.journey?linkHash(state.journey):location.pathname+location.search);}
   function restore(journey,shared=false){
     if(!journey||!api.restore(journey)){if(!shared){state.journey=null;write();}api.notice(shared?L("הקישור אינו מכיל מסלול זמין. אפשר לבחור מוצא ויעד מחדש.","This link does not contain an available route. Choose a new start and destination."):L("המסלול השמור אינו זמין בנתונים הנוכחיים.","The saved route is unavailable in the current data."));return false;}
-    const changed=shared?journey.data!==api.version:journey.signature!==routeSignature(api.getRoute());
+    const changed=shared?(journey.data!==api.version||journey.engine!=='3'):journey.signature!==routeSignature(api.getRoute());
     const invalidStep=journey.step>api.getRoute().steps.length;
     const step=changed||invalidStep?0:journey.step;
-    api.resume(step,false);saveJourney();
+    api.resume(step,shared);saveJourney();
     restoreNote=()=>invalidStep?L("השלב השמור אינו קיים במסלול הזה. המדריך נפתח מההתחלה.","The saved step does not exist on this route. Navigation starts from the beginning."):changed?L("נתוני המסלול השתנו; המסלול חושב מחדש וההתקדמות אופסה.","The route data changed; the route was recalculated and progress reset."):shared?L("מסלול מקישור משותף · ניתן להמשיך מהמקום המסומן.","Shared route \u00b7 Continue from the marked step."):L("המסלול והשלב האחרון שוחזרו מהדפדפן הזה.","Your route and last step were restored from this browser.");
     document.getElementById('routeRestoreNote').textContent=restoreNote();
     return true;
@@ -62,7 +63,7 @@
   }
   function init(options){
     api=options;read();api.refresh();window.AtlasLibrary?.init({maps:api.maps,escape:api.escape,notice:api.notice,refresh:api.refresh,select:api.select});
-    document.getElementById('personalToggle').addEventListener('click',()=>{render();document.getElementById('personalDialog').showModal();});
+    document.getElementById('personalToggle').addEventListener('click',()=>{render();const dialog=document.getElementById('personalDialog');if(window.AtlasShell)window.AtlasShell.openPopover(dialog,document.getElementById('personalToggle'));else dialog.showModal();});
     document.getElementById('closePersonal').addEventListener('click',()=>document.getElementById('personalDialog').close());
     document.getElementById('personalFilter').addEventListener('change',render);
     document.getElementById('clearRecent').addEventListener('click',()=>{if(storageOk)read();state.recent=[];write();render();api.notice(L("רשימת המפות האחרונות נוקתה. המועדפים נשמרו.","Recent maps cleared. Your favorites are kept."));});
