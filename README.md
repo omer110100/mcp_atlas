@@ -1,6 +1,6 @@
 # Maple Atlas
 
-A Hebrew interactive atlas for the official **MapleStory Classic World v2.0.0**, researched on 19 November 2026. The atlas includes every record in the published current-client map dataset, with clear separation between live-world geography, conditional content, event records, and system rooms.
+A Hebrew and English interactive atlas for the official **MapleStory Classic World v2.0.0**, researched on 19 November 2026. The atlas includes every record in the published current-client map dataset, with clear separation between live-world geography, conditional content, event records, and system rooms.
 
 ## Run locally
 
@@ -21,9 +21,15 @@ The same commands work on Windows, macOS, and Linux. In PowerShell, use `npm.cmd
 | `npm start` | Serve `dist/` locally on port 5173 | Node.js 22+ |
 | `npm start -- --port 5180` | Use a different local port | Node.js 22+ |
 | `npm run verify` | Validate source hashes, dataset joins, image files, JavaScript syntax, and static serving | Node.js 22+ |
-| `npm run test:app` | Run 84 focused routing, search, map and catalog behavior regressions | Node.js 22+ |
+| `npm run test:app` | Run focused routing, search, map, catalog, storage and language regressions | Node.js 22+ |
 | `npm run check:rebuild` | Rebuild in a temporary directory and compare with the checked-in output, without changing it | Node.js 22+ and Python 3.11+ |
 | `npm run build:data` | Regenerate the three datasets and two audit reports from the archived local sources | Node.js 22+ and Python 3.11+ |
+
+## Appearance and language
+
+The header gear opens three themes: Midnight forest, Explorer's journal and Arcane aurora. Hebrew/English language, theme and motion preferences are saved locally. Language changes preserve the active route, progress, map camera, search and hunting comparison. The motion control and device reduced-motion preference suppress decorative animation and smooth scrolling. Game entity names and source datasets retain their original values.
+
+See [interface architecture and validation](docs/EXPERIENCE.md).
 
 ## Coverage
 
@@ -72,4 +78,4 @@ Independent source comparison preserved every map and portal field. Directed rou
 
 Catalog verification checks every spawn count against the raw placements, exact coordinate bounds, icon decoding, item/monster ID joins, duplicate boss IDs, ambiguous observations, ranking semantics, and NPC/monster navigation arguments. Browser checks cover item recommendations, a boss's exact point, an NPC's exact room position, and complete walking navigation to that room.
 
-The automated commands validate the archived data and app contracts. They do not test the live game server or establish current availability of conditional content. Browser checks remain useful after changes to interaction or layout. The runtime versions used for the reproducibility audit were Node.js 24.22.3 and Python 3.12.14 on Linux; the scripts use cross-platform standard-library APIs, but a Windows machine was not available for an end-to-end run.
+The automated commands validate the archived data and app contracts. They do not test the live game server or establish current availability of conditional content. Browser checks remain useful after changes to interaction or layout. The runtime versions used for the reproducibility audit were Node.js 24.22.3 and Python 3.12.14 on Linux; the scripts use cross-platform standard-library APIs, and the November 20 interface update was checked on Windows with desktop and mobile browser viewports.

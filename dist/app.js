@@ -17,8 +17,16 @@ const ICONS = {
 const icon = (name) => `<span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[name] || ICONS.pin}</svg></span>`;
 const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const eng = (value) => `<bdi dir="${/[א-ת]/.test(String(value))?'rtl':'ltr'}" lang="${/[א-ת]/.test(String(value))?'he':'en'}">${esc(value)}</bdi>`;
-const fmt = (n) => Number(n).toLocaleString('he-IL');
-const scopeLabels = {world:'עולם המשחק',conditional:'כניסה מותנית',event:'אירוע · זמינות לא מאומתת',system:'חדר מערכת',unavailable:'כניסה לא זמינה / לא מאומתת'};
+const L = (he,en) => typeof window!=='undefined'&&window.AtlasI18n?.language==='en'?en:he;
+const D = (value) => typeof window!=='undefined'&&window.AtlasI18n?.data?window.AtlasI18n.data(value):value;
+const fmt = (n) => Number(n).toLocaleString(L('he-IL','en-US'));
+const scopeLabels = {
+  get world(){return L('עולם המשחק','Game world');},
+  get conditional(){return L('כניסה מותנית','Conditional entrance');},
+  get event(){return L('אירוע · זמינות לא מאומתת','Event · availability unverified');},
+  get system(){return L('חדר מערכת','System room');},
+  get unavailable(){return L('כניסה לא זמינה / לא מאומתת','Entrance unavailable / unverified');}
+};
 let atlas, maps, groups, byId, incoming, adjacency, activeId, currentRegion='world', detailsTab='cross', sceneId, sceneKind='cross', selectedGate=null, route=null;
 let world = {x:0,y:0,k:1}, scene = {x:0,y:0,k:1}, showAllLabels=false, worldMoved=false;
 let nodeElements=new Map(), edgeElements=[], serviceElements=[], portalPinElements=new Map();
@@ -28,8 +36,8 @@ const entityPinElements=new Map();
 const groupId = (id) => groups.find((g) => g.id === id);
 const mapLabel = (m) => `${m.name} [${m.id}]`;
 const getServices = (id) => (atlas.services || []).filter((s) => Number(s.from) === Number(id));
-const serviceLabel = (s) => s.label || s.label_he || 'מעבר מותנה';
-const serviceCondition = (s) => s.condition || s.condition_he || '';
+const serviceLabel = (s) => D(s.label || s.label_he) || L('מעבר מותנה','Conditional passage');
+const serviceCondition = (s) => D(s.condition || s.condition_he || '');
 const serviceUrls = (s) => s.sourceUrls || s.source_urls || [];
 const canRouteService = (s) => (s.routeAllowed ?? s.route_allowed) && s.to != null;
 const supplementForGate = (p,m) => getServices(m.id).find(s => s.to != null && ((s.source_portal_id != null && String(s.source_portal_id) === String(p.rawId)) || (s.portal_name && s.portal_name === p.name)));
@@ -42,73 +50,75 @@ function svgEl(tag, attrs={}, text) {
   return el;
 }
 function toast(message) { $('toast').textContent=message;$('toast').hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').hidden=true,4500); }
+function scrollBehavior(){return document.documentElement?.dataset?.motion==='off'||(typeof window!=='undefined'&&window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches)?'auto':'smooth';}
 function imageFallback(el) { if(el.dataset.fallbackUsed)return;el.dataset.fallbackUsed='1';const m=byId.get(Number(el.dataset.map));if(m && el.getAttribute('src') !== m.image)el.src=m.image;else el.style.opacity='.3'; }
-function groupLabel(m) { return groupId(m.group)?.he || m.region; }
+function groupName(g) { return g?L(g.he,g.en||D(g.he)):''; }
+function groupLabel(m) { return groupName(groupId(m.group)) || D(m.region); }
 function directionLabel(p,m) {
-  if(!m.width || !m.height)return 'מיקום מסומן בתמונת המפה';
+  if(!m.width || !m.height)return L('מיקום מסומן בתמונת המפה','Position marked on the map image');
   const x=p.x/m.width,y=p.y/m.height;
-  const horizontal=x<.34?'שמאל':x>.67?'ימין':'מרכז';
-  const vertical=y<.34?'למעלה':y>.67?'למטה':'באמצע';
+  const horizontal=x<.34?L('שמאל','Left'):x>.67?L('ימין','Right'):L('מרכז','Center');
+  const vertical=y<.34?L('למעלה','top'):y>.67?L('למטה','bottom'):L('באמצע','middle');
   return `${horizontal} · ${vertical}`;
 }
 function portalTypeLabel(p,m) {
   const supplement=supplementForGate(p,m);
-  if(p.kind==='unknown' && supplement)return supplement.walkable?'שער נסתר · תועד במדריך':'מעבר מותנה · תועד במדריך';
-  if(p.kind==='unknown')return 'ללא יעד קבוע';
-  if(p.kind==='internal')return p.noEffect?'קיצור דרך ללא אפקט':'מעבר בתוך המפה';
-  if(p.noEffect)return m.isTown?'דלת / שער ללא אפקט':'שער ללא אפקט';
-  if(p.type===3)return 'מעבר אוטומטי';
-  return 'שער מעבר';
+  if(p.kind==='unknown' && supplement)return supplement.walkable?L('שער נסתר · תועד במדריך','Hidden portal · guide documented'):L('מעבר מותנה · תועד במדריך','Conditional passage · guide documented');
+  if(p.kind==='unknown')return L('ללא יעד קבוע','No fixed destination');
+  if(p.kind==='internal')return p.noEffect?L('קיצור דרך ללא אפקט','Shortcut without a visual effect'):L('מעבר בתוך המפה','Within-map passage');
+  if(p.noEffect)return m.isTown?L('דלת / שער ללא אפקט','Door / portal without a visual effect'):L('שער ללא אפקט','Portal without a visual effect');
+  if(p.type===3)return L('מעבר אוטומטי','Automatic passage');
+  return L('שער מעבר','Portal');
 }
-function portalTarget(p,m) { const supplement=supplementForGate(p,m);if(p.kind==='internal'){const targets=m.portals.filter(q=>q.name===p.toPortal);return targets.length===1?`נחיתה בשער ${targets[0].number}`:targets.length>1?`נקודות נחיתה: ${targets.map(q=>q.number).join(', ')}`:(p.toPortal || 'נקודת יעד באותה מפה');}return p.kind==='cross'?(byId.get(p.to)?.name || `Map ${p.to}`):supplement?(byId.get(supplement.to)?.name || p.name):(p.name || 'נקודה ללא שם'); }
+function portalTarget(p,m) { const supplement=supplementForGate(p,m);if(p.kind==='internal'){const targets=m.portals.filter(q=>q.name===p.toPortal);return targets.length===1?L(`נחיתה בשער ${targets[0].number}`,`Arrive at portal ${targets[0].number}`):targets.length>1?L(`נקודות נחיתה: ${targets.map(q=>q.number).join(', ')}`,`Arrival points: ${targets.map(q=>q.number).join(', ')}`):(p.toPortal || L('נקודת יעד באותה מפה','Destination within this map'));}return p.kind==='cross'?(byId.get(p.to)?.name || `Map ${p.to}`):supplement?(byId.get(supplement.to)?.name || p.name):(p.name || L('נקודה ללא שם','Unnamed point')); }
 function portalCard(p,m,sceneMode=false) {
-  return `<div class="portal-card ${p.noEffect?'no-effect':''} ${p.kind} ${sceneMode && selectedGate===p.key?'chosen':''}" data-gate="${esc(p.key)}"><span class="portal-number">${p.number}</span><button type="button" class="portal-main" data-action="${sceneMode?'scene-pick':'portal-go'}" data-gate="${esc(p.key)}">${eng(portalTarget(p,m))}<span class="portal-meta">${esc(portalTypeLabel(p,m))} · ${esc(directionLabel(p,m))}</span>${p.kind==='internal'?'<small>אותה מפה, נקודת נחיתה אחרת</small>':''}</button><button type="button" class="portal-locate" data-action="locate" data-gate="${esc(p.key)}" title="מצא את השער בתמונה" aria-label="מצא את שער ${p.number} בתמונה">${icon('pin')}</button></div>`;
+  return `<div class="portal-card ${p.noEffect?'no-effect':''} ${p.kind} ${sceneMode && selectedGate===p.key?'chosen':''}" data-gate="${esc(p.key)}"><span class="portal-number">${p.number}</span><button type="button" class="portal-main" data-action="${sceneMode?'scene-pick':'portal-go'}" data-gate="${esc(p.key)}">${eng(portalTarget(p,m))}<span class="portal-meta">${esc(portalTypeLabel(p,m))} · ${esc(directionLabel(p,m))}</span>${p.kind==='internal'?`<small>${L('אותה מפה, נקודת נחיתה אחרת','Same map, different arrival point')}</small>`:''}</button><button type="button" class="portal-locate" data-action="locate" data-gate="${esc(p.key)}" title="${L('מצא את השער בתמונה','Locate portal on the image')}" aria-label="${L(`מצא את שער ${p.number} בתמונה`,`Locate portal ${p.number} on the image`)}">${icon('pin')}</button></div>`;
 }
 
 function renderDetails() {
   const m=byId.get(activeId);if(!m)return;
   const counts={cross:m.portals.filter(p=>displayKind(p,m)==='cross').length,internal:m.portals.filter(p=>p.kind==='internal').length,unknown:m.portals.filter(p=>displayKind(p,m)==='unknown').length,incoming:(incoming.get(m.id)||[]).length+(atlas.services||[]).filter(s=>s.to===m.id).length};
-  const tags=[];if(m.major)tags.push('<span class="tag">עיר / מוקד מרכזי</span>');else if(m.hiddenArea)tags.push('<span class="tag">אזור נסתר</span>');if(m.isNew)tags.push('<span class="tag new">תוספת נובמבר</span>');if(m.scope!=='world')tags.push(`<span class="tag warning">${scopeLabels[m.scope]||'כניסה מיוחדת'}</span>`);
-  $('mapDetails').innerHTML=`<div class="map-detail-head"><div class="map-breadcrumb">${esc(groupLabel(m))}</div><h2 dir="ltr">${esc(m.name)}</h2><bdi dir="ltr" class="map-street">${esc(m.street)}</bdi><button type="button" class="button quiet favorite-toggle" data-action="favorite" aria-pressed="${window.AtlasPersonal?.isFavorite(m.id)||false}">${window.AtlasPersonal?.isFavorite(m.id)?'★ במועדפים':'☆ הוספה למועדפים'}</button>${tags.length?`<div class="tag-row">${tags.join('')}</div>`:''}</div><button type="button" class="map-preview" data-action="open-scene"><img src="${esc(m.image)}" alt="תמונת המפה ${esc(m.name)}" data-map="${m.id}"><span class="preview-label"><span>פתח את המפה ואת כל שעריה</span>${icon('expand')}</span></button><div class="detail-actions"><button type="button" class="button quiet" data-action="route-from">יציאה מכאן</button><button type="button" class="button primary" data-action="route-to">נווט לכאן</button></div><nav class="portal-tabs" aria-label="סוגי חיבורים">${[['cross','יציאות'],['internal','קיצורים'],['incoming','נכנסים'],['unknown','לא פתורים']].map(([k,v])=>`<button type="button" data-tab="${k}" class="${detailsTab===k?'active':''}">${v}<span class="count">${counts[k]}</span></button>`).join('')}</nav><div class="portal-content" id="portalContent"></div><div class="map-notes">${(m.notes||[]).map(n=>`<p>${esc(n)}</p>`).join('')}</div><div class="map-id"><span>מזהה מפה: <bdi>${m.id}</bdi></span><span>${m.portals.length} רשומות שער</span></div>`;
+  const tags=[];if(m.major)tags.push(`<span class="tag">${L('עיר / מוקד מרכזי','Town / major hub')}</span>`);else if(m.hiddenArea)tags.push(`<span class="tag">${L('אזור נסתר','Hidden area')}</span>`);if(m.isNew)tags.push(`<span class="tag new">${L('תוספת נובמבר','November addition')}</span>`);if(m.scope!=='world')tags.push(`<span class="tag warning">${scopeLabels[m.scope]||L('כניסה מיוחדת','Special entrance')}</span>`);
+  $('mapDetails').innerHTML=`<div class="map-detail-head"><div class="map-breadcrumb">${esc(groupLabel(m))}</div><h2 dir="ltr">${esc(m.name)}</h2><bdi dir="ltr" class="map-street">${esc(m.street)}</bdi><button type="button" class="button quiet favorite-toggle" data-action="favorite" aria-pressed="${window.AtlasPersonal?.isFavorite(m.id)||false}">${window.AtlasPersonal?.isFavorite(m.id)?L('★ במועדפים','★ Saved'):L('☆ הוספה למועדפים','☆ Save favorite')}</button>${tags.length?`<div class="tag-row">${tags.join('')}</div>`:''}</div><button type="button" class="map-preview" data-action="open-scene"><img src="${esc(m.image)}" alt="${L('תמונת המפה','Map image:')} ${esc(m.name)}" data-map="${m.id}"><span class="preview-label"><span>${L('פתח את המפה ואת כל שעריה','Open map and all its portals')}</span>${icon('expand')}</span></button><div class="detail-actions"><button type="button" class="button quiet" data-action="route-from">${L('יציאה מכאן','Start here')}</button><button type="button" class="button primary" data-action="route-to">${L('נווט לכאן','Navigate here')}</button></div><nav class="portal-tabs" aria-label="${L('סוגי חיבורים','Connection types')}">${[['cross',L('יציאות','Exits')],['internal',L('קיצורים','Shortcuts')],['incoming',L('נכנסים','Incoming')],['unknown',L('לא פתורים','Unresolved')]].map(([k,v])=>`<button type="button" data-tab="${k}" class="${detailsTab===k?'active':''}">${v}<span class="count">${counts[k]}</span></button>`).join('')}</nav><div class="portal-content" id="portalContent"></div><div class="map-notes">${(m.notes||[]).map(n=>`<p>${esc(D(n))}</p>`).join('')}</div><div class="map-id"><span>${L('מזהה מפה:','Map ID:')} <bdi>${m.id}</bdi></span><span>${m.portals.length} ${L('רשומות שער','portal records')}</span></div>`;
   $('mapDetails').querySelector('img').addEventListener('error',e=>imageFallback(e.target));
   renderPortalContent();
   const spawnCount=window.HuntData?.mapSpawns?.[m.id]?.totalPoints||0;
   const npcCount=(m.npcs||[]).length;
-  if(spawnCount||npcCount)$('mapDetails').querySelector('.portal-tabs').insertAdjacentHTML('beforebegin',`<div class="entity-shortcuts">${spawnCount?`<button type="button" data-action="map-monsters">${fmt(spawnCount)} נקודות הופעה</button>`:''}${npcCount?`<button type="button" data-action="map-npcs">${npcCount===1?'מיקום דמות אחד':fmt(npcCount)+' מיקומי דמויות'}</button>`:''}</div>`);
+  if(spawnCount||npcCount)$('mapDetails').querySelector('.portal-tabs').insertAdjacentHTML('beforebegin',`<div class="entity-shortcuts">${spawnCount?`<button type="button" data-action="map-monsters">${fmt(spawnCount)} ${L('נקודות הופעה','spawn points')}</button>`:''}${npcCount?`<button type="button" data-action="map-npcs">${npcCount===1?L('מיקום דמות אחד','1 NPC location'):fmt(npcCount)+' '+L('מיקומי דמויות','NPC locations')}</button>`:''}</div>`);
 }
 function renderPortalContent() {
   const m=byId.get(activeId);if(!m || !$('portalContent'))return;
   let html='';
   if(detailsTab==='incoming'){
     const ins=incoming.get(m.id)||[];
-    html=ins.length?ins.map(({from,p})=>`<div class="portal-card ${p.noEffect?'no-effect':''}"><span class="portal-number">${p.number}</span><button class="portal-main" type="button" data-action="incoming" data-from="${from.id}">${eng(from.name)}<span class="portal-meta">שער ${p.number} במפת המקור · ${portalTypeLabel(p,from)}</span></button><button type="button" class="portal-locate" data-action="incoming-scene" data-from="${from.id}" data-gate="${esc(p.key)}" aria-label="הצגת שער המקור">${icon('pin')}</button></div>`).join(''):'<p class="empty-state">לא נמצאה כניסה דרך שער קבוע ממפה אחרת. ייתכן שהכניסה דרך דמות, אירוע או משימה.</p>';
+    html=ins.length?ins.map(({from,p})=>`<div class="portal-card ${p.noEffect?'no-effect':''}"><span class="portal-number">${p.number}</span><button class="portal-main" type="button" data-action="incoming" data-from="${from.id}">${eng(from.name)}<span class="portal-meta">${L(`שער ${p.number} במפת המקור`,`Portal ${p.number} on the source map`)} · ${portalTypeLabel(p,from)}</span></button><button type="button" class="portal-locate" data-action="incoming-scene" data-from="${from.id}" data-gate="${esc(p.key)}" aria-label="${L('הצגת שער המקור','Show source portal')}">${icon('pin')}</button></div>`).join(''):`<p class="empty-state">${L('לא נמצאה כניסה דרך שער קבוע ממפה אחרת. ייתכן שהכניסה דרך דמות, אירוע או משימה.','No fixed incoming portal was found. Entry may require an NPC, event or quest.')}</p>`;
     const services=(atlas.services||[]).filter(s=>s.to===m.id);if(services.length)html+=serviceSection(services,true);
   }else{
     const ps=m.portals.filter(p=>displayKind(p,m)===detailsTab);
-    if(detailsTab==='unknown')html+='<p class="section-note">אלה רשומות ללא מפת יעד קבועה בנתוני הלקוח. חלקן נקודות נחיתה, עוגנים או מעברים שהמשחק מפעיל באמצעות תסריט. הן אינן מוצגות כיציאות מאומתות.</p>';
-    if(detailsTab==='internal')html+='<p class="section-note">קיצורי דרך בין שתי נקודות בתוך המפה הזאת. לחיצה מציגה את מיקום השער ואת נקודת הנחיתה, כשזו רשומה במקור.</p>';
-    html+=ps.length?ps.map(p=>portalCard(p,m)).join(''):`<p class="empty-state">${detailsTab==='cross'?'אין במקור שער יציאה בעל יעד קבוע למפה אחרת.':detailsTab==='internal'?'לא נרשמו מעברים פנימיים במפה הזאת.':'לכל רשומות השער במפה הזאת יש יעד קבוע.'}</p>`;
+    if(detailsTab==='unknown')html+=`<p class="section-note">${L('אלה רשומות ללא מפת יעד קבועה בנתוני הלקוח. חלקן נקודות נחיתה, עוגנים או מעברים שהמשחק מפעיל באמצעות תסריט. הן אינן מוצגות כיציאות מאומתות.','These records have no fixed destination in the client data. Some are arrival points, anchors or scripted passages. They are not listed as verified exits.')}</p>`;
+    if(detailsTab==='internal')html+=`<p class="section-note">${L('קיצורי דרך בין שתי נקודות בתוך המפה הזאת. לחיצה מציגה את מיקום השער ואת נקודת הנחיתה, כשזו רשומה במקור.','Shortcuts between points within this map. Select a portal to see its position and arrival point when recorded in the source.')}</p>`;
+    html+=ps.length?ps.map(p=>portalCard(p,m)).join(''):`<p class="empty-state">${detailsTab==='cross'?L('אין במקור שער יציאה בעל יעד קבוע למפה אחרת.','No exit with a fixed destination on another map is recorded.'):detailsTab==='internal'?L('לא נרשמו מעברים פנימיים במפה הזאת.','No internal passages are recorded on this map.'):L('לכל רשומות השער במפה הזאת יש יעד קבוע.','All portal records on this map have a fixed destination.')}</p>`;
     if(detailsTab==='cross' || detailsTab==='unknown') {const services=getServices(m.id);if(services.length)html+=serviceSection(services);}
   }
   $('portalContent').innerHTML=html;
   document.querySelectorAll('.portal-tabs button').forEach(b=>b.classList.toggle('active',b.dataset.tab===detailsTab));
 }
 function serviceSection(services,isIncoming=false) {
-  return `<section class="service-section"><h3>${isIncoming?'כניסות ממקורות משלימים':'מעברים ממקורות משלימים'}</h3>${services.map(s=>{const target=byId.get(isIncoming?s.from:s.to);const urls=serviceUrls(s);return `<div class="service-card"><button type="button" data-action="service-target" data-target="${target?.id||''}"><span>${esc(serviceLabel(s))}</span>${target?eng(target.name):'<span class="scope-description">היעד תלוי במצב המשחק</span>'}</button>${s.npc?eng(s.npc):''}<p>${esc(serviceCondition(s))}</p>${urls[0]?`<a class="source-link" href="${esc(urls[0])}" target="_blank" rel="noopener noreferrer">מקור והסבר</a>`:''}</div>`;}).join('')}</section>`;
+  return `<section class="service-section"><h3>${isIncoming?L('כניסות ממקורות משלימים','Entrances from supplementary sources'):L('מעברים ממקורות משלימים','Passages from supplementary sources')}</h3>${services.map(s=>{const target=byId.get(isIncoming?s.from:s.to);const urls=serviceUrls(s);return `<div class="service-card"><button type="button" data-action="service-target" data-target="${target?.id||''}"><span>${esc(serviceLabel(s))}</span>${target?eng(target.name):`<span class="scope-description">${L('היעד תלוי במצב המשחק','Destination depends on game state')}</span>`}</button>${s.npc?eng(s.npc):''}<p>${esc(serviceCondition(s))}</p>${urls[0]?`<a class="source-link" href="${esc(urls[0])}" target="_blank" rel="noopener noreferrer">${L('מקור והסבר','Source and details')}</a>`:''}</div>`;}).join('')}</section>`;
 }
 function selectMap(id,{focus=false,hash=true,scroll=true}={}) {
   id=Number(id);if(!byId.has(id))return;
   const target=byId.get(id);
   if(!visibleMap(target)){
     currentRegion=['event','system','unavailable'].includes(target.scope)?'archive':'world';
-    document.querySelectorAll('[data-region]').forEach(b=>b.classList.toggle('active',b.dataset.region===currentRegion));
+    document.querySelectorAll('.region-nav [data-region]').forEach(b=>b.classList.toggle('active',b.dataset.region===currentRegion));
     updateVisibleNodes();
   }
   activeId=id;detailsTab='cross';renderDetails();highlightGraph();
   window.AtlasPersonal?.visit(id);
   if(hash)history.replaceState(null,'',window.AtlasPersonal?.mapHash(id)||`#map=${id}`);
   if(focus)centerOnMap(byId.get(id));
-  if(scroll)$('sidePanel').scrollTo({top:0,behavior:'smooth'});
+  if(scroll)$('sidePanel').scrollTo({top:0,behavior:scrollBehavior()});
 }
 function highlightGraph() {
   const m=byId.get(activeId);if(!m)return;
@@ -139,7 +149,7 @@ function buildWorld() {
   $('nodeLayer').replaceChildren();nodeElements.clear();
   const ordered=[...maps].sort((a,b)=>Number(a.major)-Number(b.major));
   for(const m of ordered){
-    const g=svgEl('g',{class:`world-node ${m.major?'major':''}`,transform:`translate(${m.x},${m.y})`,tabindex:'0',role:'button','aria-label':`${m.name}. ${groupLabel(m)}. ${m.portals.filter(p=>p.kind==='cross').length} יציאות`,'data-map':m.id});
+    const g=svgEl('g',{class:`world-node ${m.major?'major':''}`,transform:`translate(${m.x},${m.y})`,tabindex:'0',role:'button','aria-label':worldNodeLabel(m),'data-map':m.id});
     const major=Boolean(m.major),r=major?37:8.5;
     g.append(svgEl('circle',{class:'node-hit',r:major?57:22}),svgEl('circle',{class:'node-halo',r:major?46:17}));
     if(major){g.append(svgEl('circle',{class:'town-base',r}));const glyph=svgEl('g',{class:'town-glyph',transform:'translate(-25,-25)'});glyph.innerHTML=townGlyph(m);g.append(glyph);}
@@ -218,7 +228,8 @@ function fitWorld(){
 }
 function centerOnMap(m){const r=$('mapCanvas').getBoundingClientRect();world.k=Math.max(world.k,1.25);world.x=r.width/2-m.x*world.k;world.y=(r.height+90)/2-m.y*world.k;applyWorld();$('mapIntro').classList.add('is-hidden');}
 function zoomWorld(factor,cx,cy){const r=$('mapCanvas').getBoundingClientRect();cx??=r.width/2;cy??=r.height/2;const k=Math.max(.06,Math.min(4,world.k*factor)),ratio=k/world.k;world.x=cx-(cx-world.x)*ratio;world.y=cy-(cy-world.y)*ratio;world.k=k;applyWorld();$('mapIntro').classList.add('is-hidden');}
-function showMapTooltip(e,m){if(worldMoved||e.pointerType==='touch')return;const box=$('mapCanvas').getBoundingClientRect();const x=e.clientX-box.left,y=e.clientY-box.top;const tip=$('mapTooltip');tip.innerHTML=`${eng(m.name)}<small>${esc(groupLabel(m))} · ${m.portals.filter(p=>p.kind==='cross').length} שערי יציאה</small>`;tip.hidden=false;tip.style.left=`${Math.min(box.width-290,Math.max(12,x+18))}px`;tip.style.top=`${Math.min(box.height-90,y+18)}px`;}
+function worldNodeLabel(m){return `${m.name}. ${groupLabel(m)}. ${m.portals.filter(p=>p.kind==='cross').length} ${L('יציאות','exits')}`;}
+function showMapTooltip(e,m){if(worldMoved||e.pointerType==='touch')return;const box=$('mapCanvas').getBoundingClientRect();const x=e.clientX-box.left,y=e.clientY-box.top;const tip=$('mapTooltip');tip.innerHTML=`${eng(m.name)}<small>${esc(groupLabel(m))} · ${m.portals.filter(p=>p.kind==='cross').length} ${L('שערי יציאה','exit portals')}</small>`;tip.hidden=false;tip.style.left=`${Math.min(box.width-290,Math.max(12,x+18))}px`;tip.style.top=`${Math.min(box.height-90,y+18)}px`;}
 
 function closeSearch(){
   $('searchResults').hidden=true;$('search').setAttribute('aria-expanded','false');
@@ -249,20 +260,21 @@ function renderSearch(){
   const mapMatches=findMaps(q).map(m=>({...m,kind:'map'}));
   const huntMatches=window.Hunt?.searchAll(q)||[];
   activeSearchResults=[...mapMatches,...huntMatches].sort((a,b)=>Number(String(b.id)===q)-Number(String(a.id)===q)||Number(b.name.toLowerCase()===q)-Number(a.name.toLowerCase()===q)||Number(b.name.toLowerCase().startsWith(q))-Number(a.name.toLowerCase().startsWith(q))).slice(0,16);
-  const kindLabels={map:'מפה',item:'פריט',monster:'מפלצת',boss:'בוס',npc:'דמות'};
-  $('searchResults').innerHTML=activeSearchResults.length?activeSearchResults.map((m,i)=>`<button type="button" id="search-option-${i}" class="search-result search-result-mixed" role="option" aria-selected="false" tabindex="-1" data-id="${m.id}" data-kind="${esc(m.kind)}">${m.icon?`<img class="search-entity-icon" src="${esc(m.icon)}" alt="">`:`<span class="search-entity-icon search-map-icon">${icon('pin')}</span>`}<span class="search-result-copy">${eng(m.name)}<small>${kindLabels[m.kind]||'תוצאה'} · ${m.kind==='map'?esc(groupLabel(m))+' · ':''}${m.id}${m.kind==='map'&&m.scope!=='world'?' · '+scopeLabels[m.scope]:''}</small></span></button>`).join(''):'<div class="search-empty">לא נמצאה תוצאה. אפשר לחפש גם חלק משם באנגלית או מזהה.</div>';
+  const kindLabels={map:L('מפה','Map'),item:L('פריט','Item'),monster:L('מפלצת','Monster'),boss:L('בוס','Boss'),npc:L('דמות','NPC')};
+  $('searchResults').innerHTML=activeSearchResults.length?activeSearchResults.map((m,i)=>`<button type="button" id="search-option-${i}" class="search-result search-result-mixed" role="option" aria-selected="false" tabindex="-1" data-id="${m.id}" data-kind="${esc(m.kind)}">${m.icon?`<img class="search-entity-icon" src="${esc(m.icon)}" alt="">`:`<span class="search-entity-icon search-map-icon">${icon('pin')}</span>`}<span class="search-result-copy">${eng(m.name)}<small>${kindLabels[m.kind]||L('תוצאה','Result')} · ${m.kind==='map'?esc(groupLabel(m))+' · ':''}${m.id}${m.kind==='map'&&m.scope!=='world'?' · '+scopeLabels[m.scope]:''}</small></span></button>`).join(''):`<div class="search-empty">${L('לא נמצאה תוצאה. אפשר לחפש גם חלק משם באנגלית או מזהה.','No results found. Try part of an English name, a Hebrew alias or an ID.')}</div>`;
   $('searchResults').hidden=false;$('search').setAttribute('aria-expanded','true');
 }
 const aliases={'הנסיס':'henesys','אליניה':'ellinia','פריון':'perion','קרנינג':'kerning','סליפיווד':'sleepywood','לית':'lith','פלורינה':'florina','אמהרסט':'amherst'};
 function findMaps(q){if(typeof window!=='undefined'&&window.MapSearch)return window.MapSearch.search(q,maps.length);q=q.trim().toLowerCase();const alias=Object.entries(aliases).find(([he])=>q===he);if(alias)q=alias[1];return maps.filter(m=>`${m.name} ${m.id} ${m.street} ${groupLabel(m)}`.toLowerCase().includes(q)).sort((a,b)=>Number(b.name.toLowerCase().startsWith(q))-Number(a.name.toLowerCase().startsWith(q))||Number(b.major)-Number(a.major)||a.name.localeCompare(b.name));}
 function chooseSearch(id,kind='map'){closeSearch();activeSearchResults=[];$('search').value='';$('directory').hidden=true;if(kind!=='map'){window.Hunt?.open(kind,Number(id));return;}window.Hunt?.close();selectMap(id,{focus:true});}
 function openDirectory(){const opening=$('directory').hidden;$('directory').hidden=!opening;if(opening){window.Hunt?.close();renderDirectory();$('directorySearch').focus();}}
-function renderDirectory(){const q=$('directorySearch').value.trim().toLowerCase(),group=$('directoryGroup').value;const list=(q?findMaps(q):[...maps].sort((a,b)=>a.name.localeCompare(b.name)||a.id-b.id)).filter(m=>group==='all'||m.group===group);$('directoryCounter').textContent=`${fmt(list.length)} מתוך ${fmt(maps.length)} רשומות · כל מפה נשמרת לפי מזהה ייחודי`;
-  $('directoryGrid').innerHTML=list.map(m=>`<button type="button" class="directory-card" data-id="${m.id}"><img loading="lazy" decoding="async" src="${esc(m.minimap||m.image)}" alt="" data-map="${m.id}"><span class="card-info">${eng(m.name)}<small>${esc(groupLabel(m))} · ${m.id}</small>${m.scope!=='world'?`<small>${esc(scopeLabels[m.scope])}</small>`:''}</span></button>`).join('')||'<p class="no-results">אין מפות שמתאימות לסינון הזה.</p>';
+function renderDirectoryGroups(){const selected=$('directoryGroup').value;$('directoryGroup').innerHTML=`<option value="all">${L('כל האזורים','All regions')}</option>`+groups.map(g=>`<option value="${esc(g.id)}">${esc(groupName(g))}</option>`).join('');$('directoryGroup').value=selected||'all';}
+function renderDirectory(){const q=$('directorySearch').value.trim().toLowerCase(),group=$('directoryGroup').value;const list=(q?findMaps(q):[...maps].sort((a,b)=>a.name.localeCompare(b.name)||a.id-b.id)).filter(m=>group==='all'||m.group===group);$('directoryCounter').textContent=L(`${fmt(list.length)} מתוך ${fmt(maps.length)} רשומות · כל מפה נשמרת לפי מזהה ייחודי`,`${fmt(list.length)} of ${fmt(maps.length)} records · Each map has a unique ID`);
+  $('directoryGrid').innerHTML=list.map(m=>`<button type="button" class="directory-card" data-id="${m.id}" data-region="${['event','system','unavailable'].includes(m.scope)?'archive':['maple','hollow'].includes(m.group)?m.group:['market','special'].includes(m.group)?'special':'victoria'}"><img loading="lazy" decoding="async" src="${esc(m.minimap||m.image)}" alt="" data-map="${m.id}"><span class="card-info">${eng(m.name)}<small>${esc(groupLabel(m))} · ${m.id}</small>${m.scope!=='world'?`<small>${esc(scopeLabels[m.scope])}</small>`:''}</span></button>`).join('')||`<p class="no-results">${L('אין מפות שמתאימות לסינון הזה.','No maps match these filters.')}</p>`;
   $('directoryGrid').querySelectorAll('img').forEach(img=>img.addEventListener('error',e=>imageFallback(e.target)));
 }
 
-function openRoute(){ $('routePanel').hidden=false;$('routeToggle').setAttribute('aria-pressed','true');$('sidePanel').scrollTo({top:0,behavior:'smooth'});if(!$('routeFrom').value && byId.has(activeId))$('routeFrom').value=mapLabel(byId.get(activeId)); }
+function openRoute(){ $('routePanel').hidden=false;$('routeToggle').setAttribute('aria-pressed','true');$('sidePanel').scrollTo({top:0,behavior:scrollBehavior()});if(!$('routeFrom').value && byId.has(activeId))$('routeFrom').value=mapLabel(byId.get(activeId)); }
 function planTo(mapId,fromId){
   const target=byId.get(Number(mapId)),origin=byId.get(Number(fromId))||byId.get(activeId);
   if(!target||!origin)return;
@@ -288,19 +300,26 @@ function findRoute(from,to,services=false){
   }
   if(found===null)return null;const steps=[];while(prev.has(found)){const step=prev.get(found);steps.push(step);found=step.key;}steps.reverse();return {from,to,steps};
 }
-function submitRoute(e,{persist=true}={}){if(e)e.preventDefault();const from=routeMap($('routeFrom').value),to=routeMap($('routeTo').value);for(const [id,map] of [['routeFrom',from],['routeTo',to]]){$(id).setAttribute('aria-invalid',String(!map));$(id+'Error').textContent=map?'':'בחרו מפה מההצעות. כשיש כמה שמות זהים, המזהה מבדיל ביניהם.';}if(!from||!to){$(!from?'routeFrom':'routeTo').focus();return;}
+function routeInputError(){return L('בחרו מפה מההצעות. כשיש כמה שמות זהים, המזהה מבדיל ביניהם.','Choose a map from the suggestions. Use the ID to distinguish maps with identical names.');}
+function startRouteLabel(){return navigationActive()&&navigationIndex?L(`המשך מהמקום ששמרת · ${navigationIndex===route.steps.length?'מפת היעד':'מעבר '+(navigationIndex+1)}`,`Resume saved progress · ${navigationIndex===route.steps.length?'Destination':'Passage '+(navigationIndex+1)}`):L('פתיחת מדריך המסלול','Open route guide');}
+function submitRoute(e,{persist=true}={}){if(e)e.preventDefault();const from=routeMap($('routeFrom').value),to=routeMap($('routeTo').value);for(const [id,map] of [['routeFrom',from],['routeTo',to]]){$(id).setAttribute('aria-invalid',String(!map));$(id+'Error').textContent=map?'':routeInputError();}if(!from||!to){$(!from?'routeFrom':'routeTo').focus();return;}
   routeUsesServices=$('useServices').checked;route=findRoute(from.id,to.id,routeUsesServices);navigationRoute=null;navigationIndex=0;$('routeRestoreNote').textContent='';$('routeShareBox').hidden=true;if(persist)window.AtlasPersonal?.saveJourney();renderSceneNavigation();drawRoute();
-  if(!route){$('routeResult').innerHTML='<p class="route-warning">אין מסלול מלא דרך המעברים הידועים שנבחרו. ייתכן שנדרשים שירות נסיעה, תנאי משחק, או מעבר שהיעד שלו אינו מופיע בקבצים. אפשר לסמן שימוש בכניסות דרך דמויות ומשימות; גם אז חלק מהמעברים נשארים לא ידועים.</p>';return;}
+  renderRouteResult();
+  if(!route)return;
+  const ids=[route.from,...route.steps.map(s=>s.to)];
+  if(ids.length>1)fitRoute(ids);toast(route.steps.length?L(`נמצא מסלול עם ${route.steps.length} מעברים`,`Found a route with ${route.steps.length} passages`):L('זו כבר מפת המוצא','You are already at the destination'));
+}
+function renderRouteResult(){
+  if(!route){$('routeResult').innerHTML=`<p class="route-warning">${L('אין מסלול מלא דרך המעברים הידועים שנבחרו. ייתכן שנדרשים שירות נסיעה, תנאי משחק, או מעבר שהיעד שלו אינו מופיע בקבצים. אפשר לסמן שימוש בכניסות דרך דמויות ומשימות; גם אז חלק מהמעברים נשארים לא ידועים.','No complete route was found using the selected passages. Travel services, game conditions or undocumented destinations may be required. Try allowing NPC and quest entrances; some connections may still be unknown.')}</p>`;return;}
   const serviceCount=route.steps.filter(s=>s.service && !s.service.walkable).length;
   const ids=[route.from,...route.steps.map(s=>s.to)];
-  let html=`<p class="route-summary">${route.steps.length===0?'כבר נמצאים במפת היעד.':`${route.steps.length} מעברים · ${serviceCount?serviceCount+' מהם מותנים':'דרך שערים עם יעד מתועד'}`}</p>`;
-  if(serviceCount)html+='<p class="route-warning">המסלול כולל כניסות מותנות. יש לעמוד בתנאים שמופיעים בכל שלב; לא נבדקו הדמות, המשימות או הערוץ שלך.</p>';
-  if(ids.some(id=>['event','system','unavailable'].includes(byId.get(id).scope)))html+='<p class="route-warning">המסלול עובר ברשומות אירוע או מערכת. קיום החיבור בקובץ אינו מבטיח כניסה במשחק.</p>';
-  html+='<button type="button" id="startRoute" class="button primary start-route">פתיחת מדריך המסלול</button>';
-  html+='<div class="route-secondary-actions"><button type="button" id="shareRoute" class="button quiet">שיתוף מסלול ושלב נוכחי</button><button type="button" id="restartRoute" class="button quiet">התחלה מחדש</button></div>';
-  html+=ids.map((id,i)=>{const step=route.steps[i],m=byId.get(id),gate=step?.p||(step?.service?m.portals.find(p=>supplementForGate(p,m)?.id===step.service.id):null);return `<div class="route-step"><span class="step-number">${i+1}</span><div class="route-step-content"><button type="button" data-route-map="${id}">${eng(m.name)}${step?`<small>${step.service?esc(serviceLabel(step.service)):esc(`שער ${step.p.number} · ${directionLabel(step.p,m)} · ${portalTypeLabel(step.p,m)}`)}</small>${step.service?`<small>${esc(serviceCondition(step.service))}</small>`:''}`:'<small>מפת היעד</small>'}</button>${gate?`<button type="button" class="route-locate" data-route-scene="${id}" data-route-gate="${esc(gate.key)}" data-route-index="${i}">${icon('pin')}הצגת שער היציאה ${gate.number}</button>`:''}</div></div>`;}).join('');
-  html+='<button type="button" id="clearRoute" class="clear-route">ניקוי המסלול</button>';$('routeResult').innerHTML=html;
-  if(ids.length>1)fitRoute(ids);toast(route.steps.length?`נמצא מסלול עם ${route.steps.length} מעברים`:'זו כבר מפת המוצא');
+  let html=`<p class="route-summary">${route.steps.length===0?L('כבר נמצאים במפת היעד.','You are already at the destination.'):L(`${route.steps.length} מעברים · ${serviceCount?serviceCount+' מהם מותנים':'דרך שערים עם יעד מתועד'}`,`${route.steps.length} passages · ${serviceCount?serviceCount+' conditional':'Through portals with documented destinations'}`)}</p>`;
+  if(serviceCount)html+=`<p class="route-warning">${L('המסלול כולל כניסות מותנות. יש לעמוד בתנאים שמופיעים בכל שלב; לא נבדקו הדמות, המשימות או הערוץ שלך.','This route includes conditional entrances. Follow the requirements for each step; your character, quests and channel have not been checked.')}</p>`;
+  if(ids.some(id=>['event','system','unavailable'].includes(byId.get(id).scope)))html+=`<p class="route-warning">${L('המסלול עובר ברשומות אירוע או מערכת. קיום החיבור בקובץ אינו מבטיח כניסה במשחק.','This route passes through event or system records. A connection in the data does not guarantee entry in the game.')}</p>`;
+  html+=`<button type="button" id="startRoute" class="button primary start-route">${startRouteLabel()}</button>`;
+  html+=`<div class="route-secondary-actions"><button type="button" id="shareRoute" class="button quiet">${L('שיתוף מסלול ושלב נוכחי','Share route and current step')}</button><button type="button" id="restartRoute" class="button quiet">${L('התחלה מחדש','Start over')}</button></div>`;
+  html+=ids.map((id,i)=>{const step=route.steps[i],m=byId.get(id),gate=step?.p||(step?.service?m.portals.find(p=>supplementForGate(p,m)?.id===step.service.id):null);return `<div class="route-step" data-step-index="${i}" data-step-state="${routeStepState(i)}"><span class="step-number">${i+1}</span><div class="route-step-content"><button type="button" data-route-map="${id}">${eng(m.name)}${step?`<small>${step.service?esc(serviceLabel(step.service)):esc(`${L('שער','Portal')} ${step.p.number} · ${directionLabel(step.p,m)} · ${portalTypeLabel(step.p,m)}`)}</small>${step.service?`<small>${esc(serviceCondition(step.service))}</small>`:''}`:`<small>${L('מפת היעד','Destination map')}</small>`}</button>${gate?`<button type="button" class="route-locate" data-route-scene="${id}" data-route-gate="${esc(gate.key)}" data-route-index="${i}">${icon('pin')}${L(`הצגת שער היציאה ${gate.number}`,`Show exit portal ${gate.number}`)}</button>`:''}</div></div>`;}).join('');
+  html+=`<button type="button" id="clearRoute" class="clear-route">${L('ניקוי המסלול','Clear route')}</button>`;$('routeResult').innerHTML=html;
 }
 function drawRoute(){const layer=$('routeLayer');layer.replaceChildren();if(!route)return;for(const s of route.steps){const a=byId.get(s.from),b=byId.get(s.to);layer.append(svgEl('path',{d:edgePath(a,b),class:`route-edge ${s.service?'service':''}`}));}const ids=[route.from,...route.steps.map(s=>s.to)];ids.forEach((id,i)=>{const m=byId.get(id),g=svgEl('g',{transform:`translate(${m.x+19},${m.y-20})`});g.append(svgEl('circle',{class:'route-dot',r:17}),svgEl('text',{class:'route-number'},i+1));layer.append(g);});}
 function fitRoute(ids){const ms=ids.map(id=>byId.get(id)),r=$('mapCanvas').getBoundingClientRect();const minX=Math.min(...ms.map(m=>m.x))-100,maxX=Math.max(...ms.map(m=>m.x))+100,minY=Math.min(...ms.map(m=>m.y))-100,maxY=Math.max(...ms.map(m=>m.y))+100;world.k=Math.min((r.width-90)/(maxX-minX),(r.height-185)/(maxY-minY),1.6);world.k=Math.max(.07,world.k);world.x=(r.width-(minX+maxX)*world.k)/2;world.y=100+(r.height-150-(minY+maxY)*world.k)/2;applyWorld();$('mapIntro').classList.add('is-hidden');}
@@ -312,31 +331,36 @@ function navigationGate(index=navigationIndex){
   return step.p||(step.service?byId.get(step.from)?.portals.find(p=>supplementForGate(p,byId.get(step.from))?.id===step.service.id):null);
 }
 function navigationActive(){return !!route&&navigationRoute===route;}
+function routeStepState(index){return !navigationActive()?'upcoming':index<navigationIndex?'completed':index===navigationIndex?'current':'upcoming';}
+function updateRouteProgress(){
+  const start=$('startRoute');if(start)start.textContent=startRouteLabel();
+  $('routeResult').querySelectorAll('[data-step-index]').forEach(step=>step.setAttribute('data-step-state',routeStepState(Number(step.dataset.stepIndex))));
+}
 function openRouteStep(index,{show=true}={}){
   if(!route||!Number.isInteger(index)||index<0||index>route.steps.length)return;
   navigationRoute=route;navigationIndex=index;
   const id=route.steps[index]?.from??route.to;
   if(show)openScene(id,navigationGate(index)?.key,{following:true});else navigationFollowing=false;
-  const start=$('startRoute');if(start)start.textContent=index?`המשך מהמקום ששמרת · ${index===route.steps.length?'מפת היעד':'מעבר '+(index+1)}`:'פתיחת מדריך המסלול';
+  updateRouteProgress();
   window.AtlasPersonal?.saveJourney();
 }
 function renderSceneNavigation(){
   const bar=$('sceneNavigation'),active=navigationActive();bar.hidden=!active;
   $('sceneDialog').classList.toggle('compact-navigation',active&&navigationFollowing&&compactNavigation);
-  $('sceneNavCompact').setAttribute('aria-pressed',String(compactNavigation));$('sceneNavCompact').textContent=compactNavigation?'תצוגה מלאה':'ניווט מצומצם';
+  $('sceneNavCompact').setAttribute('aria-pressed',String(compactNavigation));$('sceneNavCompact').textContent=compactNavigation?L('תצוגה מלאה','Full view'):L('ניווט מצומצם','Compact navigation');
   if(!active)return;
   const step=route.steps[navigationIndex],gate=navigationGate();
   const following=navigationFollowing&&sceneId===(step?.from??route.to);
-  $('sceneNavStatus').textContent=!following?'סיור חופשי · המסלול שלך שמור':step?`מעבר ${navigationIndex+1} מתוך ${route.steps.length}`:'הגעת למפת היעד';
+  $('sceneNavStatus').textContent=!following?L('סיור חופשי · המסלול שלך שמור','Free exploration · Your route is saved'):step?L(`מעבר ${navigationIndex+1} מתוך ${route.steps.length}`,`Passage ${navigationIndex+1} of ${route.steps.length}`):L('הגעת למפת היעד','You reached the destination map');
   $('sceneNavTarget').textContent=!following?byId.get(route.steps[navigationIndex]?.from??route.to).name:step?byId.get(step.to).name:byId.get(route.to).name;
-  $('sceneNavLabel').textContent=!following?'חזרה לנקודה שבה עצרת':step?'המפה הבאה':'סיום המסלול';
-  $('sceneNavInstruction').textContent=!following?'אפשר לחקור ולחזור למסלול בכל רגע.':step?.service?serviceCondition(step.service):gate?`שער ${gate.number} מודגש בתמונה · ${directionLabel(gate,byId.get(sceneId))}`:'השלמת את כל המעברים במדריך. המיקום במשחק אינו מזוהה אוטומטית.';
+  $('sceneNavLabel').textContent=!following?L('חזרה לנקודה שבה עצרת','Return to your saved step'):step?L('המפה הבאה','Next map'):L('סיום המסלול','Route complete');
+  $('sceneNavInstruction').textContent=!following?L('אפשר לחקור ולחזור למסלול בכל רגע.','Explore freely and return to your route at any time.'):step?.service?serviceCondition(step.service):gate?L(`שער ${gate.number} מודגש בתמונה · ${directionLabel(gate,byId.get(sceneId))}`,`Portal ${gate.number} is highlighted · ${directionLabel(gate,byId.get(sceneId))}`):L('השלמת את כל המעברים במדריך. המיקום במשחק אינו מזוהה אוטומטית.','You completed all passages in the guide. Your in-game location is not detected automatically.');
   $('sceneNavPrevious').disabled=navigationIndex===0;
   $('sceneNavNext').disabled=navigationIndex===route.steps.length;
-  $('sceneNavNext').textContent=navigationIndex===route.steps.length-1?'למפת היעד':'הבא במסלול';
+  $('sceneNavNext').textContent=navigationIndex===route.steps.length-1?L('למפת היעד','To destination'):L('הבא במסלול','Next step');
   $('sceneNavReturn').hidden=following;
   $('sceneNavReroute').hidden=following;
-  $('sceneNavReroute').setAttribute('aria-label',`חישוב מסלול מהמפה המוצגת אל ${byId.get(route.to).name}`);
+  $('sceneNavReroute').setAttribute('aria-label',L(`חישוב מסלול מהמפה המוצגת אל ${byId.get(route.to).name}`,`Calculate a route from this map to ${byId.get(route.to).name}`));
   $('sceneNavCompact').hidden=!following;
   $('sceneNavError').textContent='';
   $('sceneNavFocus').hidden=!following||!gate;
@@ -355,10 +379,11 @@ function setCompactNavigation(enabled){
 function rerouteFromScene(){
   if(!navigationActive()||!byId.has(sceneId))return false;
   const destination=route.to,candidate=findRoute(sceneId,destination,routeUsesServices);
-  if(!candidate){$('sceneNavError').textContent='לא נמצא מסלול מהמפה הזאת עם אפשרויות המעבר שבחרת. המסלול הקודם נשמר; אפשר לחזור אליו או לשנות את אפשרויות התכנון.';return false;}
+  if(!candidate){$('sceneNavError').textContent=rerouteError();return false;}
   $('routeFrom').value=mapLabel(byId.get(sceneId));$('routeTo').value=mapLabel(byId.get(destination));$('useServices').checked=routeUsesServices;
-  submitRoute();openRouteStep(0);$('sceneNavCompact').focus();toast('המסלול חושב מחדש מהמפה שבחרת לאותו יעד.');return true;
+  submitRoute();openRouteStep(0);$('sceneNavCompact').focus();toast(L('המסלול חושב מחדש מהמפה שבחרת לאותו יעד.','Route recalculated from the selected map to the same destination.'));return true;
 }
+function rerouteError(){return L('לא נמצא מסלול מהמפה הזאת עם אפשרויות המעבר שבחרת. המסלול הקודם נשמר; אפשר לחזור אליו או לשנות את אפשרויות התכנון.','No route was found from this map with your selected travel options. Your previous route is saved; return to it or change the route options.');}
 function travelScenePortal(key){
   const m=byId.get(sceneId),p=m?.portals.find(p=>p.key===key);if(!p)return;
   const supplement=supplementForGate(p,m),target=byId.get(p.kind==='cross'?p.to:supplement?.to);
@@ -373,19 +398,31 @@ function loadSceneImage(retry=false){
   const m=byId.get(sceneId);if(!m)return;
   const image=$('sceneImage'),status=$('sceneImageStatus'),requestedMap=sceneId;
   if(!retry&&loadedSceneImages.has(m.image)&&image.getAttribute('href')===m.image){status.hidden=true;return;}
-  status.hidden=false;status.dataset.state='loading';$('sceneImageMessage').textContent='טוענים את תמונת המפה…';$('sceneImageRetry').hidden=true;
+  status.hidden=false;status.dataset.state='loading';$('sceneImageMessage').textContent=L("טוענים את תמונת המפה…","Loading map image…");$('sceneImageRetry').hidden=true;
   image.style.visibility='hidden';$('sceneCanvas').setAttribute('aria-busy','true');
   image.onload=()=>{if(sceneId!==requestedMap)return;loadedSceneImages.add(m.image);image.style.visibility='';status.hidden=true;$('sceneCanvas').setAttribute('aria-busy','false');};
-  image.onerror=()=>{if(sceneId!==requestedMap)return;status.dataset.state='error';$('sceneImageMessage').textContent='תמונת המפה לא נטענה. השערים והמיקומים עדיין זמינים ברשימה.';$('sceneImageRetry').hidden=false;$('sceneCanvas').setAttribute('aria-busy','false');};
+  image.onerror=()=>{if(sceneId!==requestedMap)return;status.dataset.state='error';$('sceneImageMessage').textContent=L("תמונת המפה לא נטענה. השערים והמיקומים עדיין זמינים ברשימה.","The map image could not load. Portals and locations are still available in the list.");$('sceneImageRetry').hidden=false;$('sceneCanvas').setAttribute('aria-busy','false');};
   image.setAttribute('href',retry?`${m.image}?retry=${Date.now()}`:m.image);
 }
 function openScene(id,gateKey=null,options={}){const m=byId.get(Number(id));if(!m)return;navigationFollowing=options.following===true;sceneId=m.id;window.AtlasPersonal?.visit(m.id);selectedGate=gateKey;const gate=m.portals.find(p=>p.key===gateKey);sceneKind=gate?displayKind(gate,m):'cross';$('sceneTitle').textContent=m.name;$('sceneRegion').textContent=groupLabel(m);$('sceneImage').setAttribute('width',m.width||3000);$('sceneImage').setAttribute('height',m.height||1500);loadSceneImage();$('originalImage').href=m.originalImage||m.image;if(!$('sceneDialog').open)$('sceneDialog').showModal();setSceneLayer('portals',[]);renderSceneNavigation();requestAnimationFrame(()=>{fitNavigationScene();if(gate&&!compactNavigation)pickGate(gate.key,false);});}
 function fitScene(){const m=byId.get(sceneId);if(!m)return;const r=$('sceneCanvas').getBoundingClientRect(),w=m.width||3000,h=m.height||1500;scene.k=Math.min((r.width-48)/w,(r.height-60)/h);scene.x=(r.width-w*scene.k)/2;scene.y=(r.height-h*scene.k)/2;applyScene();}
 function applyScene(){const m=byId.get(sceneId);if(!m)return;$('sceneViewport').setAttribute('transform',`translate(${scene.x},${scene.y}) scale(${scene.k})`);for(const pin of portalPinElements.values()){pin.querySelector('circle').setAttribute('r',12/scene.k);pin.querySelector('circle').setAttribute('stroke-width',1.7/scene.k);pin.querySelector('text').setAttribute('font-size',11/scene.k);}for(const pin of entityPinElements.values()){pin.querySelector('circle').setAttribute('r',(pin.classList.contains('boss')?14:11)/scene.k);pin.querySelector('circle').setAttribute('stroke-width',1.7/scene.k);pin.querySelector('text').setAttribute('font-size',10/scene.k);}document.querySelectorAll('.internal-path').forEach(p=>{p.setAttribute('stroke-width',2/scene.k);p.setAttribute('stroke-dasharray',`${6/scene.k} ${5/scene.k}`);});}
 function zoomScene(factor,cx,cy){const r=$('sceneCanvas').getBoundingClientRect();cx??=r.width/2;cy??=r.height/2;const k=Math.max(.015,Math.min(3,scene.k*factor)),ratio=k/scene.k;scene.x=cx-(cx-scene.x)*ratio;scene.y=cy-(cy-scene.y)*ratio;scene.k=k;applyScene();}
-function renderScenePins(){const m=byId.get(sceneId);$('scenePins').replaceChildren();portalPinElements.clear();for(const p of m.portals){if(sceneKind!=='all'&&displayKind(p,m)!==sceneKind)continue;const g=svgEl('g',{class:`scene-pin ${p.kind} ${p.noEffect?'no-effect':''} ${p.key===selectedGate?'chosen':''} ${navigationActive()&&navigationFollowing&&navigationGate()?.key===p.key?'route-required':''}`,transform:`translate(${p.x},${p.y})`,role:'button',tabindex:'0','aria-label':`שער ${p.number}: ${portalTarget(p,m)}`});g.append(svgEl('circle',{r:12/scene.k}),svgEl('text',{'font-size':11/scene.k},p.number));g.addEventListener('click',e=>{e.stopPropagation();if(!sceneDragging)pickGate(p.key,false);});g.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();pickGate(p.key,false);}});$('scenePins').append(g);portalPinElements.set(p.key,g);}drawInternal();applyScene();}
-function renderSceneSidebar(){const m=byId.get(sceneId);document.querySelectorAll('#sceneFilters button').forEach(b=>b.classList.toggle('active',b.dataset.kind===sceneKind));const ps=m.portals.filter(p=>sceneKind==='all'||displayKind(p,m)===sceneKind);let text='';if(sceneKind==='unknown')text='<p class="section-note">נקודות ללא יעד קבוע. אין להסיק שכל נקודה כזאת היא שער פעיל.</p>';if(sceneKind==='internal')text='<p class="section-note">בחרו שער כדי לראות גם את נקודת הנחיתה שלו. קו מופיע רק אם נקודת היעד נמצאה בשמה.</p>';$('scenePortalList').innerHTML=text+(ps.length?ps.map(p=>portalCard(p,m,true)).join(''):'<p class="empty-state">אין שערים מהסוג הזה במפה.</p>');renderSceneSelected();}
-function renderSceneSelected(){const m=byId.get(sceneId),p=m.portals.find(p=>p.key===selectedGate);if(!p){$('sceneSelected').innerHTML='';return;}const supplement=supplementForGate(p,m);const target=byId.get(p.to??supplement?.to);let html=`<div class="scene-selected"><span>שער ${p.number} · ${portalTypeLabel(p,m)}</span>${eng(portalTarget(p,m))}<small>מיקום בתמונת המקור: <bdi dir="ltr">x ${p.x}, y ${p.y}</bdi></small><small>שם השער בקובץ</small>${eng(p.name||'ללא שם')}`;if((p.kind==='cross'||supplement)&&target){if(supplement)html+=`<p>${esc(serviceCondition(supplement))}</p><small>יעד זה מתועד במקור משלים; הוא אינו יעד קבוע ברשומת הלקוח.</small><a class="source-link" href="${esc(serviceUrls(supplement)[0])}" target="_blank" rel="noopener noreferrer">מקור התיעוד</a>`;html+=`<button type="button" class="button primary" data-scene-travel="${target.id}" data-travel-gate="${esc(p.key)}">לעבור אל מפת היעד</button>`;}else if(p.kind==='internal'){const destinations=m.portals.filter(q=>q.name===p.toPortal);html+=`<small>${destinations.length===0?'שם נקודת היעד קיים, אך לא נמצאה לה קואורדינטה ברשומות השערים.':destinations.length>1?'נמצאו כמה נקודות עם שם היעד; כולן מסומנות.':'הקו מחבר לשער הנחיתה באותה מפה.'}</small>`;}else html+='<small>היעד אינו קבוע בנתוני הלקוח. אין כאן חיבור מאומת למפה אחרת.</small>';html+='</div>';$('sceneSelected').innerHTML=html;}
+function renderScenePins(){const m=byId.get(sceneId);$('scenePins').replaceChildren();portalPinElements.clear();for(const p of m.portals){if(sceneKind!=='all'&&displayKind(p,m)!==sceneKind)continue;const g=svgEl('g',{class:`scene-pin ${p.kind} ${p.noEffect?'no-effect':''} ${p.key===selectedGate?'chosen':''} ${navigationActive()&&navigationFollowing&&navigationGate()?.key===p.key?'route-required':''}`,transform:`translate(${p.x},${p.y})`,role:'button',tabindex:'0','aria-label':`${L('שער','Portal')} ${p.number}: ${portalTarget(p,m)}`});g.append(svgEl('circle',{r:12/scene.k}),svgEl('text',{'font-size':11/scene.k},p.number));g.addEventListener('click',e=>{e.stopPropagation();if(!sceneDragging)pickGate(p.key,false);});g.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();pickGate(p.key,false);}});$('scenePins').append(g);portalPinElements.set(p.key,g);}drawInternal();applyScene();}
+function renderSceneSidebar(){const m=byId.get(sceneId);document.querySelectorAll('#sceneFilters button').forEach(b=>b.classList.toggle('active',b.dataset.kind===sceneKind));const ps=m.portals.filter(p=>sceneKind==='all'||displayKind(p,m)===sceneKind);let text='';if(sceneKind==='unknown')text=`<p class="section-note">${L('נקודות ללא יעד קבוע. אין להסיק שכל נקודה כזאת היא שער פעיל.','Points without a fixed destination. Not every point is an active portal.')}</p>`;if(sceneKind==='internal')text=`<p class="section-note">${L('בחרו שער כדי לראות גם את נקודת הנחיתה שלו. קו מופיע רק אם נקודת היעד נמצאה בשמה.','Select a portal to see its arrival point. A line appears only when a destination with the matching name is found.')}</p>`;$('scenePortalList').innerHTML=text+(ps.length?ps.map(p=>portalCard(p,m,true)).join(''):`<p class="empty-state">${L('אין שערים מהסוג הזה במפה.','This map has no portals of this type.')}</p>`);renderSceneSelected();}
+function renderSceneSelected(){
+  const m=byId.get(sceneId),p=m.portals.find(p=>p.key===selectedGate);if(!p){$('sceneSelected').innerHTML='';return;}
+  const supplement=supplementForGate(p,m),target=byId.get(p.to??supplement?.to);
+  let html=`<div class="scene-selected"><span>${L('שער','Portal')} ${p.number} · ${portalTypeLabel(p,m)}</span>${eng(portalTarget(p,m))}<small>${L('מיקום בתמונת המקור:','Position in source image:')} <bdi dir="ltr">x ${p.x}, y ${p.y}</bdi></small><small>${L('שם השער בקובץ','Portal name in the data')}</small>${eng(p.name||L('ללא שם','Unnamed'))}`;
+  if((p.kind==='cross'||supplement)&&target){
+    if(supplement)html+=`<p>${esc(serviceCondition(supplement))}</p><small>${L('יעד זה מתועד במקור משלים; הוא אינו יעד קבוע ברשומת הלקוח.','This destination is documented by a supplementary source, not as a fixed destination in the client record.')}</small><a class="source-link" href="${esc(serviceUrls(supplement)[0])}" target="_blank" rel="noopener noreferrer">${L('מקור התיעוד','Documentation source')}</a>`;
+    html+=`<button type="button" class="button primary" data-scene-travel="${target.id}" data-travel-gate="${esc(p.key)}">${L('לעבור אל מפת היעד','Go to destination map')}</button>`;
+  }else if(p.kind==='internal'){
+    const destinations=m.portals.filter(q=>q.name===p.toPortal);
+    html+=`<small>${destinations.length===0?L('שם נקודת היעד קיים, אך לא נמצאה לה קואורדינטה ברשומות השערים.','The destination name is recorded, but no coordinates were found in the portal records.'):destinations.length>1?L('נמצאו כמה נקודות עם שם היעד; כולן מסומנות.','Multiple points share the destination name; all are marked.'):L('הקו מחבר לשער הנחיתה באותה מפה.','The line connects to the arrival portal within this map.')}</small>`;
+  }else html+=`<small>${L('היעד אינו קבוע בנתוני הלקוח. אין כאן חיבור מאומת למפה אחרת.','The client data has no fixed destination. This is not a verified connection to another map.')}</small>`;
+  html+='</div>';$('sceneSelected').innerHTML=html;
+}
 function pickGate(key,focus){const m=byId.get(sceneId),p=m.portals.find(p=>p.key===key);if(!p)return;selectedGate=key;for(const [k,g]of portalPinElements)g.classList.toggle('chosen',k===key);$('scenePortalList').querySelectorAll('.portal-card').forEach(c=>c.classList.toggle('chosen',c.dataset.gate===key));renderSceneSelected();drawInternal();if(focus){const r=$('sceneCanvas').getBoundingClientRect();const targetK=Math.max(scene.k,Math.min(.7,r.width/1000));scene.k=targetK;scene.x=r.width/2-p.x*scene.k;scene.y=r.height/2-p.y*scene.k;applyScene();}}
 function drawInternal(){const layer=$('sceneInternal');layer.replaceChildren();const m=byId.get(sceneId),p=m?.portals.find(p=>p.key===selectedGate);if(!p||p.kind!=='internal')return;const targets=m.portals.filter(q=>q.name===p.toPortal);for(const t of targets){layer.append(svgEl('path',{class:'internal-path',d:`M${p.x},${p.y}Q${(p.x+t.x)/2},${Math.min(p.y,t.y)-100} ${t.x},${t.y}`}));const target=svgEl('circle',{cx:t.x,cy:t.y,r:19/scene.k,fill:'none',stroke:'#f5ddac','stroke-width':2/scene.k});layer.append(target);}applyScene();}
 
@@ -402,7 +439,7 @@ function setSceneLayer(layer,ids=[]){
   $('sceneFilters').hidden=!isPortal;$('sceneEntitySummary').hidden=isPortal;
   $('sceneEntities').replaceChildren();entityPinElements.clear();
   document.querySelectorAll('#sceneLayers button').forEach(b=>{b.classList.toggle('active',b.dataset.layer===layer);b.setAttribute('aria-pressed',String(b.dataset.layer===layer));});
-  $('sceneHint').textContent=isPortal?'המספרים תואמים לרשימת השערים · גלגלת לקירוב · גרירה לתנועה':layer==='npcs'?'מיקומי דמויות מתוך קובץ המפה · גלגלת לקירוב · גרירה לתנועה':'נקודות הופעה רשומות · אינן מציגות מפלצות חיות בזמן אמת';
+  $('sceneHint').textContent=isPortal?L("המספרים תואמים לרשימת השערים · גלגלת לקירוב · גרירה לתנועה","Numbers match the portal list · Scroll to zoom · Drag to pan"):layer==='npcs'?L("מיקומי דמויות מתוך קובץ המפה · גלגלת לקירוב · גרירה לתנועה","NPC locations from map data · Scroll to zoom · Drag to pan"):L("נקודות הופעה רשומות · אינן מציגות מפלצות חיות בזמן אמת","Recorded spawn points · Not live monster positions");
   if(isPortal){renderScenePins();renderSceneSidebar();return;}
   renderSceneEntities();
 }
@@ -410,21 +447,21 @@ function renderSceneEntities(){
   const m=byId.get(sceneId),isNpc=sceneLayer==='npcs';
   if(!isNpc&&!window.HuntData){
     sceneEntityPoints=[];$('sceneSelected').innerHTML='';
-    $('sceneEntitySummary').innerHTML=window.Hunt?.catalogStatus==='unavailable'?'<p class="section-note" role="status">נתוני נקודות ההופעה לא נטענו.</p><button type="button" class="button quiet" id="sceneRetryCatalog">פתיחת הקטלוג לניסיון נוסף</button>':'<p class="section-note" role="status">טוענים את נתוני נקודות ההופעה…</p>';
+    $('sceneEntitySummary').innerHTML=window.Hunt?.catalogStatus==='unavailable'?`<p class="section-note" role="status">${L('נתוני נקודות ההופעה לא נטענו.','Spawn point data could not load.')}</p><button type="button" class="button quiet" id="sceneRetryCatalog">${L('פתיחת הקטלוג לניסיון נוסף','Open catalog to retry')}</button>`:`<p class="section-note" role="status">${L('טוענים את נתוני נקודות ההופעה…','Loading spawn point data…')}</p>`;
     $('scenePortalList').innerHTML='';return;
   }
   const raw=isNpc?(m.npcs||[]).map(p=>({...p,entityId:p.id})):(window.HuntData?.mapSpawns?.[sceneId]?.points||[]).map(p=>({...p,entityId:p.mobId}));
   sceneEntityPoints=raw.filter(p=>(!sceneEntityIds.length||sceneEntityIds.includes(p.entityId))&&Number.isFinite(p.x)&&Number.isFinite(p.y)).map((p,i)=>({...p,number:i+1,key:`${sceneLayer}:${sceneId}:${i}`}));
   const uniqueIds=[...new Set(sceneEntityPoints.map(p=>p.entityId))];
   const selectedNames=sceneEntityIds.map(entityDefinition).map(n=>eng(n.name)).join('');
-  let summary=`<div class="entity-scene-summary"><span class="eyebrow">${isNpc?'אנשים בדרך':'איפה מתחיל הציד'}</span>${selectedNames}<strong>${sceneEntityPoints.length===1?(isNpc?'מיקום דמות אחד':'נקודת הופעה אחת'):fmt(sceneEntityPoints.length)+' '+(isNpc?'מיקומי דמויות':'נקודות הופעה')} · ${uniqueIds.length===1?(isNpc?'דמות אחת':'סוג מפלצת אחד'):uniqueIds.length+' '+(isNpc?'מזהי דמות':'סוגי מפלצות')}</strong>`;
-  if(sceneEntityIds.length)summary+=`<button type="button" class="entity-show-all" id="sceneShowAll">${isNpc?'הצג את כל הדמויות במפה':'הצג את כל המפלצות במפה'}</button>`;
-  summary+=`<p>${isNpc?'המיקום מבוסס על קובץ המפה. דמות משימה או אירוע עשויה להופיע רק בתנאים מסוימים.':'זו פריסת נקודות ההופעה שבנתונים. מספר המפלצות החיות וזמן החזרה נשלטים על ידי שרת המשחק.'}</p></div>`;
+  let summary=`<div class="entity-scene-summary"><span class="eyebrow">${isNpc?L("אנשים בדרך","People along the way"):L("איפה מתחיל הציד","Where the hunt begins")}</span>${selectedNames}<strong>${sceneEntityPoints.length===1?(isNpc?L("מיקום דמות אחד","1 NPC location"):L("נקודת הופעה אחת","1 spawn point")):fmt(sceneEntityPoints.length)+' '+(isNpc?L("מיקומי דמויות","NPC locations"):L("נקודות הופעה","spawn points"))} · ${uniqueIds.length===1?(isNpc?L("דמות אחת","1 NPC"):L("סוג מפלצת אחד","1 monster type")):uniqueIds.length+' '+(isNpc?L("מזהי דמות","NPC IDs"):L("סוגי מפלצות","monster types"))}</strong>`;
+  if(sceneEntityIds.length)summary+=`<button type="button" class="entity-show-all" id="sceneShowAll">${isNpc?L("הצג את כל הדמויות במפה","Show all NPCs on this map"):L("הצג את כל המפלצות במפה","Show all monsters on this map")}</button>`;
+  summary+=`<p>${isNpc?L("המיקום מבוסס על קובץ המפה. דמות משימה או אירוע עשויה להופיע רק בתנאים מסוימים.","Locations come from the map data. Quest or event NPCs may appear only under certain conditions."):L("זו פריסת נקודות ההופעה שבנתונים. מספר המפלצות החיות וזמן החזרה נשלטים על ידי שרת המשחק.","This shows the recorded spawn point layout. The game server controls live monster counts and respawn times.")}</p></div>`;
   $('sceneEntitySummary').innerHTML=summary;
   $('sceneSelected').innerHTML='';
   for(const p of sceneEntityPoints){
     const def=entityDefinition(p.entityId),boss=!isNpc&&def.isBoss;
-    const pin=svgEl('g',{class:`entity-pin ${isNpc?'npc':boss?'boss':'monster'}`,transform:`translate(${p.x},${p.y})`,role:'button',tabindex:'0','aria-label':`${isNpc?'מיקום':'נקודת הופעה'} ${p.number}: ${def.name}`});
+    const pin=svgEl('g',{class:`entity-pin ${isNpc?'npc':boss?'boss':'monster'}`,transform:`translate(${p.x},${p.y})`,role:'button',tabindex:'0','aria-label':`${isNpc?L("מיקום","Location"):L("נקודת הופעה","Spawn point")} ${p.number}: ${def.name}`});
     pin.append(svgEl('circle'),svgEl('text',{},p.number));
     pin.addEventListener('click',e=>{e.stopPropagation();if(!sceneDragging)pickEntity(p.key,false);});
     pin.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();pickEntity(p.key,false);}});
@@ -432,8 +469,8 @@ function renderSceneEntities(){
   }
   $('scenePortalList').innerHTML=sceneEntityPoints.length?sceneEntityPoints.map(p=>{
     const def=entityDefinition(p.entityId);
-    return `<button type="button" class="entity-location-card" data-entity-key="${esc(p.key)}"><span class="entity-location-number">${p.number}</span>${def.icon?`<img src="${esc(def.icon)}" alt="" loading="lazy">`:''}<span>${eng(def.name)}<small>${!isNpc&&def.isBoss?'בוס · ':''}${esc(directionLabel(p,m))}</small></span></button>`;
-  }).join(''):`<p class="empty-state">${isNpc?'לא נרשם במפה הזאת מיקום של הדמות שנבחרה.':'אין נקודות הופעה רשומות לבחירה הזאת במפה. זימון באמצעות משימה או אירוע עשוי לא להופיע בקובץ.'}</p>`;
+    return `<button type="button" class="entity-location-card" data-entity-key="${esc(p.key)}"><span class="entity-location-number">${p.number}</span>${def.icon?`<img src="${esc(def.icon)}" alt="" loading="lazy">`:''}<span>${eng(def.name)}<small>${!isNpc&&def.isBoss?L("בוס · ","Boss · "):''}${esc(directionLabel(p,m))}</small></span></button>`;
+  }).join(''):`<p class="empty-state">${isNpc?L("לא נרשם במפה הזאת מיקום של הדמות שנבחרה.","No location for the selected NPC is recorded on this map."):L("אין נקודות הופעה רשומות לבחירה הזאת במפה. זימון באמצעות משימה או אירוע עשוי לא להופיע בקובץ.","No spawn points match this selection on this map. Quest or event summons may not appear in the data.")}</p>`;
   if(sceneEntityPoints.length===1)pickEntity(sceneEntityPoints[0].key,false);
   applyScene();
 }
@@ -442,7 +479,7 @@ function pickEntity(key,focus){
   selectedEntity=key;const def=entityDefinition(p.entityId),isNpc=sceneLayer==='npcs';
   for(const [k,pin]of entityPinElements)pin.classList.toggle('chosen',k===key);
   $('scenePortalList').querySelectorAll('[data-entity-key]').forEach(b=>b.classList.toggle('chosen',b.dataset.entityKey===key));
-  $('sceneSelected').innerHTML=`<div class="scene-selected entity-selected"><span>${isNpc?'מיקום דמות':def.isBoss?'נקודת הופעה של בוס':'נקודת הופעה'} ${p.number}</span>${eng(def.name)}<small>מזהה: ${p.entityId}${!isNpc&&def.level!=null?' · רמה '+def.level:''}</small><small>מיקום בתמונת המקור</small><bdi class="entity-coordinates" dir="ltr">x ${p.x}, y ${p.y}</bdi><p>${isNpc?'הסימון מראה את המיקום הרשום של הדמות במפה.':'הסימון מציין נקודת הופעה אפשרית. הוא אינו מאשר שהמפלצת נמצאת כאן כרגע.'}</p>${def.sourceUrl?`<a class="source-link" href="${esc(def.sourceUrl)}" target="_blank" rel="noopener noreferrer">רשומת המקור</a>`:''}</div>`;
+  $('sceneSelected').innerHTML=`<div class="scene-selected entity-selected"><span>${isNpc?L("מיקום דמות","NPC location"):def.isBoss?L("נקודת הופעה של בוס","Boss spawn point"):L("נקודת הופעה","Spawn point")} ${p.number}</span>${eng(def.name)}<small>${L('מזהה:','ID:')} ${p.entityId}${!isNpc&&def.level!=null?L(" · רמה "," · Level ")+def.level:''}</small><small>${L('מיקום בתמונת המקור','Position in source image')}</small><bdi class="entity-coordinates" dir="ltr">x ${p.x}, y ${p.y}</bdi><p>${isNpc?L("הסימון מראה את המיקום הרשום של הדמות במפה.","This marker shows the recorded NPC location on the map."):L("הסימון מציין נקודת הופעה אפשרית. הוא אינו מאשר שהמפלצת נמצאת כאן כרגע.","This marker indicates a possible spawn point. It does not confirm that a monster is currently here.")}</p>${def.sourceUrl?`<a class="source-link" href="${esc(def.sourceUrl)}" target="_blank" rel="noopener noreferrer">${L('רשומת המקור','Source record')}</a>`:''}</div>`;
   if(focus){const r=$('sceneCanvas').getBoundingClientRect();scene.k=Math.max(scene.k,Math.min(.8,r.width/900));scene.x=r.width/2-p.x*scene.k;scene.y=r.height/2-p.y*scene.k;applyScene();}
 }
 
@@ -454,24 +491,55 @@ function enablePanZoom(svg,kind){let points=new Map(),start=null,moved=false,las
   svg.addEventListener('wheel',e=>{e.preventDefault();const r=svg.getBoundingClientRect();(isWorld?zoomWorld:zoomScene)(Math.exp(-e.deltaY*.0015),e.clientX-r.left,e.clientY-r.top);},{passive:false});
 }
 
-function renderAbout(){const stats=atlas.meta.stats;$('coverageStats').innerHTML=[[maps.length,'רשומות מפה'],[stats.cross,'שערים בין מפות'],[stats.internal,'מעברים פנימיים'],[stats.unknown,'ללא יעד קבוע']].map(([v,l])=>`<div class="coverage-stat"><b>${fmt(v)}</b><span>${l}</span></div>`).join('');$('sourcesList').innerHTML=(atlas.sources||[]).map(s=>`<div class="source-item"><a href="${esc(s.url)}" target="_blank" rel="noopener noreferrer">${esc(s.title)}</a><p>${esc(s.description||'')}</p></div>`).join('');}
+function renderAbout(){const stats=atlas.meta.stats;$('coverageStats').innerHTML=[[maps.length,L("רשומות מפה","map records")],[stats.cross,L("שערים בין מפות","portals between maps")],[stats.internal,L("מעברים פנימיים","internal passages")],[stats.unknown,L('ללא יעד קבוע','no fixed destination')]].map(([v,l])=>`<div class="coverage-stat"><b>${fmt(v)}</b><span>${l}</span></div>`).join('');$('sourcesList').innerHTML=(atlas.sources||[]).map(s=>`<div class="source-item"><a href="${esc(s.url)}" target="_blank" rel="noopener noreferrer">${esc(D(s.title))}</a><p>${esc(D(s.description||''))}</p></div>`).join('');}
 function renderHuntAbout(){
   const data=window.HuntData;if(!data)return;
   let section=$('huntingCoverage');
   if(!section){section=document.createElement('section');section.id='huntingCoverage';$('sourcesList').insertAdjacentElement('beforebegin',section);}
   const stats=data.meta.stats,dropMeta=data.dropData?.meta||{};
-  section.innerHTML=`<h3>חיפוש פריטים, מפלצות ודמויות</h3><p>הקטלוג כולל ${fmt(stats.items)} פריטים, ${fmt(stats.monsters)} רשומות מפלצת ו־${fmt(stats.npcs)} רשומות דמות. ${fmt(stats.spawnPoints)} נקודות הופעה מסומנות ב־${fmt(stats.mapsWithSpawns)} מפות. ${fmt(stats.npcPlacements)} מיקומי דמויות נרשמו ב־${fmt(stats.mapsWithNpcs)} מפות.</p><p>שמות כפולים נשמרים בנפרד לפי מזהה. לדמות או לבוס ללא מיקום מתועד לא ניתנה כתובת משוערת. המלצת הציד מבוססת על נקודות הופעה, ולא על תדירות הופעה, סיכוי נפילה או פריטים בשעה.</p>${window.Hunt?.dropStatus==='unavailable'?'<p class="route-warning">תיעוד הנפילות לא נטען בביקור הזה. אפשר לנסות שוב בחלונית החיפוש והציד; אין להסיק מכך שלפריטים אין נפילות מתועדות.</p>':`<p>תיעוד הפריטים מכסה כרגע ${fmt(dropMeta.acceptedRelationships||0)} קשרים בין ${fmt(dropMeta.coveredItemIds||0)} פריטים לבין ${fmt(dropMeta.coveredMonsterIds||0)} מזהי מפלצת. נכללו רק דיווחים שסומנו בקלאסיק, ללא שיעורי הנפילה של גרסאות אחרות. זהו מאגר קהילתי חלקי; אין תאריך או גרסת תצפית לכל שורה, ולא כל דיווח נבדק מחדש בעדכון הנוכחי.</p>`}<p><a class="source-link" href="https://ms-classic.com/drops" target="_blank" rel="noopener noreferrer">טבלת תצפיות הנפילה</a><a class="source-link" href="https://maplelandhub.com/classic/en/monster/700000" target="_blank" rel="noopener noreferrer">תצפיות נוספות של בוס הפטרייה</a></p><p class="copyright" dir="ltr" lang="en">${esc(dropMeta.attribution||'')} ${esc(dropMeta.license||'')} <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" rel="noopener noreferrer">License</a></p><div class="coverage-downloads"><a href="hunt-data.json" download="classic-hunt-data.json" class="button quiet">הורדת קטלוג ומיקומים</a><a href="drop-data.json" download="classic-drop-observations.json" class="button quiet">הורדת תצפיות הנפילה</a></div><h3>מקורות המפות והמעברים</h3>`;
+  const coverage=L(`הקטלוג כולל ${fmt(stats.items)} פריטים, ${fmt(stats.monsters)} רשומות מפלצת ו־${fmt(stats.npcs)} רשומות דמות. ${fmt(stats.spawnPoints)} נקודות הופעה מסומנות ב־${fmt(stats.mapsWithSpawns)} מפות. ${fmt(stats.npcPlacements)} מיקומי דמויות נרשמו ב־${fmt(stats.mapsWithNpcs)} מפות.`,`The catalog contains ${fmt(stats.items)} items, ${fmt(stats.monsters)} monster records and ${fmt(stats.npcs)} NPC records. ${fmt(stats.spawnPoints)} spawn points are marked across ${fmt(stats.mapsWithSpawns)} maps. ${fmt(stats.npcPlacements)} NPC locations are recorded across ${fmt(stats.mapsWithNpcs)} maps.`);
+  const dropCoverage=L(`תיעוד הפריטים מכסה כרגע ${fmt(dropMeta.acceptedRelationships||0)} קשרים בין ${fmt(dropMeta.coveredItemIds||0)} פריטים לבין ${fmt(dropMeta.coveredMonsterIds||0)} מזהי מפלצת. נכללו רק דיווחים שסומנו בקלאסיק, ללא שיעורי הנפילה של גרסאות אחרות. זהו מאגר קהילתי חלקי; אין תאריך או גרסת תצפית לכל שורה, ולא כל דיווח נבדק מחדש בעדכון הנוכחי.`,`Drop observations currently cover ${fmt(dropMeta.acceptedRelationships||0)} relationships between ${fmt(dropMeta.coveredItemIds||0)} items and ${fmt(dropMeta.coveredMonsterIds||0)} monster IDs. Only Classic-tagged reports are included, without drop rates from other versions. This is a partial community dataset; individual rows lack observation dates or versions, and not every report was rechecked in the current update.`);
+  section.innerHTML=`<h3>${L('חיפוש פריטים, מפלצות ודמויות','Find items, monsters and NPCs')}</h3><p>${coverage}</p><p>${L('שמות כפולים נשמרים בנפרד לפי מזהה. לדמות או לבוס ללא מיקום מתועד לא ניתנה כתובת משוערת. המלצת הציד מבוססת על נקודות הופעה, ולא על תדירות הופעה, סיכוי נפילה או פריטים בשעה.','Duplicate names are kept separate by ID. NPCs and bosses without documented locations are not assigned estimated positions. Hunting suggestions use spawn points, not respawn frequency, drop chance or items per hour.')}</p>${window.Hunt?.dropStatus==='unavailable'?`<p class="route-warning">${L('תיעוד הנפילות לא נטען בביקור הזה. אפשר לנסות שוב בחלונית החיפוש והציד; אין להסיק מכך שלפריטים אין נפילות מתועדות.','Drop observations could not load during this visit. Retry in the search and hunting panel; this does not mean the items have no documented drops.')}</p>`:`<p>${dropCoverage}</p>`}<p><a class="source-link" href="https://ms-classic.com/drops" target="_blank" rel="noopener noreferrer">${L('טבלת תצפיות הנפילה','Drop observation table')}</a><a class="source-link" href="https://maplelandhub.com/classic/en/monster/700000" target="_blank" rel="noopener noreferrer">${L('תצפיות נוספות של בוס הפטרייה','Additional Mushroom boss observations')}</a></p><p class="copyright" dir="ltr" lang="en">${esc(dropMeta.attribution||'')} ${esc(dropMeta.license||'')} <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" rel="noopener noreferrer">License</a></p><div class="coverage-downloads"><a href="hunt-data.json" download="classic-hunt-data.json" class="button quiet">${L('הורדת קטלוג ומיקומים','Download catalog and locations')}</a><a href="drop-data.json" download="classic-drop-observations.json" class="button quiet">${L('הורדת תצפיות הנפילה','Download drop observations')}</a></div><h3>${L('מקורות המפות והמעברים','Map and passage sources')}</h3>`;
+}
+// Refresh copy in place. Changing language must never resubmit a route or move the camera.
+function refreshLanguage(){
+  if(!atlas)return;
+  const selectedSearch=activeSearchResults[searchIndex],searchOpen=!$('searchResults').hidden;
+  renderDetails();renderDirectoryGroups();
+  if(!$('directory').hidden)renderDirectory();
+  if(searchOpen&&$('search').value.trim()){
+    renderSearch();
+    if(selectedSearch){const index=activeSearchResults.findIndex(result=>result.id===selectedSearch.id&&result.kind===selectedSearch.kind);if(index>=0){searchIndex=index-1;moveSearchSelection(1);}}
+  }
+  for(const [id,node]of nodeElements)node.setAttribute('aria-label',worldNodeLabel(byId.get(id)));
+  $('mapTooltip').hidden=true;
+  if(route||$('routeResult').innerHTML)renderRouteResult();
+  for(const id of ['routeFrom','routeTo'])if($(id).getAttribute('aria-invalid')==='true')$(id+'Error').textContent=routeInputError();
+  renderAbout();renderHuntAbout();
+  if(byId.has(sceneId)){
+    const selected=selectedEntity,hadRerouteError=!!$('sceneNavError').textContent;
+    $('sceneRegion').textContent=groupLabel(byId.get(sceneId));
+    setSceneLayer(sceneLayer,sceneEntityIds);
+    if(selected&&sceneLayer!=='portals')pickEntity(selected,false);
+    renderSceneNavigation();
+    if(hadRerouteError)$('sceneNavError').textContent=rerouteError();
+    $('sceneImageMessage').textContent=$('sceneImageStatus').dataset.state==='error'?L('תמונת המפה לא נטענה. השערים והמיקומים עדיין זמינים ברשימה.','The map image could not load. Portals and locations are still available in the list.'):L('טוענים את תמונת המפה…','Loading map image…');
+  }
+}
+function renderLoadingError(){
+  $('loading').innerHTML=`<div style="padding:30px;text-align:center;line-height:1.9">${L('המפה לא נטענה.','The atlas could not load.')}<br>${L('נסו לרענן את העמוד.','Try refreshing the page.')}<br><small>${L('אם פתחתם קובץ מקומי, השתמשו בקישור לאטלס.','If you opened a local file, use the online atlas link instead.')}</small></div>`;
 }
 function bindEvents(){
+  window.addEventListener('atlas-languagechange',refreshLanguage);
   $('search').addEventListener('input',renderSearch);$('search').addEventListener('focus',()=>{if($('search').value.trim())renderSearch();});$('search').addEventListener('keydown',handleSearchKey);
   $('searchResults').addEventListener('click',e=>{const b=e.target.closest('[data-id]');if(b)chooseSearch(b.dataset.id,b.dataset.kind);});document.addEventListener('click',e=>{if(!e.target.closest('.search-wrap'))closeSearch();});
   document.addEventListener('keydown',e=>{if(e.key==='/'&&!['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)&&!$('sceneDialog').open&&!$('aboutDialog').open){e.preventDefault();$('search').focus();}});
-  document.querySelectorAll('[data-region]').forEach(b=>b.addEventListener('click',()=>{currentRegion=b.dataset.region;document.querySelectorAll('[data-region]').forEach(btn=>btn.classList.toggle('active',btn===b));updateVisibleNodes();fitWorld();$('directory').hidden=true;}));
+  document.querySelectorAll('.region-nav [data-region]').forEach(b=>b.addEventListener('click',()=>{currentRegion=b.dataset.region;document.querySelectorAll('.region-nav [data-region]').forEach(btn=>btn.classList.toggle('active',btn===b));updateVisibleNodes();fitWorld();$('directory').hidden=true;}));
   $('zoomIn').addEventListener('click',()=>zoomWorld(1.35));$('zoomOut').addEventListener('click',()=>zoomWorld(1/1.35));$('fitMap').addEventListener('click',fitWorld);$('labelsToggle').addEventListener('click',()=>{showAllLabels=!showAllLabels;$('labelsToggle').setAttribute('aria-pressed',String(showAllLabels));applyWorld();});
   $('directoryToggle').addEventListener('click',openDirectory);$('closeDirectory').addEventListener('click',()=>$('directory').hidden=true);$('directorySearch').addEventListener('input',renderDirectory);$('directoryGroup').addEventListener('change',renderDirectory);$('directoryGrid').addEventListener('click',e=>{const card=e.target.closest('[data-id]');if(card){$('directory').hidden=true;selectMap(card.dataset.id,{focus:true});}});
   $('routeToggle').addEventListener('click',()=>{if($('routePanel').hidden)openRoute();else{$('routePanel').hidden=true;$('routeToggle').setAttribute('aria-pressed','false');}});$('closeRoute').addEventListener('click',()=>{$('routePanel').hidden=true;$('routeToggle').setAttribute('aria-pressed','false');});$('routeForm').addEventListener('submit',submitRoute);
   $('routeResult').addEventListener('click',e=>{if(e.target.id==='shareRoute'){window.AtlasPersonal?.share();return;}if(e.target.id==='restartRoute'){openRouteStep(0);return;}if(e.target.id==='startRoute'){openRouteStep(navigationActive()?navigationIndex:0);return;}const gate=e.target.closest('[data-route-scene]');if(gate){const index=gate.dataset.routeIndex!==undefined?Number(gate.dataset.routeIndex):route?.steps.findIndex((s,i)=>s.from===Number(gate.dataset.routeScene)&&navigationGate(i)?.key===gate.dataset.routeGate);openRouteStep(index);return;}const map=e.target.closest('[data-route-map]');if(map)selectMap(map.dataset.routeMap,{focus:true,scroll:false});if(e.target.id==='clearRoute'){route=null;navigationRoute=null;navigationIndex=0;window.AtlasPersonal?.saveJourney();renderSceneNavigation();drawRoute();$('routeResult').innerHTML='';$('routeRestoreNote').textContent='';$('routeShareBox').hidden=true;}});
-  $('mapDetails').addEventListener('click',e=>{const tab=e.target.closest('[data-tab]');if(tab){detailsTab=tab.dataset.tab;renderPortalContent();return;}const b=e.target.closest('[data-action]');if(!b)return;const m=byId.get(activeId),p=m.portals.find(p=>p.key===b.dataset.gate);switch(b.dataset.action){case'favorite':window.AtlasPersonal?.toggle(m.id);break;case'open-scene':openScene(m.id);break;case'map-monsters':openSpawns(m.id);break;case'map-npcs':openNpcs(m.id);break;case'route-from':openRoute();$('routeFrom').value=mapLabel(m);$('routeTo').focus();break;case'route-to':{const old=routeMap($('routeFrom').value);openRoute();if(!old||old.id===m.id)$('routeFrom').value=mapLabel(byId.get(10001000)||maps[0]);$('routeTo').value=mapLabel(m);$('routeFrom').focus();break;}case'portal-go':if(p?.kind==='cross')selectMap(p.to,{focus:true});else if(p)openScene(m.id,p.key);break;case'locate':if(p)openScene(m.id,p.key);break;case'incoming':selectMap(b.dataset.from,{focus:true});break;case'incoming-scene':openScene(Number(b.dataset.from),b.dataset.gate);break;case'service-target':if(b.dataset.target)selectMap(b.dataset.target,{focus:true});else toast('למעבר הזה אין יעד קבוע. הפרטים מופיעים בתנאי השירות.');break;}});
+  $('mapDetails').addEventListener('click',e=>{const tab=e.target.closest('[data-tab]');if(tab){detailsTab=tab.dataset.tab;renderPortalContent();return;}const b=e.target.closest('[data-action]');if(!b)return;const m=byId.get(activeId),p=m.portals.find(p=>p.key===b.dataset.gate);switch(b.dataset.action){case'favorite':window.AtlasPersonal?.toggle(m.id);break;case'open-scene':openScene(m.id);break;case'map-monsters':openSpawns(m.id);break;case'map-npcs':openNpcs(m.id);break;case'route-from':openRoute();$('routeFrom').value=mapLabel(m);$('routeTo').focus();break;case'route-to':{const old=routeMap($('routeFrom').value);openRoute();if(!old||old.id===m.id)$('routeFrom').value=mapLabel(byId.get(10001000)||maps[0]);$('routeTo').value=mapLabel(m);$('routeFrom').focus();break;}case'portal-go':if(p?.kind==='cross')selectMap(p.to,{focus:true});else if(p)openScene(m.id,p.key);break;case'locate':if(p)openScene(m.id,p.key);break;case'incoming':selectMap(b.dataset.from,{focus:true});break;case'incoming-scene':openScene(Number(b.dataset.from),b.dataset.gate);break;case'service-target':if(b.dataset.target)selectMap(b.dataset.target,{focus:true});else toast(L("למעבר הזה אין יעד קבוע. הפרטים מופיעים בתנאי השירות.","This passage has no fixed destination. See its requirements for details."));break;}});
   $('sceneNavCompact').addEventListener('click',()=>setCompactNavigation(!compactNavigation));
   $('sceneNavReroute').addEventListener('click',rerouteFromScene);
   for(const id of ['routeFrom','routeTo'])$(id).addEventListener('input',()=>{$(id).removeAttribute('aria-invalid');$(id+'Error').textContent='';});
@@ -487,13 +555,13 @@ function bindEvents(){
   window.addEventListener('hunt-unavailable',()=>{if($('sceneDialog').open&&sceneLayer==='monsters')setSceneLayer(sceneLayer,sceneEntityIds);});
   window.addEventListener('hunt-ready',()=>{renderDetails();if($('search').value)renderSearch();renderHuntAbout();if($('sceneDialog').open&&sceneLayer!=='portals')setSceneLayer(sceneLayer,sceneEntityIds);});
   const about=()=>{renderHuntAbout();$('aboutDialog').showModal();};$('aboutButton').addEventListener('click',about);$('coverageButton').addEventListener('click',about);$('closeAbout').addEventListener('click',()=>$('aboutDialog').close());$('aboutDialog').addEventListener('click',e=>{if(e.target===$('aboutDialog')){const r=$('aboutDialog').getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)$('aboutDialog').close();}});
-  document.querySelector('.brand').addEventListener('click',e=>{e.preventDefault();currentRegion='world';document.querySelectorAll('[data-region]').forEach(b=>b.classList.toggle('active',b.dataset.region==='world'));updateVisibleNodes();fitWorld();});
+  document.querySelector('.brand').addEventListener('click',e=>{e.preventDefault();currentRegion='world';document.querySelectorAll('.region-nav [data-region]').forEach(b=>b.classList.toggle('active',b.dataset.region==='world'));updateVisibleNodes();fitWorld();});
   enablePanZoom($('worldSvg'),'world');enablePanZoom($('sceneSvg'),'scene');let resizeTimer;window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{fitWorld();if($('sceneDialog').open)fitNavigationScene();},180);});window.addEventListener('hashchange',()=>{const id=location.hash.match(/map=(\d+)/);if(id)selectMap(Number(id[1]),{focus:true,hash:false});});
 }
 async function init(){
   document.querySelectorAll('[data-icon]').forEach(el=>el.innerHTML=`<svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[el.dataset.icon]||ICONS.pin}</svg>`);
   try{const response=await fetch('atlas-data.json');if(!response.ok)throw Error(`data ${response.status}`);atlas=await response.json();maps=atlas.maps;groups=atlas.groups;byId=new Map(maps.map(m=>[m.id,m]));incoming=new Map();adjacency=new Map();for(const m of maps){const out=[];for(const p of m.portals){if(p.kind==='cross'&&byId.has(p.to)){out.push({to:p.to,p});if(!incoming.has(p.to))incoming.set(p.to,[]);incoming.get(p.to).push({from:m,p});}}adjacency.set(m.id,out);}
-    $('mapCount').textContent=maps.length;$('mapOptions').innerHTML=maps.map(m=>`<option value="${esc(mapLabel(m))}"></option>`).join('');$('directoryGroup').innerHTML='<option value="all">כל האזורים</option>'+groups.map(g=>`<option value="${esc(g.id)}">${esc(g.he)}</option>`).join('');
+    $('mapCount').textContent=maps.length;$('mapOptions').innerHTML=maps.map(m=>`<option value="${esc(mapLabel(m))}"></option>`).join('');renderDirectoryGroups();
     window.MapSearch?.init({maps,groupLabel});
     buildWorld();renderAbout();bindEvents();const hash=location.hash.match(/map=(\d+)/);selectMap(hash&&byId.has(Number(hash[1]))?Number(hash[1]):10001000,{hash:false,scroll:false});$('loading').hidden=true;requestAnimationFrame(()=>{fitWorld();if(hash)centerOnMap(byId.get(activeId));});
     window.Atlas={get data(){return atlas},findRoute,selectMap,openScene,openSpawns,openNpcs,planTo,get activeMap(){return activeId},get currentRoute(){return route},fitWorld};
@@ -503,6 +571,6 @@ async function init(){
       restore:saved=>{openRoute();$('routeFrom').value=mapLabel(byId.get(saved.from));$('routeTo').value=mapLabel(byId.get(saved.to));$('useServices').checked=saved.services;submitRoute(null,{persist:false});return !!route;},
       resume:(index,show)=>openRouteStep(index,{show})});
     window.dispatchEvent(new Event('atlas-ready'));
-  }catch(error){$('loading').innerHTML='<div style="padding:30px;text-align:center;line-height:1.9">המפה לא נטענה.<br>נסו לרענן את העמוד.<br><small>אם פתחתם קובץ מקומי, השתמשו בקישור לאטלס.</small></div>';console.error('Atlas loading failed',error);}
+  }catch(error){renderLoadingError();window.addEventListener('atlas-languagechange',renderLoadingError);console.error('Atlas loading failed',error);}
 }
 init();

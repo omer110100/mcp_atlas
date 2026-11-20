@@ -1,6 +1,7 @@
 'use strict';
 // One matching/selection contract for every map field. No network or storage.
 (() => {
+  const L=(he,en)=>window.AtlasI18n?.language==='en'?en:he;
   const ALIASES={
     'הנסיס':'Henesys','אליניה':'Ellinia','אלינייה':'Ellinia',
     'פריון':'Perion','קרנינג':'Kerning City','קרנינג סיטי':'Kerning City',
@@ -33,7 +34,7 @@
     if(!input||attached.has(input))return;
     const holder=document.createElement('div'),list=document.createElement('div'),note=document.createElement('p');
     const id=`map-lookup-${++serial}`;
-    holder.className='map-lookup';list.className='map-lookup-list';list.id=id;list.hidden=true;list.setAttribute('role','listbox');list.setAttribute('aria-label','הצעות למפת משחק');
+    holder.className='map-lookup';list.className='map-lookup-list';list.id=id;list.hidden=true;list.setAttribute('role','listbox');list.setAttribute('aria-label',L('הצעות למפת משחק','Game map suggestions'));
     note.className='map-lookup-status';note.id=id+'-status';note.setAttribute('role','status');note.setAttribute('aria-live','polite');
     input.before(holder);holder.append(input,list,note);input.removeAttribute('list');input.setAttribute('dir','auto');input.setAttribute('autocomplete','off');input.setAttribute('role','combobox');input.setAttribute('aria-autocomplete','list');input.setAttribute('aria-controls',id);input.setAttribute('aria-expanded','false');
     let results=[],index=-1;
@@ -51,9 +52,9 @@
         option.className='map-lookup-option';option.id=`${id}-${i}`;option.setAttribute('role','option');option.setAttribute('aria-selected','false');option.dataset.lookupIndex=String(i);
         name.textContent=map.name;meta.textContent=`${groupLabel(map)||map.street||''} · ${map.id}`;option.append(name,meta);list.append(option);
       }
-      if(!results.length){const empty=document.createElement('p');empty.className='map-lookup-empty';empty.textContent='לא נמצאה מפה. נסו שם אחר בעברית, באנגלית או מזהה מפה.';list.append(empty);}
+      if(!results.length){const empty=document.createElement('p');empty.className='map-lookup-empty';empty.textContent=L('לא נמצאה מפה. נסו שם אחר בעברית, באנגלית או מזהה מפה.','No map found. Try another Hebrew or English name, or a map ID.');list.append(empty);}
       list.hidden=false;input.setAttribute('aria-expanded','true');input.removeAttribute('aria-activedescendant');
-      note.textContent=all.length>8?`מוצגות 8 מתוך ${all.length} התאמות. הוסיפו טקסט כדי לצמצם.`:all.length?`${all.length} הצעות. בחרו מפה או השתמשו בחצים וב־Enter.`:'לא נמצאו מפות מתאימות.';
+      note.textContent=all.length>8?L(`מוצגות 8 מתוך ${all.length} התאמות. הוסיפו טקסט כדי לצמצם.`,`Showing 8 of ${all.length} matches. Type more to narrow the results.`):all.length?L(`${all.length} הצעות. בחרו מפה או השתמשו בחצים וב־Enter.`,`${all.length} suggestions. Select a map or use the arrow keys and Enter.`):L('לא נמצאו מפות מתאימות.','No matching maps.');
     };
     input.addEventListener('input',render);input.addEventListener('focus',render);input.addEventListener('blur',close);
     input.addEventListener('keydown',event=>{
@@ -71,17 +72,21 @@
     // Keep DOM focus in the combobox while clicking or tapping an option.
     list.addEventListener('pointerdown',e=>{if(e.target.closest('[data-lookup-index]'))e.preventDefault();});
     list.addEventListener('click',e=>{const option=e.target.closest('[data-lookup-index]');if(option)choose(Number(option.dataset.lookupIndex));});
-    attached.set(input,{close});
+    const refresh=()=>{list.setAttribute('aria-label',L('הצעות למפת משחק','Game map suggestions'));if(!list.hidden)render();};
+    attached.set(input,{close,refresh});
   }
   function scan(root){if(root.matches?.(TARGETS))attach(root);root.querySelectorAll?.(TARGETS).forEach(attach);}
   function init(options){
     maps=Array.isArray(options.maps)?options.maps:[...options.maps.values()];byId=new Map(maps.map(m=>[m.id,m]));groupLabel=options.groupLabel||(()=> '');
-    records=maps.map(map=>{const name=norm(map.name),localAliases=aliasEntries.filter(([,en])=>name.includes(en)).map(([he])=>he).join(' ');return {map,name,text:norm(`${map.name} ${map.id} ${map.street||''} ${groupLabel(map)} ${localAliases}`)};});
+    records=maps.map(map=>{const name=norm(map.name),localAliases=aliasEntries.filter(([,en])=>name.includes(en)).map(([he])=>he).join(' ');return {map,name,text:norm(`${map.name} ${map.id} ${map.street||''} ${groupLabel(map)} ${window.AtlasTranslations?.[groupLabel(map)]||Object.entries(window.AtlasTranslations||{}).find(([,en])=>en===groupLabel(map))?.[0]||''} ${localAliases}`)};});
     scan(document);
     if(!observer&&typeof MutationObserver!=='undefined'){
       observer=new MutationObserver(changes=>{for(const change of changes)for(const node of change.addedNodes)if(node.nodeType===1)scan(node);});
       observer.observe(document.body,{childList:true,subtree:true});
     }
   }
+  window.addEventListener?.('atlas-languagechange',()=>{
+    document.querySelectorAll(TARGETS).forEach(input=>attached.get(input)?.refresh());
+  });
   window.MapSearch={init,resolve,search,attach};
 })();

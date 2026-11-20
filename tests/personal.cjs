@@ -64,6 +64,8 @@ function setup({saved,hash='',storageBlocked=false,writeBlocked=false,clipboardB
   check('invalid stored progress is rejected before route callback',setup({saved:malformedJourney}).restored.length===0);
   const shared=setup({hash:'#route=1,3&services=1&step=2&data=test-v1',saved:altered});
   check('explicit shared route takes precedence over saved route',shared.restored.length===1&&shared.resumed[0]===2&&shared.restored[0].services);
+  shared.el('routeRestoreNote').textContent='';shared.events.get('atlas-languagechange')();
+  check('language switch never resurrects a dismissed restore notice',shared.el('routeRestoreNote').textContent==='');
   check('shared URL from a different dataset starts at first step',setup({hash:'#route=1,3&step=2&data=old'}).resumed[0]===0);
   const invalidShared=setup({hash:'#route=999,3',saved:fresh.stored()});
   check('invalid shared URL gives feedback without silently opening unrelated saved route',invalidShared.notices.length===1&&invalidShared.restored.length===0);

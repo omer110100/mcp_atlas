@@ -1,0 +1,41 @@
+'use strict';
+const fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');
+const root=path.join(__dirname,'../dist'),results=[];
+const check=(name,passed)=>results.push({name,passed:!!passed});
+function setup(saved={},blocked=false){
+  const values=new Map(Object.entries(saved)),listeners=new Map(),events=[];
+  const element=(text='')=>({nodeValue:text,isConnected:true,dataset:{},attrs:{},listeners:{},setAttribute(k,v){this.attrs[k]=v;},getAttribute(k){return this.attrs[k]??null;},addEventListener(k,f){this.listeners[k]=f;},showModal(){this.open=true;},close(){this.open=false;}});
+  const text=element(' תכנון מסלול '),gone=element('כל המקומות'),input=element();input.attrs.placeholder='שם מפה או מזהה…';
+  const nodes=[text,gone],ids=new Map();
+  const el=id=>{if(!ids.has(id))ids.set(id,element());return ids.get(id);};
+  const themes=['midnight','parchment','aurora'].map(theme=>{const e=element();e.dataset.themeOption=theme;return e;});
+  const languages=['he','en'].map(language=>{const e=element();e.dataset.languageOption=language;return e;});
+  const html=element(),meta=element();
+  const document={documentElement:html,createTreeWalker(){let i=-1;return{nextNode(){return ++i<nodes.length;},get currentNode(){return nodes[i];}};},querySelectorAll(selector){return selector==='[data-theme-option]'?themes:selector==='[data-language-option]'?languages:[input];},querySelector:()=>meta,getElementById:el};
+  const window={addEventListener(name,fn){const a=listeners.get(name)||[];a.push(fn);listeners.set(name,a);},dispatchEvent(event){events.push(event);for(const fn of listeners.get(event.type)||[])fn(event);}};
+  const ctx=vm.createContext({window,document,NodeFilter:{SHOW_TEXT:4},CustomEvent:class{constructor(type,args){this.type=type;Object.assign(this,args);}},localStorage:{getItem:k=>{if(blocked)throw Error('blocked');return values.get(k)||null;},setItem:(k,v)=>{if(blocked)throw Error('quota');values.set(k,v);}}});
+  for(const file of ['translations.js','i18n.js','appearance.js'])vm.runInContext(fs.readFileSync(path.join(root,file),'utf8'),ctx);
+  return{api:window.AtlasI18n,catalog:window.AtlasTranslations,el,html,text,gone,input,themes,languages,values,events,click(data){el('appearanceDialog').listeners.click({target:{closest:selector=>selector.includes('theme')?{dataset:{themeOption:data.theme}}:{dataset:{languageOption:data.language}}}});}};
+}
+const x=setup();check('first visit defaults to Hebrew, RTL and midnight',x.html.lang==='he'&&x.html.dir==='rtl'&&x.html.dataset.theme==='midnight');
+x.api.setLanguage('en');check('English updates static text, attributes and direction together',x.text.nodeValue===' Plan route '&&x.input.attrs.placeholder==='Map name or ID…'&&x.html.dir==='ltr');
+check('language event reaches feature modules with the selected language',x.events.at(-1).detail.language==='en');
+check('dataset annotations translate while unknown game names remain unchanged',x.api.data('הפלגה לפלורינה')==='Sail to Florina Beach'&&x.api.data('Henesys')==='Henesys');
+check('unsupported language is rejected',x.api.setLanguage('xx')===false&&x.html.lang==='en');
+x.gone.isConnected=false;x.gone.nodeValue='dynamic view';x.api.setLanguage('he');
+check('round trip restores original shell without touching detached feature views',x.text.nodeValue===' תכנון מסלול '&&x.gone.nodeValue==='dynamic view');
+x.click({theme:'parchment'});x.el('motionToggle').checked=false;x.el('motionToggle').listeners.change();
+check('theme and motion survive another visit',setup(Object.fromEntries(x.values)).html.dataset.theme==='parchment'&&setup(Object.fromEntries(x.values)).html.dataset.motion==='off');
+x.click({language:'en'});check('settings language controls update accessibly',x.languages[1].attrs['aria-pressed']==='true'&&x.languages[0].attrs['aria-pressed']==='false');
+check('saved English starts in LTR',setup(Object.fromEntries(x.values)).html.lang==='en');
+const blocked=setup({},true);blocked.click({theme:'aurora'});blocked.click({language:'en'});
+check('blocked storage preserves usable language/theme controls and explains the limit',blocked.html.dataset.theme==='aurora'&&blocked.html.lang==='en'&&blocked.el('appearanceStorage').textContent.includes('unavailable'));
+const corrupt=setup({'maple-atlas-appearance-v1':'{"theme":"<script>","motion":"yes"}','maple-atlas-language-v1':'javascript:bad'});
+check('invalid saved preferences fall back to safe defaults',corrupt.html.dataset.theme==='midnight'&&corrupt.html.lang==='he');
+let hebrew=[];function walk(v){if(typeof v==='string'&&/[\u0590-\u05ff]/.test(v))hebrew.push(v);else if(v&&typeof v==='object')Object.values(v).forEach(walk);}
+for(const file of fs.readdirSync(root).filter(n=>n.endsWith('.json')))walk(JSON.parse(fs.readFileSync(path.join(root,file),'utf8')));
+check('every Hebrew dataset annotation has an English translation',hebrew.every(s=>x.catalog[s]&&!/[\u0590-\u05ff]/.test(x.catalog[s])));
+const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
+const shell=[...html.matchAll(/>([^<>]+)</g)].map(m=>m[1].trim()).filter(s=>/[\u0590-\u05ff]/.test(s)&&s!=='עברית');
+check('every initial Hebrew shell text has an English translation',shell.every(s=>x.catalog[s]));
+const failed=results.filter(r=>!r.passed);console.log(JSON.stringify({checks:results.length,failed:failed.length,failures:failed}));process.exitCode=failed.length?1:0;

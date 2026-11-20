@@ -30,7 +30,7 @@ class Element {
     return this._options||[];
   }
   getBoundingClientRect(){return {width:1000,height:700,left:0,top:0,right:1000,bottom:700};}
-  scrollTo(){} focus(){document.activeElement=this;} blur(){document.activeElement=new Element('body');}
+  scrollTo(options){this.lastScrollOptions=options;} focus(){document.activeElement=this;} blur(){document.activeElement=new Element('body');}
   showModal(){this.open=true;} close(){this.open=false;} insertAdjacentHTML(){} insertAdjacentElement(){}
 }
 const get=id=>{if(!elements.has(id))elements.set(id,new Element(id==='search'?'input':'div'));return elements.get(id);};
@@ -191,6 +191,57 @@ run('openScene(route.to)');
 check('reroute from destination gives valid zero-step completion',run('rerouteFromScene()&&route.from===route.to&&route.steps.length===0&&navigationIndex===0')&&get('sceneNavNext').disabled&&get('sceneNavPrevious').disabled);
 run('navigationRoute=null;renderSceneNavigation();globalThis.inactiveRoute=route');
 check('inactive guide never forces compact layout or allows reroute',!get('sceneDialog').classList.contains('compact-navigation')&&run('rerouteFromScene()===false&&route===inactiveRoute'));
+
+// Language refresh exercises the real registered renderer without re-planning.
+// The translation provider follows the public API; shell direction is tested separately.
+vm.runInContext(fs.readFileSync(root+'/dist/translations.js','utf8'),ctx);
+run(`window.AtlasI18n={language:'he',data(value){return this.language==='en'?(window.AtlasTranslations[value]??value):value;}};`);
+const changeLanguage=language=>{window.AtlasI18n.language=language;window.dispatchEvent({type:'atlas-languagechange'});};
+const noHebrew=id=>!/[א-ת]/.test(get(id).innerHTML);
+get('routeFrom').value='Ellinia [10002000]';get('routeTo').value='Forgotten Hollow [10006000]';get('useServices').checked=false;
+run(`selectMap(10001000);submitRoute();openRouteStep(3);setCompactNavigation(true);sceneKind='all';setSceneLayer('portals',[]);detailsTab='incoming';currentRegion='maple';globalThis.languageRoute=route;globalThis.languageState=JSON.stringify({activeId,currentRegion,detailsTab,sceneId,sceneKind,selectedGate,navigationIndex,navigationFollowing,compactNavigation,routeUsesServices,world,scene});`);
+get('directoryGroup').value='hollow';get('directorySearch').value='hollow';get('directory').hidden=false;
+get('search').value='henesys';run('renderSearch();moveSearchSelection(1);moveSearchSelection(1);globalThis.languageSearchIndex=searchIndex;');
+get('routeFrom').value='unsaved origin edit';get('useServices').checked=true;
+changeLanguage('en');
+check('English toggle preserves route identity and guide progress',run('route===languageRoute&&navigationRoute===route&&navigationIndex===3'));
+check('English toggle preserves map selection, filters, compact preference and camera',run('languageState===JSON.stringify({activeId,currentRegion,detailsTab,sceneId,sceneKind,selectedGate,navigationIndex,navigationFollowing,compactNavigation,routeUsesServices,world,scene})'));
+check('English toggle preserves unsaved route form values and planned travel policy',get('routeFrom').value==='unsaved origin edit'&&get('useServices').checked===true&&run('routeUsesServices===false'));
+check('English toggle preserves directory group and query',get('directoryGroup').value==='hollow'&&get('directorySearch').value==='hollow'&&get('directoryCounter').textContent.includes('records'));
+check('English toggle preserves active search option and query',get('search').value==='henesys'&&run('searchIndex===languageSearchIndex')&&get('search').getAttribute('aria-activedescendant')===`search-option-${run('searchIndex')}`);
+check('English route retains exit buttons, translated conditions and saved resume step',noHebrew('routeResult')&&get('routeResult').innerHTML.includes('Show exit portal')&&get('routeResult').innerHTML.includes('Resume saved progress · Passage 4'));
+check('English details, portals and source descriptions contain no untranslated Hebrew',['mapDetails','portalContent','scenePortalList','sceneSelected','coverageStats','sourcesList'].every(noHebrew));
+check('English guide identifies current passage and highlighted portal',get('sceneNavStatus').textContent.startsWith('Passage 4 of ')&&get('sceneNavInstruction').textContent.startsWith('Portal '));
+check('route progress styling distinguishes completed current and upcoming maps',run('routeStepState(2)==="completed"&&routeStepState(3)==="current"&&routeStepState(4)==="upcoming"')&&get('routeResult').innerHTML.includes('data-step-index="3" data-step-state="current"'));
+check('directory cards provide region styling without changing map IDs',get('directoryGrid').innerHTML.includes('data-region="hollow"')&&get('directoryGrid').innerHTML.includes('data-id="10006000"'));
+changeLanguage('he');
+check('switching back to Hebrew preserves the same route and viewport',run('route===languageRoute&&languageState===JSON.stringify({activeId,currentRegion,detailsTab,sceneId,sceneKind,selectedGate,navigationIndex,navigationFollowing,compactNavigation,routeUsesServices,world,scene})')&&get('sceneNavStatus').textContent.startsWith('מעבר 4 מתוך '));
+run(`openSpawns(10001005,[]);pickEntity(sceneEntityPoints[1].key,true);globalThis.languageEntity=selectedEntity;globalThis.entityView=JSON.stringify(scene);`);
+changeLanguage('en');
+check('language toggle preserves selected spawn point and zoom in a detour',run('sceneLayer==="monsters"&&selectedEntity===languageEntity&&entityView===JSON.stringify(scene)&&navigationIndex===3&&!navigationFollowing'));
+check('English spawn summary and selected point render translated provenance',noHebrew('sceneEntitySummary')&&noHebrew('sceneSelected')&&get('sceneSelected').innerHTML.includes('possible spawn point'));
+run('openScene(10007000);rerouteFromScene();');
+changeLanguage('he');
+changeLanguage('en');
+check('failed reroute remains visible and translated without replacing the journey',get('sceneNavError').textContent.startsWith('No route was found')&&run('route===languageRoute&&navigationIndex===3'));
+get('sceneImage').onerror();changeLanguage('he');changeLanguage('en');
+check('image failure remains retryable after a language change',get('sceneImageMessage').textContent.startsWith('The map image could not load')&&!get('sceneImageRetry').hidden&&get('sceneImageStatus').dataset.state==='error');
+get('routeFrom').value='unknown origin';get('routeTo').value='unknown destination';run('submitRoute()');changeLanguage('he');changeLanguage('en');
+check('validation errors translate without erasing input or the existing route',get('routeFrom').value==='unknown origin'&&get('routeFromError').textContent.startsWith('Choose a map')&&get('routeToError').textContent.startsWith('Choose a map')&&run('route===languageRoute'));
+fire('sceneNavReturn','click');fire('sceneNavNext','click');
+check('English next-step handler still advances to the exact required portal',run('navigationIndex===4&&navigationFollowing&&selectedGate===navigationGate().key')&&get('sceneNavStatus').textContent.startsWith('Passage 5 of '));
+run(`window.HuntData=undefined;window.Hunt.catalogStatus='unavailable';setSceneLayer('monsters',[]);`);
+check('English unavailable spawn catalog provides a translated retry action',get('sceneEntitySummary').innerHTML.includes('Spawn point data could not load.')&&get('sceneEntitySummary').innerHTML.includes('Open catalog to retry')&&noHebrew('sceneEntitySummary'));
+window.HuntData=hunt;changeLanguage('he');
+
+document.documentElement={dataset:{motion:'off'}};
+run('openRoute()');
+check('disabling site motion prevents smooth route-panel scrolling',get('sidePanel').lastScrollOptions.behavior==='auto');
+document.documentElement.dataset.motion='on';window.matchMedia=()=>({matches:true});
+run('selectMap(10001000)');
+check('system reduced-motion preference prevents smooth selected-map scrolling',get('sidePanel').lastScrollOptions.behavior==='auto');
+window.matchMedia=()=>({matches:false});run('openRoute()');
+check('smooth panel scrolling remains available when motion is allowed',get('sidePanel').lastScrollOptions.behavior==='smooth');
 
 const report={checkedAt:new Date().toISOString(),method:'Node VM with lightweight DOM contract stubs; no browser, no rendering, no network checks',appSha256:crypto.createHash('sha256').update(source).digest('hex'),results,failures:results.filter(r=>!r.passed)};
 process.exitCode=report.failures.length?1:0;

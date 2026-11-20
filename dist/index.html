@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="he" dir="rtl">
+<html lang="he" dir="rtl" data-theme="midnight" data-motion="on">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -8,15 +8,19 @@
   <title>אטלס מייפלסטורי קלאסיק</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath fill='%23e9bd78' d='M32 3l6 16 13-5-3 14 12 5-18 12-9 16-3-20-22-8 13-5-3-14 10 5z'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="styles.css">
-  <link rel="stylesheet" href="hunt.css?v=journey-2">
-  <link rel="stylesheet" href="navigation.css?v=journey-2">
-  <link rel="stylesheet" href="controls.css?v=personal-1">
-  <link rel="stylesheet" href="personal.css?v=personal-1">
-  <link rel="stylesheet" href="map-search.css?v=journey-2">
-  <script defer src="map-search.js?v=journey-2"></script>
-  <script defer src="personal.js?v=personal-1"></script>
-  <script defer src="app.js?v=journey-2"></script>
-  <script defer src="hunt.js?v=journey-2"></script>
+  <link rel="stylesheet" href="hunt.css?v=seasons-1">
+  <link rel="stylesheet" href="navigation.css?v=seasons-1">
+  <link rel="stylesheet" href="controls.css?v=seasons-1">
+  <link rel="stylesheet" href="personal.css?v=seasons-1">
+  <link rel="stylesheet" href="map-search.css?v=seasons-1">
+  <link rel="stylesheet" href="themes.css?v=seasons-1">
+  <script defer src="translations.js?v=seasons-1"></script>
+  <script defer src="i18n.js?v=seasons-1"></script>
+  <script defer src="appearance.js?v=seasons-1"></script>
+  <script defer src="map-search.js?v=seasons-1"></script>
+  <script defer src="personal.js?v=seasons-1"></script>
+  <script defer src="app.js?v=seasons-1"></script>
+  <script defer src="hunt.js?v=seasons-1"></script>
 </head>
 <body>
   <header class="app-header">
@@ -25,7 +29,7 @@
       <div><span class="brand-en" lang="en" dir="ltr">MAPLE ATLAS</span><span class="brand-he">כל עולם מתחיל בשער</span></div>
     </a>
     <div class="edition"><span lang="en" dir="ltr">MapleStory Classic World</span><span>גרסה 2.0.0 · נתוני 18.11.2026</span></div>
-    <div class="header-actions"><button id="personalToggle" class="button quiet personal-toggle" type="button" aria-label="המקומות שלי — מועדפים ומפות אחרונות"><span class="icon" aria-hidden="true">★</span><span class="personal-label">המקומות שלי</span></button><button id="huntToggle" aria-label="חיפוש וציד" class="button hunt-toggle" type="button"><span class="icon" data-icon="compass"></span><span>חיפוש וציד</span></button><button id="routeToggle" class="button primary" type="button"><span class="icon" data-icon="route"></span>תכנון מסלול</button><button id="aboutButton" class="button quiet" type="button" aria-label="על האטלס"><span class="icon" data-icon="book"></span><span>על האטלס</span></button></div>
+    <div class="header-actions"><button id="appearanceToggle" class="button quiet" type="button" aria-label="עיצוב ושפה · Appearance and language"><span class="icon" aria-hidden="true">⚙</span><span>עיצוב ושפה</span></button><button id="personalToggle" class="button quiet personal-toggle" type="button" aria-label="המקומות שלי — מועדפים ומפות אחרונות"><span class="icon" aria-hidden="true">★</span><span class="personal-label">המקומות שלי</span></button><button id="huntToggle" aria-label="חיפוש וציד" class="button hunt-toggle" type="button"><span class="icon" data-icon="compass"></span><span>חיפוש וציד</span></button><button id="routeToggle" class="button primary" type="button"><span class="icon" data-icon="route"></span>תכנון מסלול</button><button id="aboutButton" class="button quiet" type="button" aria-label="על האטלס"><span class="icon" data-icon="book"></span><span>על האטלס</span></button></div>
   </header>
   <main class="workspace">
     <section class="world-pane" aria-label="מפת הקשרים של עולם המשחק">
@@ -62,6 +66,17 @@
       <footer class="panel-footer"><span>מחקר: 19 בנובמבר 2026</span><button id="coverageButton" type="button">כיסוי ומקורות</button></footer>
     </aside>
   </main>
+  <dialog id="appearanceDialog" class="appearance-dialog" aria-labelledby="appearanceTitle">
+    <div class="section-heading"><div><span class="eyebrow">האטלס, בדרך שלכם</span><h2 id="appearanceTitle">עיצוב ושפה</h2></div><button id="closeAppearance" class="icon-button" type="button" aria-label="סגירת הגדרות עיצוב">×</button></div>
+    <section class="appearance-section"><h3>בחרו אווירה</h3><p>שלוש דרכים לצאת לאותו מסע.</p><div class="theme-grid">
+      <button type="button" class="theme-choice" data-theme-option="midnight" aria-pressed="true"><span class="theme-swatch" aria-hidden="true"></span><span class="theme-name">יער בחצות</span><small class="theme-description">כחול לילה, ירוק יער וזהב עדין</small></button>
+      <button type="button" class="theme-choice" data-theme-option="parchment" aria-pressed="false"><span class="theme-swatch" aria-hidden="true"></span><span class="theme-name">יומן מסע</span><small class="theme-description">קלף בהיר, נחושת וירוק זית</small></button>
+      <button type="button" class="theme-choice" data-theme-option="aurora" aria-pressed="false"><span class="theme-swatch" aria-hidden="true"></span><span class="theme-name">זוהר הקסם</span><small class="theme-description">סגול עמוק, טורקיז ואור פנינה</small></button>
+    </div></section>
+    <section class="appearance-section"><h3>שפת הממשק</h3><div class="appearance-language" role="group" aria-label="שפת הממשק"><button type="button" class="button" data-language-option="he" aria-pressed="true" lang="he" dir="rtl">עברית</button><button type="button" class="button" data-language-option="en" aria-pressed="false" lang="en" dir="ltr">English</button></div><p>שמות המשחק נשארים במקור. אפשר לחפש מפות בשתי השפות.</p></section>
+    <section class="appearance-section"><h3>תנועה ואפקטים</h3><label class="check-row"><input id="motionToggle" type="checkbox" checked><span>לאפשר אנימציות עדינות</span></label><p>האטלס מכבד גם את הגדרת הפחתת התנועה במכשיר.</p></section>
+    <p id="appearanceStorage" class="personal-storage" role="status"></p>
+  </dialog>
   <dialog id="personalDialog" class="personal-dialog" aria-labelledby="personalTitle">
     <div class="section-heading"><h2 id="personalTitle">המקומות שלי</h2><button id="closePersonal" type="button" class="icon-button" aria-label="סגירת המקומות שלי">×</button></div>
     <label for="personalFilter">מה להציג?</label><select id="personalFilter"><option value="favorites">★ המועדפים שלי</option><option value="recent">מפות שפתחתי לאחרונה</option></select>

@@ -264,7 +264,7 @@ async function main() {
   equal(drops.meta.dropRatesIncluded, false, 'Drop-rate exclusion flag changed');
   console.log(`PASS ${drops.links.length} attributed Classic drop links and ${drops.unresolved.length} explicitly unresolved observation`);
 
-  for (const file of ['dist/app.js', 'dist/hunt.js', 'dist/personal.js', 'dist/map-search.js', ...readdirSync(join(root, 'scripts')).filter(name => name.endsWith('.mjs')).map(name => `scripts/${name}`)]) {
+  for (const file of [...readdirSync(dist).filter(name => name.endsWith('.js')).map(name => `dist/${name}`), ...readdirSync(join(root, 'scripts')).filter(name => name.endsWith('.mjs')).map(name => `scripts/${name}`)]) {
     const result = spawnSync(process.execPath, ['--check', join(root, file)], { encoding: 'utf8', windowsHide: true });
     check(result.status === 0, `JavaScript syntax error in ${file}: ${result.stderr || result.error?.message}`);
   }

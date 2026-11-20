@@ -27,9 +27,11 @@ class Event{
 const document=new Element('document');document.body=new Element('body');document.append(document.body);document.createElement=tag=>new Element(tag);
 const field=id=>{const input=new Element('input');input.id=id;input.setAttribute('list','mapOptions');document.body.append(input);return input;};
 const from=field('routeFrom'),to=field('routeTo');let observer;
-const ctx=vm.createContext({window:{},document,Event,MutationObserver:class{constructor(fn){this.callback=fn;observer=this;}observe(target,options){this.target=target;this.options=options;}}});
+const languageListeners=[];
+const ctx=vm.createContext({window:{addEventListener(type,fn){if(type==='atlas-languagechange')languageListeners.push(fn);}},document,Event,MutationObserver:class{constructor(fn){this.callback=fn;observer=this;}observe(target,options){this.target=target;this.options=options;}}});
+vm.runInContext(fs.readFileSync(path.join(root,'dist/translations.js'),'utf8'),ctx);
 vm.runInContext(source,ctx);const search=ctx.window.MapSearch;
-const group=m=>atlas.groups.find(g=>g.id===m.group)?.he||'';
+const group=m=>{const he=atlas.groups.find(g=>g.id===m.group)?.he||'';return ctx.window.AtlasI18n?.language==='en'?ctx.window.AtlasTranslations[he]||he:he;};
 search.init({maps:atlas.maps,groupLabel:group});
 check('known ID selects exactly its record',search.resolve('10002000')?.name==='Ellinia');
 check('selected label resolves by unique ID',search.resolve('Ellinia [10002000]')?.id===10002000);
@@ -85,4 +87,19 @@ check('observer can see its own wrapper mutation without duplicating attachment'
 from.value='';from.dispatchEvent(new Event('input'));check('broad search announces truncation rather than implying complete results',note.textContent.includes('8 מתוך'));
 from.dispatchEvent(new Event('keydown',{key:'ArrowUp'}));check('up arrow starts from last suggested option',from.getAttribute('aria-activedescendant')===list.children[7].id);
 from.dispatchEvent(new Event('keydown',{key:'Tab'}));check('Tab closes list without trapping keyboard',list.hidden);
+let current=origin;const detached=[];
+for(let i=0;i<15;i++){
+  current.value='unlikely unknown map';current.dispatchEvent(new Event('focus'));
+  const removed=current.parentElement;detached.push(removed.children[1]);
+  document.body.children.splice(document.body.children.indexOf(removed),1);removed.parentElement=null;
+  current=field('huntOrigin');observer.callback([{addedNodes:[current]}]);
+}
+current.value='אליניה';current.dispatchEvent(new Event('input'));
+ctx.window.AtlasI18n={language:'en'};languageListeners.forEach(fn=>fn());
+const currentList=current.parentElement.children[1],currentNote=current.parentElement.children[2];
+check('recreated hunt origins share one language listener',languageListeners.length===1);
+check('language switch never touches detached comboboxes',detached.every(box=>box.getAttribute('aria-label')==='הצעות למפת משחק'&&box.children[0].textContent.includes('לא נמצאה')));
+check('open combobox localizes suggestions while preserving the typed Hebrew query',current.value==='אליניה'&&currentList.getAttribute('aria-label')==='Game map suggestions'&&!/[\u0590-\u05ff]/.test(currentList.children[0].children[1].textContent)&&currentNote.textContent.includes('Showing 8 of'));
+check('closed connected combobox labels also update on language change',list.hidden&&list.getAttribute('aria-label')==='Game map suggestions');
+check('English region search remains available after language change',search.search('Forests',atlas.maps.length).length>5);
 const failures=results.filter(r=>!r.passed);console.log(JSON.stringify({checks:results.length,failed:failures.length,failures}));process.exitCode=failures.length?1:0;
