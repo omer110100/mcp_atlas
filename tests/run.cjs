@@ -7,10 +7,15 @@ const suites=[
   ['preferences.cjs','Language, appearance and translation coverage'],
   ['map-search.cjs','Unified Hebrew map lookup'],
   ['atlas-routing.cjs','Directed routing and original data'],
+  ['journey.cjs','Multi-stop planning and confirmed arrival portals'],
   ['atlas-behavior.cjs','Search, portal actions and entity scenes'],
   ['atlas-graph.cjs','Graph, selection and region filters'],
   ['hunt.cjs','Item, monster and NPC catalog behavior'],
   ['personal.cjs','Saved journeys, sharing and personal map library'],
+  ['library-store.cjs','Local backup boundaries and safe merging'],
+  ['library-ui.cjs','Notes, route drafts and backup controller'],
+  ['map-info.cjs','Map occupants, exact markers and availability'],
+  ['experience.cjs','Welcome, reading, layout and motion preferences'],
 ];
 let total=0,failed=0;
 for(const [file,label] of suites){

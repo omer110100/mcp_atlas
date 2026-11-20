@@ -5,6 +5,7 @@ const site=require('node:path').resolve(__dirname,'..');
 const atlas=JSON.parse(fs.readFileSync(site+'/dist/atlas-data.json','utf8'));
 const app=fs.readFileSync(site+'/dist/app.js','utf8').replace(/\ninit\(\);\s*$/,'\n');
 const ctx=vm.createContext({console,ATLAS_INPUT:atlas});
+vm.runInContext(fs.readFileSync(site+'/dist/journey.js','utf8'),ctx);
 vm.runInContext(app,ctx,{filename:'app.js'});
 vm.runInContext(`
 atlas=ATLAS_INPUT;maps=atlas.maps;groups=atlas.groups;byId=new Map(maps.map(m=>[m.id,m]));incoming=new Map();adjacency=new Map();

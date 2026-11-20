@@ -21,15 +21,27 @@ The same commands work on Windows, macOS, and Linux. In PowerShell, use `npm.cmd
 | `npm start` | Serve `dist/` locally on port 5173 | Node.js 22+ |
 | `npm start -- --port 5180` | Use a different local port | Node.js 22+ |
 | `npm run verify` | Validate source hashes, dataset joins, image files, JavaScript syntax, and static serving | Node.js 22+ |
-| `npm run test:app` | Run focused routing, search, map, catalog, storage and language regressions | Node.js 22+ |
+| `npm run test:app` | Run routing, search, hunting, map occupants, local library/import, preferences and language regressions | Node.js 22+ |
 | `npm run check:rebuild` | Rebuild in a temporary directory and compare with the checked-in output, without changing it | Node.js 22+ and Python 3.11+ |
 | `npm run build:data` | Regenerate the three datasets and two audit reports from the archived local sources | Node.js 22+ and Python 3.11+ |
 
 ## Appearance and language
 
-The header gear opens three themes: Midnight forest, Explorer's journal and Arcane aurora. Hebrew/English language, theme and motion preferences are saved locally. Language changes preserve the active route, progress, map camera, search and hunting comparison. The motion control and device reduced-motion preference suppress decorative animation and smooth scrolling. Game entity names and source datasets retain their original values.
+The header gear opens three themes: Midnight forest, Explorer's journal and Arcane aurora. Each includes postcard map cards, woodland ornaments, regional accents and optional motion: drifting lights, route strokes, selection rings and portal emphasis. Decorations do not move map coordinates or intercept controls. The motion switch and device reduced-motion preference suppress decorative animation and smooth scrolling.
 
-See [interface architecture and validation](docs/EXPERIENCE.md).
+Hebrew/English language, theme, reading mode and desktop panel width are saved locally. Language changes preserve the active route, progress, map camera, search and hunting comparison. Game entity names and source datasets retain their original values. A first-visit chooser, mobile bottom navigation, keyboard help and a map/postcard switch provide direct access to the main tools.
+
+## Journeys, hunting and personal maps
+
+- Build a directed route with up to **8 intermediate stops**, reorder or remove stops, compare ordinary and conditional entrances, or swap the endpoints and reverse the stop order before recalculating. The guide includes previous/next controls, an all-steps selector, compact navigation and recalculation after a detour. Arrival portals are marked only when a unique source-record match exists.
+- Keep a hunting goal attached to a route and show its recorded spawn points at the destination. A session-only basket holds up to **8 items, monsters or bosses** and ranks maps by documented overlap. Shared spawn records count once; unresolved drop evidence stays explicit. Level-range and boss filters, map comparisons and local metric explanations support choosing a hunting map.
+- Map details list every distinct monster and NPC with recorded placements on that map, including point counts. Selecting an occupant opens its exact map and highlights its recorded locations. NPC search offers explicit per-map location actions; missing or ambiguous location evidence does not produce a guessed destination.
+- Use **My places** for favorites, recent maps, a manually chosen default origin, up to **50 named routes**, **20 favorite groups**, and map notes. Notes are also available beside full map images. Saved routes retain stops, hunting purpose and progress; restoring them recalculates against the current dataset.
+- Export or preview and merge a local JSON backup, limited to **4 MiB (4,194,304 bytes)** on import. Existing notes for the same map and routes with the same name are retained; matching groups merge their map IDs. The file contains personal map data, not theme or language preferences, and is never uploaded by the atlas.
+
+All personal data is browser-local, with session-only fallback when storage is unavailable. There is no account, cloud sync, player-location detection or live spawn feed. Shared route links contain route settings and hunting goals, not private notes or favorites. **Report a problem** opens a contextual GitHub draft for the user to review and submit; it sends no report automatically.
+
+See [interface architecture and validation](docs/EXPERIENCE.md) and the [25-feature implementation checklist](docs/EXPEDITION-CHECKLIST.md) for implementation details and limits.
 
 ## Coverage
 
@@ -70,7 +82,7 @@ The dataset, drop observations, and game artwork have different rights and attri
 
 ## Validation
 
-The [verification report](docs/VERIFICATION.md) records the exact inventory, 84 application regressions, browser observations, file fingerprints, and known data limits.
+The [verification report](docs/VERIFICATION.md) records the source inventory, historical verification evidence, browser observations, file fingerprints, and known data limits. Run `npm run test:app` for the current regression inventory; the expedition feature checklist does not replace release verification.
 
 `npm run verify` checks all four pinned API source hashes, original map/portal preservation, known destination joins, supplementary-service semantics, monster spawn counts, NPC positions, drop joins and attribution, local image dimensions, icon hashes, JavaScript syntax, HTML dependencies, and a short HTTP smoke check on an ephemeral local port. It requires no Python, downloads, or browser automation. The single source portal anchor outside its event-map render is retained and explicitly accounted for.
 

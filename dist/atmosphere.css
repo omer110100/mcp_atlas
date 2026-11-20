@@ -1,0 +1,88 @@
+/* Original woodland atlas art. Decorative layers never intercept map input. */
+:root {
+  --ambient-a:#91c9a3;--ambient-b:#d7bd82;--land-core:#466e50;--land-rim:#234638;
+  --island-core:#64824f;--island-rim:#34583f;--coast:#b9c69c88;--ornament-opacity:.8;
+}
+html[data-theme="parchment"] {--ambient-a:#abc69a;--ambient-b:#e3cf91;--land-core:#67794e;--land-rim:#3a5641;--island-core:#84925b;--island-rim:#536e48;--coast:#d7d1a29c;--ornament-opacity:.75;}
+html[data-theme="aurora"] {--ambient-a:#b4dbea;--ambient-b:#d3b4f4;--land-core:#426b63;--land-rim:#263d48;--island-core:#66836c;--island-rim:#3f5960;--coast:#b8d7ce88;--ornament-opacity:.83;}
+.world-pane:has(.region-nav [data-region="hollow"].active) {--ambient-a:#c3a2ef;--ambient-b:#87d8d1;}
+.world-pane:has(.region-nav [data-region="maple"].active) {--ambient-a:#bcd999;--ambient-b:#edcd89;}
+.world-pane:has(.region-nav [data-region="special"].active) {--ambient-a:#e1ca92;--ambient-b:#a5d5c8;}
+.world-pane:has(.region-nav [data-region="archive"].active) {--ambient-a:#c5b6e1;--ambient-b:#91b5d6;}
+html .map-canvas {background:radial-gradient(ellipse at 16% 0%,color-mix(in srgb,var(--ambient-a) 15%,transparent),transparent 50%),radial-gradient(ellipse at 95% 70%,color-mix(in srgb,var(--ambient-b) 10%,transparent),transparent 40%),radial-gradient(ellipse at 68% 25%,var(--map-center),var(--map-middle) 52%,var(--map-edge));}
+html .map-canvas::before {inset:0;background-image:linear-gradient(#b4d1c307 1px,transparent 1px),linear-gradient(90deg,#b4d1c307 1px,transparent 1px),radial-gradient(#bfd6bf24 .6px,transparent .7px);background-size:48px 48px,48px 48px,7px 7px;opacity:.7;mask-image:radial-gradient(ellipse at center,#000,transparent 90%);pointer-events:none;}
+html .map-canvas::after {inset:0;z-index:0;background:url('atlas-ornaments.svg') center bottom / 100% 100% no-repeat;opacity:var(--ornament-opacity);box-shadow:inset 0 0 120px #031a2350,inset 0 1px #d8ca9c12;pointer-events:none;}
+html #worldSvg {z-index:1;}
+html .map-intro {z-index:2;}
+html .map-footnote {z-index:4;}
+html[data-theme="aurora"] .map-canvas::after {filter:hue-rotate(28deg) saturate(.9);}
+html[data-theme="parchment"] .map-canvas::after {filter:sepia(.16) saturate(.8);}
+html .world-pane::after {inset:10% 3% 8%;background:radial-gradient(circle at 7% 28%,var(--ambient-a) 0 1px,transparent 3px),radial-gradient(circle at 14% 76%,var(--ambient-b) 0 1.4px,transparent 4px),radial-gradient(circle at 27% 16%,var(--ambient-a) 0 .8px,transparent 3px),radial-gradient(circle at 43% 89%,var(--ambient-b) 0 1px,transparent 3px),radial-gradient(circle at 58% 11%,var(--ambient-a) 0 1px,transparent 3px),radial-gradient(circle at 73% 81%,var(--ambient-b) 0 1.2px,transparent 3px),radial-gradient(circle at 88% 31%,var(--ambient-a) 0 1px,transparent 3px),radial-gradient(circle at 96% 66%,var(--ambient-b) 0 1.2px,transparent 4px);opacity:.55;animation:atlas-motes 11s ease-in-out infinite alternate;pointer-events:none;}
+html #landGrad stop:first-child {stop-color:var(--land-core);}
+html #landGrad stop:nth-child(2) {stop-color:color-mix(in srgb,var(--land-core) 55%,var(--land-rim));}
+html #landGrad stop:last-child {stop-color:var(--land-rim);}
+html #mapleGrad stop:first-child {stop-color:var(--island-core);}
+html #mapleGrad stop:last-child {stop-color:var(--island-rim);}
+html #hollowGrad stop:first-child {stop-color:#6d608d;}
+html[data-theme="aurora"] #hollowGrad stop:first-child {stop-color:#8366a0;}
+html .land-border {stroke:var(--coast);stroke-width:3;}
+html .ocean-lines {stroke:color-mix(in srgb,var(--ambient-a) 17%,transparent);stroke-width:2;}
+html .decor-tree {opacity:.44;}
+html .decor-tree:nth-of-type(3n) {opacity:.58;}
+html .decor-tree path:last-child {fill:#83a26b;stroke:#bdd3a3;stroke-opacity:.2;}
+html[data-theme="aurora"] .decor-tree path:last-child {fill:#7ca790;stroke:#b8dccb;}
+html .land-title {fill:#e0dfb54d;letter-spacing:13px;}
+html .group-label {fill:#d4dfba9c;letter-spacing:6px;}
+html .compass {opacity:.62;stroke:var(--ambient-b);}
+html .compass text {fill:var(--ambient-b);}
+html .town-base {fill:#173c36;stroke:#ddc795;stroke-width:3.5;filter:drop-shadow(0 5px 8px #051812a6);}
+html .town-glyph {stroke:#f5deb0;}
+html .world-node.selected .town-base {stroke:#fff0be;fill:#2b5243;filter:drop-shadow(0 0 12px #eac77365);}
+html .world-node.selected .node-halo {stroke:#f0d58f;stroke-dasharray:5 8;stroke-width:4;filter:drop-shadow(0 0 6px #efcf8155);}
+html .world-node.selected .node-dot {fill:#fff1ba;stroke:#dfc174;}
+html .world-node.neighbor .node-dot {fill:#d9edc5;stroke:#b4d6a2;}
+html .world-edge.highlighted {stroke:#cfebba;filter:drop-shadow(0 0 3px #b4d89e44);}
+html .route-edge {stroke-width:8;stroke-dasharray:20 8;filter:drop-shadow(0 0 6px color-mix(in srgb,var(--map-route) 65%,transparent));}
+html .route-edge.service {stroke-dasharray:10 12;}
+html .scene-pin.route-required circle {stroke-width:3;stroke-dasharray:4 3;filter:drop-shadow(0 0 9px #f5d488);}
+html .scene-canvas::before {content:"";position:absolute;inset:5%;background:radial-gradient(ellipse at 50% 50%,transparent 49%,#d4c6a016 49.3% 49.7%,transparent 50%),radial-gradient(ellipse at 50% 50%,transparent 57%,#a2d7cc10 57.2% 57.5%,transparent 57.8%);pointer-events:none;}
+html .scene-canvas::after {box-shadow:inset 0 0 90px #010b244d,inset 0 0 0 1px #d9d8b60d;}
+html .map-intro h1 {text-shadow:0 2px 18px #04191f99;}
+html .map-legend {background:color-mix(in srgb,var(--panel) 94%,transparent);backdrop-filter:blur(12px);}
+html .map-controls {border-color:color-mix(in srgb,var(--gold) 35%,var(--line));}
+html .app-header {background:linear-gradient(105deg,var(--panel),var(--green-soft) 65%,var(--panel));}
+html .app-header::after {content:"";position:absolute;bottom:0;inset-inline:0;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);opacity:.3;pointer-events:none;}
+html .brand-en {text-shadow:0 2px 15px color-mix(in srgb,var(--gold) 16%,transparent);}
+html .search-wrap {border-color:color-mix(in srgb,var(--gold) 30%,var(--input-border));box-shadow:0 6px 24px var(--shadow-color),inset 0 1px color-mix(in srgb,var(--gold) 10%,transparent);}
+html .region-nav button {box-shadow:0 3px 10px var(--shadow-color),inset 0 1px color-mix(in srgb,var(--gold) 7%,transparent);}
+html .directory {background-image:radial-gradient(circle at 97% 2%,color-mix(in srgb,var(--gold) 8%,transparent),transparent 33%);}
+html .directory-card {box-shadow:0 2px 0 color-mix(in srgb,var(--postcard) 75%,var(--postcard-ink)),0 7px 16px var(--shadow-color);}
+html .directory-card::after {content:"";position:absolute;top:17px;inset-inline-end:16px;width:21px;height:21px;border:1px dashed #efe5c6b3;outline:1px solid #efe5c655;outline-offset:3px;transform:rotate(9deg);border-radius:50%;pointer-events:none;background:radial-gradient(circle,#e6dbc680 1px,transparent 2px);}
+html .map-preview {box-shadow:0 2px 0 color-mix(in srgb,var(--postcard) 70%,var(--postcard-ink)),0 9px 22px var(--shadow-color);}
+html .hunt-map-card.hunt-recommended {position:relative;border-top-width:4px;box-shadow:0 8px 24px var(--shadow-color),inset 0 1px color-mix(in srgb,var(--gold) 25%,transparent);}
+html .hunt-map-card.hunt-recommended::after {content:"✦";position:absolute;top:12px;inset-inline-end:14px;font-size:24px;color:var(--gold);opacity:.22;pointer-events:none;}
+html .welcome-dialog {background-image:radial-gradient(ellipse at 95% 0%,var(--green-soft),transparent 60%);}
+html .welcome-dialog .welcome-actions button {box-shadow:0 4px 12px var(--shadow-color),inset 0 1px color-mix(in srgb,var(--gold) 10%,transparent);}
+html .welcome-dialog .welcome-actions .xp-icon {filter:drop-shadow(0 0 8px color-mix(in srgb,var(--gold) 20%,transparent));}
+@keyframes atlas-motes {0%{opacity:.2;translate:0 8px;}50%{opacity:.65;}100%{opacity:.3;translate:4px -12px;}}
+@keyframes atlas-ring-flow {to{stroke-dashoffset:-78;}}
+@keyframes atlas-route-flow {to{stroke-dashoffset:-56;}}
+@keyframes atlas-badge-light {0%,100%{filter:drop-shadow(0 0 5px #eac77340);}50%{filter:drop-shadow(0 0 12px #eac77380);}}
+@media(prefers-reduced-motion:no-preference){
+  html:not([data-motion="off"]) .world-node.selected .node-halo {animation:atlas-ring-flow 7s linear infinite;}
+  html:not([data-motion="off"]) .world-node.selected .town-base {animation:atlas-badge-light 4s ease-in-out infinite;}
+  html:not([data-motion="off"]) .route-edge {animation:atlas-route-flow 3s linear infinite;}
+  html:not([data-motion="off"]) .route-edge.service {animation:atlas-path-flow 2.6s linear infinite;}
+  html:not([data-motion="off"]) .scene-pin.route-required circle {animation:atlas-ring-flow 7s linear infinite;}
+  html:not([data-motion="off"]) .directory-card:hover {transform:translateY(-4px) rotate(-.4deg);}
+  html:not([data-motion="off"]) .brand:hover .brand-leaf {transform:rotate(5deg);transition:transform .35s;}
+  html:not([data-motion="off"]) :is(.world-node,.world-edge,.land-border,#worldDefs stop) {transition:opacity .35s,stroke .35s,fill .35s,stop-color .6s;}
+}
+@media(max-width:780px){
+  html .map-canvas::after {background-size:auto 100%;opacity:calc(var(--ornament-opacity) * .65);}
+  html .world-pane::after {opacity:.3;}
+  html .directory-card::after {top:14px;inset-inline-end:13px;width:16px;height:16px;outline-offset:2px;}
+  html .region-nav button {box-shadow:0 2px 6px var(--shadow-color);}
+}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important;}}
+html[data-motion="off"] *,html[data-motion="off"] *::before,html[data-motion="off"] *::after {animation:none!important;transition:none!important;scroll-behavior:auto!important;}

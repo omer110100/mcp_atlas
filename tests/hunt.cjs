@@ -5,7 +5,7 @@
 const fs=require('fs'),vm=require('vm'),assert=require('assert');
 const path=require('node:path');
 const base=path.resolve(__dirname,'..','dist')+path.sep;
-const source=fs.readFileSync(base+'hunt.js','utf8').replace('window.Hunt={searchAll,open,close,','window.Hunt={_test:{state,boot,retryDrops,render,renderDetail,renderCatalog,buildCandidates,sortCandidates,npcLocations,onPanelChange,onPanelClick,parseOrigin,walkDistanceText,comparisonContent,comparisonAccess,toggleComparison},searchAll,open,close,');
+const source=fs.readFileSync(base+'hunt.js','utf8').replace('window.Hunt={searchAll,open,close,','window.Hunt={_test:{state,boot,retryDrops,render,renderDetail,renderCatalog,buildCandidates,sortCandidates,npcLocations,onPanelChange,onPanelClick,onPanelInput,parseOrigin,walkDistanceText,comparisonContent,comparisonAccess,toggleComparison,resolvedBasket,basketCandidates,routeGoal,levelFilter},searchAll,open,close,');
 const rawAtlas=JSON.parse(fs.readFileSync(base+'atlas-data.json'));
 const rawHunt=JSON.parse(fs.readFileSync(base+'hunt-data.json'));
 const rawDrops=JSON.parse(fs.readFileSync(base+'drop-data.json'));
@@ -48,7 +48,7 @@ function makeHarness(options={}){
   const root=new Element('body');doc={body:root,activeElement:root,getElementById:id=>nodes[id]||null,querySelector:()=>null,addEventListener(){},createElement:tag=>new Element(tag)};
   for(const id of ['huntToggle','routeTo'])root.appendChild(new Element('button',`id="${id}"`));
   const panel=root.appendChild(new Element('section','id="huntPanel" hidden'));
-  for(const id of ['huntSearch','huntAnnouncement','huntBody'])panel.appendChild(new Element(id==='huntSearch'?'input':'div',`id="${id}"`));
+  for(const id of ['huntSearch','huntAnnouncement','huntBasketBar','huntBody'])panel.appendChild(new Element(id==='huntSearch'?'input':'div',`id="${id}"`));
   for(const id of ['huntEyebrow','huntTitle','huntSearchLabel'])panel.appendChild(new Element('span',`id="${id}"`));
   panel.appendChild(new Element('button','class="hunt-close"'));
   const tabs=panel.appendChild(new Element('nav','class="hunt-tabs"'));
@@ -56,6 +56,10 @@ function makeHarness(options={}){
   const atlas=structuredClone(rawAtlas),hunt=structuredClone(rawHunt),drops=structuredClone(rawDrops);
   const api={data:atlas,activeMap:10001000,findRoute(from,to,services){calls.push(['find',from,to,services]);if(from===to)return{steps:[]};const queue=[[from,0]],seen=new Set([from]);for(let i=0;i<queue.length;i++){const[id,n]=queue[i];const map=atlas.maps.find(m=>m.id===id);for(const p of map?.portals||[]){if(p.kind!=='cross'||seen.has(p.to))continue;if(p.to===to)return{steps:Array(n+1).fill({})};seen.add(p.to);queue.push([p.to,n+1]);}}return null;},selectMap(...a){calls.push(['map',...a]);},planTo(...a){calls.push(['route',...a]);},openSpawns(...a){calls.push(['spawn',...a]);},openNpcs(...a){calls.push(['npc',...a]);}};
   const window={Atlas:api,addEventListener(k,f){(events[k]||=[]).push(f);},dispatchEvent(e){if(e.type==='hunt-ready')readyStatuses.push(window.Hunt.dropStatus);if(e.type==='hunt-unavailable')unavailableStatuses.push(window.Hunt.catalogStatus);for(const f of events[e.type]||[])f(e);}};
+  if(Object.hasOwn(options,'origin')){
+    let savedOrigin=options.origin;
+    window.AtlasPersonal={getOrigin:()=>savedOrigin,storageOk:options.storageOk!==false,setOrigin(id){if(!atlas.maps.some(map=>map.id===id))return false;savedOrigin=id;calls.push(['save-origin',id]);window.dispatchEvent({type:'atlas-originchange'});return true;}};
+  }
   let language=options.language||'he';
   function enableI18n(){window.AtlasI18n={get language(){return language;},get locale(){return language==='en'?'en-US':'he-IL';},text:(he,en)=>language==='en'?en:he,data:he=>language==='en'?(translations[he]??he):he};}
   function setLanguage(next){language=next;enableI18n();window.dispatchEvent({type:'atlas-languagechange',detail:{language}});}
@@ -224,7 +228,7 @@ function report(){
       english.H.open(kind);assert(!/[\u0590-\u05ff]/u.test(body.innerHTML),`${kind} catalogue includes Hebrew`);
       assert(english.nodes.huntSearch.placeholder.includes('name or ID'));
     }
-    for(const [kind,id]of [['item',1092002],['item',4000020],['boss',700003],['monster',100100],['npc',313]]){
+    for(const [kind,id]of [['item',1092002],['item',4000020],['boss',700003],['monster',2],['npc',313]]){
       english.H.open(kind,id);assert(!/[\u0590-\u05ff]/u.test(body.innerHTML),`${kind} ${id} detail includes Hebrew`);
     }
     english.H.open('item',1092002);
@@ -268,6 +272,92 @@ function report(){
     failed.modes.drop='ready';await failed.H._test.retryDrops();assert(failed.nodes.huntBody.innerHTML.includes('recorded target spawn points'));
     const unavailable=makeHarness({language:'en',hunt:'fail'});unavailable.H.open('item');await unavailable.H._test.boot();
     assert(unavailable.nodes.huntBody.innerHTML.includes('The catalogue could not be loaded.'));assert(!/[\u0590-\u05ff]/u.test(unavailable.nodes.huntBody.innerHTML));
+  });
+  await check('basket accepts at most eight known exact goals and rejects malformed IDs',async()=>{
+    const basket=makeHarness();await basket.H._test.boot();basket.H.open('item');
+    basket.action('basket-toggle',{kind:'item',id:-1});basket.action('basket-toggle',{kind:'npc',id:313});basket.action('basket-toggle',{kind:'monster',id:'NaN'});basket.action('basket-toggle',{kind:'item',id:'9007199254740993'});
+    assert.equal(basket.H._test.state.basket.length,0);
+    for(const item of basket.hunt.items.slice(0,9))basket.action('basket-toggle',{kind:'item',id:item.id});
+    assert.equal(basket.H._test.state.basket.length,8);assert(basket.nodes.huntAnnouncement.textContent.includes('עד 8 מטרות'));
+    basket.action('basket-toggle',{kind:'item',id:basket.hunt.items[0].id});assert.equal(basket.H._test.state.basket.length,7);
+    basket.action('basket-toggle',{kind:'monster',id:700000});assert.equal(basket.H._test.state.basket.at(-1).kind,'boss');
+    basket.action('basket-toggle',{kind:'boss',id:700000});assert.equal(basket.H._test.state.basket.length,7);
+    basket.H.open('boss',700003);assert.equal(basket.H._test.state.basket.length,7);
+  });
+  await check('basket overlap counts each spawn once and retains unresolved goals in the denominator',async()=>{
+    const basket=makeHarness({language:'en'});await basket.H._test.boot();basket.H.open('item',1092002);
+    const itemMonsterIds=[...basket.H._test.state.targets],single=basket.H._test.buildCandidates(itemMonsterIds);
+    basket.action('basket-toggle',{kind:'item',id:1092002});basket.action('basket-toggle',{kind:'monster',id:itemMonsterIds[0]});basket.action('basket-toggle',{kind:'item',id:4000020});
+    basket.H.openBasket();const candidates=basket.H._test.basketCandidates();
+    assert.equal(candidates.length,single.length);
+    for(const candidate of candidates){assert.equal(candidate.count,single.find(c=>c.map.id===candidate.map.id).count);assert(candidate.share<=100);assert.equal(candidate.goalCount,3);assert(candidate.coveredGoals.length<=2);}
+    assert(candidates.some(candidate=>candidate.coveredGoals.length===2));
+    assert(basket.nodes.huntBody.innerHTML.includes('monster variant is unconfirmed'));assert(basket.nodes.huntBody.innerHTML.includes('counted once'));
+    assert(!/[\u0590-\u05ff]/u.test(basket.nodes.huntBody.innerHTML));
+    const ranked=basket.H._test.sortCandidates([{map:{id:1,name:'One'},count:100,share:100,distance:0,coveredGoals:[1]},{map:{id:2,name:'Two'},count:1,share:1,distance:20,coveredGoals:[1,2]}]);
+    assert.equal(ranked[0].map.id,2);
+  });
+  await check('basket comparisons, language switches and return to search preserve goal selection',async()=>{
+    const basket=makeHarness();await basket.H._test.boot();basket.H.open('item',1092002);basket.action('basket-toggle',{kind:'item',id:1092002});basket.H.openBasket();
+    const list=basket.H._test.basketCandidates();basket.H._test.toggleComparison(list[0].map.id);basket.action('compare-open');
+    basket.nodes.huntRank.value='distance';basket.H._test.onPanelChange({target:basket.nodes.huntRank});
+    assert(basket.nodes.huntComparison.innerHTML.includes('מטרות עם עדות במפה'));
+    const before=plain(basket.H._test.state.basket),compared=plain(basket.H._test.state.compare);basket.setLanguage('en');
+    assert.equal(basket.H._test.state.basketOpen,true);assert.equal(basket.H._test.state.compareOpen,true);assert.deepEqual(plain(basket.H._test.state.basket),before);assert.deepEqual(plain(basket.H._test.state.compare),compared);
+    basket.action('catalog');assert.equal(basket.H._test.state.basketOpen,false);assert.deepEqual(plain(basket.H._test.state.basket),before);
+    basket.H.openBasket();basket.action('basket-clear');assert.equal(basket.H._test.state.basket.length,0);assert.equal(basket.H._test.state.compare.length,0);assert(basket.nodes.huntBody.innerHTML.includes('Choose goals'));
+  });
+  await check('failed drop evidence does not prevent monster goals or imply missing item drops',async()=>{
+    const basket=makeHarness({language:'en',drop:'fail'});await basket.H._test.boot();basket.H.open('item',1092002);
+    basket.action('basket-toggle',{kind:'item',id:1092002});basket.action('basket-toggle',{kind:'monster',id:2});basket.H.openBasket();
+    assert(basket.nodes.huntBody.innerHTML.includes('Drop records are unavailable'));assert(basket.nodes.huntBody.innerHTML.includes('Retry loading records'));
+    assert(basket.H._test.basketCandidates().length);assert(basket.H._test.basketCandidates().every(c=>c.coveredGoals.length===1&&c.goalCount===2));
+    basket.modes.drop='ready';await basket.H._test.retryDrops();assert(basket.H._test.basketCandidates().some(c=>c.coveredGoals.some(goal=>goal.kind==='item')));
+  });
+  await check('level filters include exact bounds and boss choices without altering entity IDs',async()=>{
+    const filtered=makeHarness({language:'en'});await filtered.H._test.boot();filtered.H.open('monster');
+    filtered.nodes.huntLevelMin.value='30';filtered.H._test.onPanelInput({target:filtered.nodes.huntLevelMin});filtered.nodes.huntLevelMax.value='50';filtered.H._test.onPanelInput({target:filtered.nodes.huntLevelMax});
+    filtered.nodes.huntCreatureType.value='all';filtered.H._test.onPanelChange({target:filtered.nodes.huntCreatureType});
+    const ids=()=>filtered.nodes.huntBody.querySelectorAll('[data-hunt-open]').map(node=>Number(node.dataset.id));
+    const expected=filtered.hunt.monsters.filter(m=>m.level>=30&&m.level<=50).map(m=>m.id).sort((a,b)=>a-b);
+    assert.deepEqual(ids().sort((a,b)=>a-b),expected);
+    filtered.nodes.huntCreatureType.value='boss';filtered.H._test.onPanelChange({target:filtered.nodes.huntCreatureType});
+    assert.deepEqual(ids().sort((a,b)=>a-b),filtered.hunt.monsters.filter(m=>m.isBoss&&m.level>=30&&m.level<=50).map(m=>m.id).sort((a,b)=>a-b));
+    filtered.H.open('boss');assert(ids().every(id=>filtered.hunt.monsters.find(m=>m.id===id).isBoss));
+    filtered.action('clear-levels');assert.equal(filtered.H._test.state.levelMin,'');assert.equal(filtered.H._test.state.levelMax,'');
+  });
+  await check('invalid level ranges remain editable and never silently broaden search',async()=>{
+    const filtered=makeHarness({language:'en'});await filtered.H._test.boot();filtered.H.open('monster');
+    filtered.nodes.huntLevelMin.value='99';filtered.H._test.onPanelInput({target:filtered.nodes.huntLevelMin});filtered.nodes.huntLevelMax.value='20';filtered.nodes.huntLevelMax.focus();filtered.H._test.onPanelInput({target:filtered.nodes.huntLevelMax});
+    assert(filtered.nodes.huntBody.innerHTML.includes('minimum level must not exceed'));assert.equal(filtered.doc.activeElement.id,'huntLevelMax');assert.equal(filtered.nodes.huntLevelMax.value,'20');assert.equal(filtered.nodes.huntBody.querySelectorAll('[data-hunt-open]').length,0);
+    filtered.nodes.huntLevelMin.value='1.5';filtered.H._test.onPanelInput({target:filtered.nodes.huntLevelMin});assert(filtered.nodes.huntBody.innerHTML.includes('whole level from 1 to 200'));
+    filtered.setLanguage('he');assert.equal(filtered.nodes.huntLevelMin.value,'1.5');assert(filtered.nodes.huntBody.innerHTML.includes('הזינו רמה שלמה'));
+    filtered.action('clear-levels');assert(filtered.nodes.huntBody.querySelectorAll('[data-hunt-open]').length>0);
+  });
+  await check('hunt routes carry exact item subset or basket purpose and NPC routes stay unchanged',async()=>{
+    const routed=makeHarness({language:'en'});await routed.H._test.boot();routed.H.open('item',1092002);
+    const ids=[...routed.H._test.state.targets];routed.H._test.state.targets=new Set([ids[0]]);routed.H._test.renderDetail();
+    const map=routed.H._test.buildCandidates([ids[0]])[0].map.id;routed.action('route',{map});
+    assert.deepEqual(plain(routed.calls.at(-1)),['route',map,10001000,{goal:{kind:'hunt',targets:[{kind:'item',id:1092002}],monsterIds:[ids[0]]}}]);
+    assert(routed.H.describeGoal(routed.calls.at(-1)[3].goal).includes('Pan Lid'));
+    routed.H.open('item',1092002);routed.action('basket-toggle',{kind:'item',id:1092002});routed.action('basket-toggle',{kind:'monster',id:ids[0]});routed.H.openBasket();routed.action('route',{map});
+    const goal=routed.calls.at(-1)[3].goal;assert.equal(goal.targets.length,2);assert.equal(new Set(goal.monsterIds).size,goal.monsterIds.length);assert(goal.monsterIds.length<=128);
+    routed.H.open('npc',313);routed.action('route',{map});assert.equal(routed.calls.at(-1).length,3);
+  });
+  await check('saved origin is used initially while active-map and explicit-save actions stay distinct',async()=>{
+    const saved=makeHarness({language:'en',origin:10002000,storageOk:false});await saved.H._test.boot();saved.H.open('item',1092002);
+    assert.equal(saved.H._test.state.originId,10002000);assert.equal(saved.calls.filter(call=>call[0]==='save-origin').length,0);
+    saved.nodes.huntOrigin.value='10001005';saved.H._test.onPanelChange({target:saved.nodes.huntOrigin});assert.equal(saved.window.AtlasPersonal.getOrigin(),10002000);
+    saved.action('origin-save');assert.equal(saved.window.AtlasPersonal.getOrigin(),10001005);assert(saved.nodes.huntAnnouncement.textContent.includes('storage is unavailable'));
+    saved.action('origin-active');assert.equal(saved.H._test.state.originId,10001000);assert.equal(saved.window.AtlasPersonal.getOrigin(),10001005);
+    saved.nodes.huntOrigin.value='unknown';saved.H._test.onPanelChange({target:saved.nodes.huntOrigin});saved.action('origin-save');assert.equal(saved.window.AtlasPersonal.getOrigin(),10001005);
+  });
+  await check('spawn metrics have local keyboard-accessible explanations without invented rates',async()=>{
+    const explained=makeHarness({language:'en'});await explained.H._test.boot();explained.H.open('boss',700003);
+    const html=explained.nodes.huntBody.innerHTML;
+    assert(html.includes('<details class="hunt-metric-help"><summary aria-label="About spawn points">'));
+    assert(html.includes('not an item drop chance'));assert(html.includes('not a live monster count'));assert(html.includes('single-player estimate'));
+    explained.setLanguage('he');assert(explained.nodes.huntBody.innerHTML.includes('על תקרת המפלצות'));
   });
   report();
 })().catch(error=>{results.push({name:'hunt test setup',passed:false,error:error.stack||error.message});report();});

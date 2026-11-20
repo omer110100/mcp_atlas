@@ -1,0 +1,42 @@
+'use strict';
+const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
+const root=path.resolve(__dirname,'..'),atlas=JSON.parse(fs.readFileSync(root+'/dist/atlas-data.json','utf8'));
+const context=vm.createContext({});vm.runInContext(fs.readFileSync(root+'/dist/journey.js','utf8'),context);
+const journey=context.AtlasJourney,maps=new Map(atlas.maps.map(map=>[map.id,map])),adjacency=new Map(atlas.maps.map(map=>[map.id,map.portals.filter(portal=>portal.kind==='cross'&&maps.has(portal.to)).map(p=>({to:p.to,p}))]));
+const graph={maps,adjacency,services:atlas.services,asOf:atlas.meta.asOf},results=[];
+const check=(name,passed)=>results.push({name,passed:!!passed});
+const route=(from,to,stops=[],services=false)=>journey.findRoute(graph,from,to,services,stops);
+const trip=route(10002000,10000000,[10001000,10004000]);
+check('ordered stops are visited in their requested sequence',trip&&trip.waypointSteps.length===2&&trip.waypointSteps[0]<trip.waypointSteps[1]&&trip.steps[trip.waypointSteps[0]-1].to===10001000&&trip.steps[trip.waypointSteps[1]-1].to===10004000);
+check('all itinerary steps remain exact source directed connections',trip.steps.every(step=>step.p?step.p.to===step.to&&maps.get(step.from).portals.includes(step.p):atlas.services.includes(step.service)));
+const florina=route(10000000,10000000,[10007000],true);
+check('Florina origin state survives the waypoint boundary and allows documented return',florina?.steps.length===2&&florina.steps[1].service.id==='boat-florina-lith'&&florina.waypointSteps[0]===1);
+check('a route beginning on Florina never gains invented return origin',route(10007000,10000000,[],true)===null);
+check('conditional-only waypoint rejects ordinary route',route(10000000,10000000,[10007000],false)===null);
+check('a later unreachable waypoint never returns a partial successful route',route(10002000,10000000,[10001000,80002000],true)===null);
+const duplicate=route(10002000,10002000,[10002000,10002000]);
+check('consecutive stops on starting map resolve without invented movement',duplicate.steps.length===0&&JSON.stringify(duplicate.waypointSteps)==='[0,0]');
+check('invalid endpoints and waypoint IDs are rejected',route(-1,-1)===null&&route(10002000,10001000,[999999999])===null);
+check('waypoint count is bounded at eight',route(10002000,10002000,Array(9).fill(10002000))===null&&route(10002000,10002000,Array(8).fill(10002000))?.steps.length===0);
+check('remaining itinerary excludes completed stops but retains future order',JSON.stringify(journey.remainingStops(trip,trip.waypointSteps[0]))==='[10004000]');
+check('no remaining stops once the last waypoint is reached',journey.remainingStops(trip,trip.waypointSteps[1]).length===0);
+const legacy=journey.normalizeRecipe({from:10002000,to:10001000},maps);
+check('legacy two-map recipes retain backwards-compatible defaults',legacy&&legacy.stops.length===0&&legacy.services===false&&legacy.step===0);
+check('recipes reject string IDs, nonboolean options and excessive progress',journey.normalizeRecipe({from:'10002000',to:10001000},maps)===null&&journey.normalizeRecipe({from:10002000,to:10001000,services:'true'},maps)===null&&journey.normalizeRecipe({from:10002000,to:10001000,step:10001},maps)===null);
+const goal=journey.normalizeGoal({kind:'hunt',targets:[{kind:'item',id:4000000},{kind:'item',id:4000000}],monsterIds:[100100,100100]});
+check('goal IDs deduplicate without storing caller labels or URLs',JSON.stringify(goal)==='{"kind":"hunt","targets":[{"kind":"item","id":4000000}],"monsterIds":[100100]}');
+check('goal boundary rejects excessive or invalid selections',journey.normalizeGoal({kind:'hunt',targets:Array(9).fill({kind:'item',id:1}),monsterIds:[]})===null&&journey.normalizeGoal({kind:'hunt',targets:[{kind:'unknown',id:1}],monsterIds:[]})===null&&journey.normalizeGoal({kind:'hunt',targets:[{kind:'item',id:1}],monsterIds:Array(129).fill(1)})===null);
+check('invalid attached goal rejects the recipe rather than inventing meaning',journey.normalizeRecipe({from:10002000,to:10001000,goal:{kind:'hunt',targets:[],monsterIds:[]}},maps)===null);
+let foundArrival=false,incorrectArrival=false;
+for(const map of atlas.maps)for(const portal of map.portals.filter(p=>p.kind==='cross')){
+  const result=journey.arrivalInfo({steps:[{from:map.id,to:portal.to,p:portal}]},1,maps),matches=maps.get(portal.to)?.portals.filter(p=>p.name===portal.toPortal)||[];
+  if(matches.length===1){foundArrival=true;if(result.portal!==matches[0])incorrectArrival=true;}
+  else if(result.portal)incorrectArrival=true;
+}
+check('all fixed arrival markers use exactly one matching recorded target portal name',foundArrival&&!incorrectArrival);
+check('scripted services never borrow an unverified arrival coordinate',journey.arrivalInfo({steps:[{from:10002071,to:10006060,service:atlas.services.find(s=>s.to===10006060)}]},1,maps).portal===null);
+const toyMaps=new Map([[1,{portals:[]}],[2,{portals:[{name:'entry',key:'a'},{name:'entry',key:'b'}]}]]);
+check('duplicate destination portal names produce an explicit ambiguous result',journey.arrivalInfo({steps:[{from:1,to:2,p:{kind:'cross',to:2,toPortal:'entry'}}]},1,toyMaps).reason==='ambiguous');
+check('first map never fabricates an incoming gate',journey.arrivalInfo(trip,0,maps).portal===null);
+check('ordinary and conditional identical paths compare equal',journey.pathSignature(route(10002000,10001000))===journey.pathSignature(route(10002000,10001000,[],true)));
+const failures=results.filter(result=>!result.passed);console.log(JSON.stringify({checks:results.length,failed:failures.length,failures}));process.exitCode=failures.length?1:0;

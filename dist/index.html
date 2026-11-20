@@ -7,20 +7,31 @@
   <meta name="description" content="אטלס אינטראקטיבי למייפלסטורי קלאסיק: כל רשומות המפות בגרסה 2.0.0, שערים, מקומות נסתרים וניווט בין מפות.">
   <title>אטלס מייפלסטורי קלאסיק</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath fill='%23e9bd78' d='M32 3l6 16 13-5-3 14 12 5-18 12-9 16-3-20-22-8 13-5-3-14 10 5z'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css">
-  <link rel="stylesheet" href="hunt.css?v=seasons-2">
-  <link rel="stylesheet" href="navigation.css?v=seasons-2">
-  <link rel="stylesheet" href="controls.css?v=seasons-2">
-  <link rel="stylesheet" href="personal.css?v=seasons-2">
-  <link rel="stylesheet" href="map-search.css?v=seasons-2">
-  <link rel="stylesheet" href="themes.css?v=seasons-2">
-  <script defer src="translations.js?v=seasons-2"></script>
-  <script defer src="i18n.js?v=seasons-2"></script>
-  <script defer src="appearance.js?v=seasons-2"></script>
-  <script defer src="map-search.js?v=seasons-2"></script>
-  <script defer src="personal.js?v=seasons-2"></script>
-  <script defer src="app.js?v=seasons-2"></script>
-  <script defer src="hunt.js?v=seasons-2"></script>
+  <link rel="stylesheet" href="styles.css?v=expedition-2">
+  <link rel="stylesheet" href="hunt.css?v=expedition-2">
+  <link rel="stylesheet" href="navigation.css?v=expedition-2">
+  <link rel="stylesheet" href="controls.css?v=expedition-2">
+  <link rel="stylesheet" href="personal.css?v=expedition-2">
+  <link rel="stylesheet" href="map-search.css?v=expedition-2">
+  <link rel="stylesheet" href="themes.css?v=expedition-2">
+  <link rel="stylesheet" href="library.css?v=expedition-2">
+  <link rel="stylesheet" href="hunt-enhancements.css?v=expedition-2">
+  <link rel="stylesheet" href="experience.css?v=expedition-2">
+  <link rel="stylesheet" href="atmosphere.css?v=expedition-2">
+  <link rel="stylesheet" href="journey.css?v=expedition-2">
+  <link rel="stylesheet" href="map-info.css?v=expedition-2">
+  <script defer src="translations.js?v=expedition-2"></script>
+  <script defer src="i18n.js?v=expedition-2"></script>
+  <script defer src="appearance.js?v=expedition-2"></script>
+  <script defer src="map-search.js?v=expedition-2"></script>
+  <script defer src="personal.js?v=expedition-2"></script>
+  <script defer src="journey.js?v=expedition-2"></script>
+  <script defer src="library-store.js?v=expedition-2"></script>
+  <script defer src="library.js?v=expedition-2"></script>
+  <script defer src="app.js?v=expedition-2"></script>
+  <script defer src="hunt.js?v=expedition-2"></script>
+  <script defer src="experience.js?v=expedition-2"></script>
+  <script defer src="map-info.js?v=expedition-2"></script>
 </head>
 <body>
   <header class="app-header">
@@ -59,8 +70,8 @@
     <aside id="sidePanel" class="side-panel" aria-label="פרטי המקום הנבחר">
       <section id="routePanel" class="route-panel" hidden>
         <div class="section-heading"><div><span class="eyebrow">בוחרים יעד, מוצאים דרך</span><h2>המסע שלך</h2></div><button id="closeRoute" type="button" class="icon-button" aria-label="סגירת תכנון מסלול"><span class="icon" data-icon="close"></span></button></div>
-        <form id="routeForm"><label for="routeFrom">מאיפה יוצאים?</label><input id="routeFrom" list="mapOptions" required autocomplete="off" dir="auto" aria-describedby="routeFromError"><small id="routeFromError" class="field-error" role="status"></small><label for="routeTo">לאן מגיעים?</label><input id="routeTo" list="mapOptions" required autocomplete="off" dir="auto" aria-describedby="routeToError"><small id="routeToError" class="field-error" role="status"></small><datalist id="mapOptions"></datalist><label class="check-row"><input id="useServices" type="checkbox"><span>לכלול כניסות דרך דמויות ומשימות</span></label><p class="route-help">המסלול ממזער מעברים בין מפות. זמן הליכה ותנאי כניסה אינם מחושבים.</p><button class="button primary full" type="submit">מצא מסלול</button></form>
-        <p id="routeRestoreNote" class="route-restore-note" role="status"></p><p id="routeStorageStatus" class="personal-storage" role="status"></p><div id="routeResult" aria-live="polite"></div><div id="routeShareBox" class="route-share-box" hidden><label for="routeShareUrl">קישור למסלול ולשלב הנוכחי</label><input id="routeShareUrl" readonly dir="ltr" aria-describedby="routeShareHelp"><small id="routeShareHelp">המועדפים והמפות האחרונות אינם נכללים בקישור.</small></div>
+        <form id="routeForm"><label for="routeFrom">מאיפה יוצאים?</label><input id="routeFrom" list="mapOptions" required autocomplete="off" dir="auto" aria-describedby="routeFromError"><small id="routeFromError" class="field-error" role="status"></small><label for="routeTo">לאן מגיעים?</label><input id="routeTo" list="mapOptions" required autocomplete="off" dir="auto" aria-describedby="routeToError"><small id="routeToError" class="field-error" role="status"></small><datalist id="mapOptions"></datalist><div class="route-itinerary-tools"><button type="button" id="routeSwap" class="button quiet">⇄</button><button type="button" id="routeAddStop" class="button quiet">＋</button></div><div id="routeStops"></div><label class="check-row"><input id="useServices" type="checkbox"><span>לכלול כניסות דרך דמויות ומשימות</span></label><p class="route-help">המסלול ממזער מעברים בין מפות. זמן הליכה ותנאי כניסה אינם מחושבים.</p><button class="button primary full" type="submit">מצא מסלול</button></form>
+        <div id="routeGoal"></div><div id="routeAlternatives"></div><p id="routeRestoreNote" class="route-restore-note" role="status"></p><p id="routeStorageStatus" class="personal-storage" role="status"></p><div id="routeResult" aria-live="polite"></div><div id="routeShareBox" class="route-share-box" hidden><label for="routeShareUrl">קישור למסלול ולשלב הנוכחי</label><input id="routeShareUrl" readonly dir="ltr" aria-describedby="routeShareHelp"><small id="routeShareHelp">המועדפים והמפות האחרונות אינם נכללים בקישור.</small></div>
       </section>
       <section id="mapDetails"><div class="detail-placeholder">בחרו מקום על המפה כדי להתחיל לחקור.</div></section>
       <footer class="panel-footer"><span>מחקר: 19 בנובמבר 2026</span><button id="coverageButton" type="button">כיסוי ומקורות</button></footer>
@@ -87,7 +98,7 @@
     <section id="sceneNavigation" class="scene-navigation" aria-label="מדריך המסלול" hidden>
       <div class="navigation-copy" aria-live="polite"><span id="sceneNavStatus" class="navigation-status"></span><div class="navigation-destination"><span id="sceneNavLabel"></span><bdi id="sceneNavTarget"></bdi></div><p id="sceneNavInstruction"></p><p id="sceneNavError" class="navigation-error" role="status"></p></div>
       <div class="navigation-actions"><button id="sceneNavPrevious" class="button quiet" type="button">הקודם</button><button id="sceneNavNext" class="button primary" type="button">הבא במסלול</button><button id="sceneNavFocus" class="button quiet" type="button">מיקוד בשער</button><button id="sceneNavCompact" type="button" class="button quiet" aria-pressed="false">ניווט מצומצם</button><button id="sceneNavReroute" type="button" class="button primary" hidden>מסלול מכאן לאותו יעד</button><button id="sceneNavReturn" class="button primary" type="button" hidden>חזרה למסלול</button></div>
-      <progress id="sceneNavProgress" aria-label="התקדמות במסלול" value="0" max="1"></progress>
+      <div id="sceneNavGoal"></div><nav id="sceneNavBreadcrumb"></nav><select id="sceneNavStep"></select><progress id="sceneNavProgress" aria-label="התקדמות במסלול" value="0" max="1"></progress>
     </section>
     <div class="scene-body"><div id="sceneCanvas" class="scene-canvas"><svg id="sceneSvg" xmlns="http://www.w3.org/2000/svg" aria-label="מפת המשחק עם מיקומים ממוספרים"><g id="sceneViewport"><image id="sceneImage"/><g id="sceneInternal"></g><g id="scenePins"></g><g id="sceneEntities"></g></g></svg><div id="sceneImageStatus" class="scene-image-status" role="status" aria-live="polite" hidden><span class="loading-orb" aria-hidden="true"></span><p id="sceneImageMessage"></p><button type="button" class="button quiet" id="sceneImageRetry" hidden>ניסיון נוסף לטעינת התמונה</button></div><div id="sceneHint" class="scene-hint">המספרים תואמים לרשימת השערים · גלגלת לקירוב · גרירה לתנועה</div></div><aside class="scene-sidebar"><nav id="sceneLayers" class="scene-layers" aria-label="סוג המיקומים בתמונה"><button type="button" data-layer="portals" class="active">שערים</button><button type="button" data-layer="monsters">מפלצות</button><button type="button" data-layer="npcs">דמויות</button></nav><div id="sceneFilters" class="scene-filters"><button type="button" data-kind="cross" class="active">למפה אחרת</button><button type="button" data-kind="internal">בתוך המפה</button><button type="button" data-kind="unknown">ללא יעד קבוע</button><button type="button" data-kind="all">הכל</button></div><div id="sceneEntitySummary"></div><div id="sceneSelected" aria-live="polite"></div><div id="scenePortalList"></div><a id="originalImage" class="original-image" target="_blank" rel="noopener noreferrer">תמונת המקור ברזולוציה מלאה</a></aside></div>
   </dialog>

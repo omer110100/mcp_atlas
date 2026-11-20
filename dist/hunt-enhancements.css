@@ -1,0 +1,46 @@
+/* Hunting goals and local metric explanations share the active theme tokens. */
+.hunt-basket-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 24px 14px;flex-shrink:0;font-size:12px;color:var(--muted)}
+.hunt-basket-bar .button{min-height:40px;white-space:nowrap;font-size:13px}
+.hunt-basket-bar .button[aria-pressed=true]{color:var(--gold);background:var(--accent-soft);border-color:var(--gold)}
+.hunt-basket-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.hunt-basket-heading h3{margin:8px 0;font-size:25px;color:var(--heading)}
+.hunt-basket-add{margin-bottom:16px}
+.hunt-basket-goals{list-style:none;padding:0;margin:16px 0;display:grid;gap:8px}
+.hunt-basket-goals li{display:flex;align-items:center;gap:12px;padding:12px;border:1px solid var(--line);border-radius:var(--radius-sm,8px);background:var(--panel-2)}
+.hunt-basket-goals li>div{flex:1;min-width:0}
+.hunt-basket-goals .hunt-text-button{margin:0;text-align:start;overflow-wrap:anywhere}
+.hunt-basket-goals small{font-size:12px;color:var(--muted)}
+.hunt-basket-goals li>.button{flex:none;font-size:12px;min-height:40px;padding-inline:10px}
+.hunt-goal-coverage{margin-top:12px;padding:11px 13px;background:var(--green-soft);border-radius:var(--radius-sm,8px);font-size:13px;color:var(--ink)}
+.hunt-goal-coverage strong{font-weight:600;color:var(--green)}
+.hunt-goal-coverage p{line-height:1.7;margin:6px 0 0;overflow-wrap:anywhere}
+.hunt-level-filters{display:grid;grid-template-columns:minmax(70px,1fr) minmax(70px,1fr) minmax(130px,1.4fr) auto;align-items:end;gap:10px;margin:0 0 16px}
+.hunt-level-filters label{display:grid;gap:6px;min-width:0;font-size:13px;color:var(--ink)}
+.hunt-level-filters input,.hunt-level-filters select{width:100%;min-width:0;min-height:44px}
+.hunt-level-filters .button{font-size:12px;min-height:44px}
+.hunt-filter-error{font-size:13px;line-height:1.6;color:var(--danger);margin:0 0 16px}
+.hunt-origin-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.hunt-origin-actions .button{font-size:12px;flex:1}
+.hunt-map-stats>div{min-width:0;font-size:13px;line-height:1.5;color:var(--muted)}
+.hunt-metric-help{margin:4px 0 0;text-align:start;font-size:12px}
+.hunt-metric-help summary{display:flex;align-items:center;justify-content:center;min-width:32px;min-height:32px;width:max-content;margin-inline:auto;border:1px solid var(--line);border-radius:50%;color:var(--gold);cursor:pointer;list-style:none;line-height:1}
+.hunt-metric-help summary::-webkit-details-marker{display:none}
+.hunt-metric-help summary:hover{background:var(--accent-soft)}
+.hunt-metric-help summary:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
+.hunt-metric-help[open] summary{background:var(--accent-soft);border-color:var(--gold)}
+.hunt-metric-help p{font-size:12px!important;line-height:1.7!important;margin:9px 0 0!important;padding:9px;border:1px solid var(--line);border-radius:var(--radius-sm,8px);color:var(--ink)!important;background:var(--panel);overflow-wrap:anywhere}
+.hunt-capacity{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.hunt-capacity>p{margin:7px 0!important}
+.hunt-capacity>.hunt-metric-help{flex:1;min-width:32px;margin:0}
+.hunt-capacity>.hunt-metric-help summary{margin-inline:0}
+@media(max-width:780px){
+  .hunt-basket-bar{padding:0 15px 12px;gap:8px}
+  .hunt-basket-bar>span{max-width:150px;line-height:1.5}
+  .hunt-level-filters{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .hunt-level-filters .button{width:100%}
+  .hunt-basket-goals li{padding:10px;gap:8px}
+  .hunt-basket-goals .hunt-icon{width:30px;height:34px}
+  .hunt-basket-heading h3{font-size:22px}
+  .hunt-origin-actions .button{flex-basis:100%}
+  .hunt-metric-help summary{min-height:40px;min-width:40px}
+}

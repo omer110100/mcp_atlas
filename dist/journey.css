@@ -1,0 +1,123 @@
+/* Multi-stop planning and navigation context, using the shared theme palette. */
+:root {--journey-arrival:#a7dce9;--journey-arrival-soft:color-mix(in srgb,var(--journey-arrival) 9%,var(--panel));}
+html[data-theme="parchment"] {--journey-arrival:#336b7c;}
+html[data-theme="aurora"] {--journey-arrival:#a4cff6;}
+/* Each navigation child owns an explicit region. New context must never compete
+   with the summary in a single shrinking flex row. Long content scrolls here,
+   leaving the map and its sidebar visible in both full and compact modes. */
+html #sceneNavigation {
+  display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);
+  grid-template-areas:"summary actions" "breadcrumb steps" "goal goal" "progress progress";
+  align-items:start;justify-content:stretch;gap:14px 22px;
+  max-height:min(48dvh,420px);min-height:0;overflow:auto;overscroll-behavior:contain;
+  scrollbar-width:thin;scrollbar-color:var(--line) transparent;
+}
+html #sceneNavigation > .navigation-copy {grid-area:summary;min-width:0;width:100%;}
+html #sceneNavigation > .navigation-actions {grid-area:actions;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));min-width:0;max-width:none;width:100%;margin:0;gap:8px;align-content:start;}
+html #sceneNavigation .navigation-actions .button {min-width:0;max-width:100%;white-space:normal;overflow-wrap:anywhere;}
+html #sceneNavigation :is(#sceneNavReturn,#sceneNavCompact,#sceneNavReroute) {grid-column:auto;}
+html #sceneNavBreadcrumb {grid-area:breadcrumb;min-width:0;width:100%;}
+html #sceneNavBreadcrumb .journey-breadcrumb {margin-top:0;}
+html #sceneNavStep {grid-area:steps;min-width:0;width:100%;max-width:100%;align-self:start;}
+html #sceneNavProgress {grid-area:progress;position:static;display:block;width:100%;height:4px;margin:0;align-self:end;}
+html #sceneNavGoal {grid-area:goal;min-width:0;width:100%;padding:12px 14px;border:1px solid var(--border-subtle);border-radius:10px;background:var(--panel);}
+html #sceneNavGoal:empty {display:none;}
+html #sceneNavGoal strong {font-size:13px;color:var(--green);}
+html #sceneNavGoal p {margin:6px 0;font-size:13px;line-height:1.75;color:var(--ink);overflow-wrap:anywhere;}
+html #sceneNavGoal small {display:block;font-size:12px;line-height:1.7;color:var(--muted);margin-top:8px;}
+html #sceneNavGoal .button {margin-top:8px;max-width:100%;white-space:normal;}
+html .scene-dialog.compact-navigation #sceneNavigation {max-height:min(42dvh,350px);}
+#routeStops {display:grid;gap:12px;margin-top:14px;}
+#routeStops:empty,#routeGoal:empty,#routeAlternatives:empty {display:none;}
+.route-itinerary-tools {display:flex;flex-wrap:wrap;gap:8px;}
+.route-itinerary-tools .button {flex:1 1 120px;}
+.route-stop-row {min-width:0;display:grid;grid-template-columns:minmax(0,1fr);gap:7px;padding:11px 12px;border:1px solid var(--border-subtle);border-inline-start:3px solid var(--green);border-radius:10px;background:var(--panel);}
+html #routeForm .route-stop-row label {margin:0 0 2px;font-size:13px;font-weight:600;color:var(--green);}
+.route-stop-row .map-lookup {width:100%;min-width:0;}
+.route-stop-row input {width:100%;min-width:0;}
+.route-stop-actions {display:flex;align-items:center;justify-content:flex-end;gap:6px;}
+.route-stop-actions button {display:inline-flex;align-items:center;justify-content:center;min-width:42px;min-height:42px;padding:5px 10px;background:var(--panel-2);color:var(--ink);border:1px solid var(--line);border-radius:8px;font-size:20px;line-height:1;}
+.route-stop-actions button:hover:not(:disabled) {background:var(--surface-hover);border-color:var(--gold);}
+.route-stop-actions [data-stop-remove]:hover {color:var(--danger);border-color:var(--danger);}
+.route-stop-row .field-error {margin:0;}
+#routeSwap,#routeAddStop {max-width:100%;font-size:13px;line-height:1.6;min-height:44px;margin-top:10px;white-space:normal;}
+#routeGoal {display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;background:var(--green-soft);border:1px solid var(--line);border-radius:12px;margin-top:16px;padding:13px;}
+.route-goal-copy {min-width:0;flex:1 1 170px;}
+.route-goal-copy strong {color:var(--green);font-size:13px;}
+.route-goal-copy p {color:var(--ink);font-size:13px;line-height:1.8;margin:6px 0 0;overflow-wrap:anywhere;}
+#routeClearGoal {font-size:12px;min-height:40px;padding:8px 10px;}
+#routeAlternatives {margin:21px 0 17px;padding-block:17px;border-block:1px solid var(--border-subtle);}
+#routeAlternatives h3 {font-size:16px;font-weight:600;line-height:1.6;margin:0 0 12px;color:var(--heading);}
+.route-alternative-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}
+.route-alternative {display:flex;flex-direction:column;align-items:flex-start;gap:8px;min-width:0;min-height:100px;padding:13px 11px;text-align:start;border:1px solid var(--line);border-radius:11px;background:var(--panel);color:var(--ink);}
+.route-alternative strong {font-size:13px;font-weight:600;line-height:1.6;}
+.route-alternative span {font-size:12px;line-height:1.7;color:var(--muted);}
+.route-alternative[aria-pressed="true"] {background:var(--accent-soft);border-color:var(--gold);box-shadow:inset 0 -3px var(--gold);}
+.route-alternative[aria-pressed="true"] strong {color:var(--gold);}
+.route-alternative:hover:not(:disabled) {border-color:var(--gold);background:var(--surface-hover);}
+.route-alternative:disabled {opacity:.6;}
+.journey-breadcrumb {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-top:13px;}
+.journey-breadcrumb button {min-width:0;min-height:68px;display:flex;flex-direction:column;align-items:stretch;gap:5px;padding:9px 11px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--ink);text-align:start;}
+.journey-breadcrumb button small {font-family:var(--font);font-size:11px;color:var(--muted);line-height:1.5;}
+.journey-breadcrumb button bdi {font-family:Georgia,serif;font-size:14px;line-height:1.5;overflow-wrap:anywhere;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;}
+.journey-breadcrumb button[aria-current="step"] {border-color:var(--gold);background:var(--accent-soft);box-shadow:inset 0 2px var(--gold);}
+.journey-breadcrumb button[aria-current="step"] small {color:var(--gold);font-weight:600;}
+.journey-breadcrumb button:hover {border-color:var(--gold);}
+html #sceneNavBreadcrumb .journey-entry-note {margin:10px 0 0;padding:9px 11px;border-inline-start:3px solid var(--journey-arrival);border-radius:6px;background:var(--journey-arrival-soft);color:var(--journey-arrival);font-size:12px;line-height:1.7;}
+html .scene-pin.route-arrival:not(.route-required) circle {fill:#55bcd1;stroke:#e0fbff;stroke-width:3;stroke-dasharray:none;filter:drop-shadow(0 0 8px #6dd7ec99);}
+html .scene-pin.route-arrival:not(.route-required) text {fill:#082b38;font-weight:800;}
+html[data-readability="comfortable"] .journey-breadcrumb button {min-height:79px;}
+html[data-readability="comfortable"] .journey-breadcrumb button bdi {font-size:16px;line-height:1.6;}
+html[data-readability="comfortable"] #sceneNavBreadcrumb .journey-entry-note {font-size:14px;line-height:1.9;}
+@media(max-width:780px){
+  html #sceneNavigation {grid-template-columns:minmax(0,1fr);grid-template-areas:"summary" "actions" "breadcrumb" "steps" "goal" "progress";gap:11px;max-height:44dvh;padding:13px 13px 18px;}
+  html #sceneNavigation > .navigation-actions {gap:6px;}
+  html .scene-dialog.compact-navigation #sceneNavigation {max-height:38dvh;}
+  html .scene-dialog:not(.compact-navigation) .scene-body {grid-template-rows:minmax(0,58fr) minmax(0,42fr);}
+  .route-stop-actions button {min-width:44px;min-height:44px;}
+  .journey-breadcrumb {gap:5px;margin-top:11px;}
+  .journey-breadcrumb button {padding:8px 7px;min-height:68px;}
+  .journey-breadcrumb button bdi {font-size:13px;}
+  html #sceneNavBreadcrumb .journey-entry-note {font-size:12px;padding:8px 9px;}
+}
+@media(max-height:600px) and (orientation:landscape){
+  html #sceneNavigation {grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);grid-template-areas:"summary actions" "breadcrumb steps" "goal goal" "progress progress";max-height:44dvh;padding:10px 14px 15px;gap:10px 16px;}
+  html .scene-dialog.compact-navigation #sceneNavigation {max-height:40dvh;}
+  html .scene-dialog:not(.compact-navigation) .scene-body {grid-template-columns:minmax(0,1fr) 270px;grid-template-rows:minmax(0,1fr);}
+}
+@media(max-height:600px) and (max-width:780px) and (orientation:landscape){
+  html .scene-dialog:not(.compact-navigation) .scene-body {grid-template-columns:minmax(0,1fr) minmax(140px,35%);}
+}
+@media(max-height:600px) and (max-width:420px) and (orientation:landscape){
+  html #sceneNavigation {grid-template-columns:minmax(0,1fr);grid-template-areas:"summary" "actions" "breadcrumb" "steps" "goal" "progress";}
+}
+@media(max-width:360px){
+  .route-alternative-grid {grid-template-columns:minmax(0,1fr);}
+  .route-alternative {min-height:80px;gap:5px;}
+  #routeSwap,#routeAddStop {width:100%;}
+  .journey-breadcrumb button {padding-inline:6px;}
+}
+
+/* Compact mode prioritizes the current instruction and controls. The full step
+   picker and hunting-arrival actions remain available inside the scrolling bar. */
+html .scene-dialog.compact-navigation #sceneNavigation {
+  grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);
+  grid-template-areas:"summary actions" "steps steps" "goal goal" "progress progress";
+  gap:8px 16px;padding:11px 18px 15px;max-height:32dvh;
+}
+html .scene-dialog.compact-navigation #sceneNavBreadcrumb {display:none;}
+html .scene-dialog.compact-navigation .navigation-status {font-size:13px;margin-bottom:3px;}
+html .scene-dialog.compact-navigation .navigation-destination {gap:5px 10px;}
+html .scene-dialog.compact-navigation .navigation-destination bdi {font-size:19px;line-height:1.4;}
+html .scene-dialog.compact-navigation #sceneNavInstruction {margin-top:4px;font-size:13px;line-height:1.6;}
+html .scene-dialog.compact-navigation #sceneNavigation > .navigation-actions {gap:6px;}
+html .scene-dialog.compact-navigation .navigation-actions .button {padding:8px 11px;min-height:44px;font-size:13px;}
+html .scene-dialog.compact-navigation #sceneNavStep {min-height:44px;padding-block:8px;}
+html .scene-dialog.compact-navigation #sceneNavGoal {padding:10px 12px;}
+@media(max-width:780px){
+  html .scene-dialog.compact-navigation #sceneNavigation {grid-template-columns:minmax(0,1fr);grid-template-areas:"summary" "actions" "steps" "goal" "progress";gap:8px;padding:10px 12px 14px;}
+  html .scene-dialog.compact-navigation .navigation-destination bdi {font-size:18px;}
+}
+@media(max-height:600px) and (orientation:landscape) and (min-width:421px){
+  html .scene-dialog.compact-navigation #sceneNavigation {grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);grid-template-areas:"summary actions" "steps steps" "goal goal" "progress progress";}
+}

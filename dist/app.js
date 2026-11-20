@@ -32,6 +32,7 @@ let world = {x:0,y:0,k:1}, scene = {x:0,y:0,k:1}, showAllLabels=false, worldMove
 let nodeElements=new Map(), edgeElements=[], serviceElements=[], portalPinElements=new Map();
 let activeSearchResults=[], searchIndex=-1, toastTimer;
 let sceneLayer='portals', sceneEntityIds=[], sceneEntityPoints=[], selectedEntity=null;
+let routeStopValues=[],pendingRouteGoal=null,pendingGoalDestination=null,routeChoices=null;
 const entityPinElements=new Map();
 const groupId = (id) => groups.find((g) => g.id === id);
 const mapLabel = (m) => `${m.name} [${m.id}]`;
@@ -51,6 +52,18 @@ function svgEl(tag, attrs={}, text) {
 }
 function toast(message) { $('toast').textContent=message;$('toast').hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').hidden=true,4500); }
 function scrollBehavior(){return document.documentElement?.dataset?.motion==='off'||(typeof window!=='undefined'&&window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches)?'auto':'smooth';}
+function notifyView(){if(typeof window!=='undefined'&&window.Atlas)window.dispatchEvent(new Event('atlas-viewchange'));}
+function describeMap(id){
+  const map=byId.get(Number(id));if(!map)return null;
+  const monsterPoints=window.HuntData?.mapSpawns?.[map.id]?.totalPoints||0,npcCount=(map.npcs||[]).length;
+  const category=['event','system','unavailable'].includes(map.scope)?'archive':map.scope==='conditional'?'special':map.isTown||map.major?'town':monsterPoints?'hunting':'field';
+  const labels={town:L('עיר ומוקד','Town or hub'),hunting:L('מפת ציד','Hunting map'),special:L('כניסה מותנית','Conditional entrance'),archive:L('אירוע או מערכת','Event or system'),field:L('מפת שטח','Field map')};
+  return {category,label:labels[category],region:groupLabel(map),exits:map.portals.filter(portal=>displayKind(portal,map)==='cross').length,monsterPoints,npcCount};
+}
+function getContext(){
+  const brief=id=>{const map=byId.get(id);return map?{id:map.id,name:map.name}:null;},recipe=getJourney();
+  return {activeMap:brief(activeId),sceneMap:$('sceneDialog').open?brief(sceneId):null,route:recipe?{...recipe,index:recipe.step,total:route.steps.length}:null,step:recipe?.step??0,sceneOpen:!!$('sceneDialog').open};
+}
 function imageFallback(el) { if(el.dataset.fallbackUsed)return;el.dataset.fallbackUsed='1';const m=byId.get(Number(el.dataset.map));if(m && el.getAttribute('src') !== m.image)el.src=m.image;else el.style.opacity='.3'; }
 function groupName(g) { return g?L(g.he,g.en||D(g.he)):''; }
 function groupLabel(m) { return groupName(groupId(m.group)) || D(m.region); }
@@ -85,6 +98,7 @@ function renderDetails() {
   const spawnCount=window.HuntData?.mapSpawns?.[m.id]?.totalPoints||0;
   const npcCount=(m.npcs||[]).length;
   if(spawnCount||npcCount)$('mapDetails').querySelector('.portal-tabs').insertAdjacentHTML('beforebegin',`<div class="entity-shortcuts">${spawnCount?`<button type="button" data-action="map-monsters">${fmt(spawnCount)} ${L('נקודות הופעה','spawn points')}</button>`:''}${npcCount?`<button type="button" data-action="map-npcs">${npcCount===1?L('מיקום דמות אחד','1 NPC location'):fmt(npcCount)+' '+L('מיקומי דמויות','NPC locations')}</button>`:''}</div>`);
+  notifyView();
 }
 function renderPortalContent() {
   const m=byId.get(activeId);if(!m || !$('portalContent'))return;
@@ -127,6 +141,7 @@ function highlightGraph() {
   for(const s of serviceElements){if(s.a===m.id)neighbors.add(s.b);if(s.b===m.id)neighbors.add(s.a);}
   for(const [id,g] of nodeElements){g.classList.toggle('selected',id===m.id);g.classList.toggle('neighbor',neighbors.has(id));}
   for(const {element,a,b} of [...edgeElements,...serviceElements])element.classList.toggle('highlighted',a===m.id || b===m.id);
+  updateGraphDetail();
 }
 
 function buildWorld() {
@@ -219,6 +234,39 @@ function applyWorld(){
   $('worldViewport').setAttribute('transform',`translate(${world.x},${world.y}) scale(${world.k})`);
   $('worldSvg').classList.toggle('detail-zoom',world.k>.82);$('worldSvg').classList.toggle('all-labels',showAllLabels);
   for(const [id,g] of nodeElements){const m=byId.get(id),label=g.querySelector('text');const size=m.major?14/world.k:12/world.k;label.setAttribute('font-size',size);if(!m.major)g.querySelector('.node-hit').setAttribute('r',Math.max(18,11/world.k));}
+  updateGraphDetail();
+}
+function updateGraphDetail(){
+  const journeyMaps=new Set(route?[route.from,...route.steps.map(step=>step.to)]:[]);
+  const narrowOverview=currentRegion==='world'&&world.k<.3&&!showAllLabels&&$('mapCanvas').getBoundingClientRect().width<600;
+  const labels=[];
+  for(const [id,node]of nodeElements){
+    const map=byId.get(id),hidden=currentRegion==='world'&&world.k<.3&&!showAllLabels&&!map.major&&id!==activeId&&!journeyMaps.has(id);
+    node.style.display=hidden?'none':'';
+    const label=node.querySelector('text');if(!label)continue;
+    label.style.visibility='';
+    if(narrowOverview&&visibleMap(map)&&(map.major||id===activeId))labels.push({map,label,priority:id===activeId?2:journeyMaps.has(id)?1:0});
+  }
+  if(!narrowOverview)return;
+  // Read every text box before changing visibility to avoid repeated layout work.
+  // Selection wins, followed by route towns and then stable numeric map order.
+  const measured=labels.sort((a,b)=>b.priority-a.priority||a.map.id-b.map.id).map(entry=>({...entry,box:worldLabelBox(entry.map,entry.label)}));
+  const occupied=[];
+  for(const {label,box}of measured){
+    const overlaps=occupied.some(other=>box.left<other.right&&box.right>other.left&&box.top<other.bottom&&box.bottom>other.top);
+    label.style.visibility=overlaps?'hidden':'';
+    if(!overlaps)occupied.push(box);
+  }
+}
+function worldLabelBox(map,label){
+  const fontSize=map.major?14:12,padding=5,anchorX=world.x+map.x*world.k,anchorY=world.y+(map.y+(map.major?66:-19))*world.k;
+  const fallbackWidth=(label.textContent||map.name).length*fontSize*.8;
+  let box={left:anchorX-fallbackWidth/2,top:anchorY-fontSize,right:anchorX+fallbackWidth/2,bottom:anchorY+fontSize*.3};
+  try{
+    const bounds=label.getBBox?.();
+    if(bounds&&[bounds.x,bounds.y,bounds.width,bounds.height].every(Number.isFinite)&&bounds.width>0&&bounds.height>0)box={left:anchorX+bounds.x*world.k,top:world.y+(map.y+bounds.y)*world.k,right:anchorX+(bounds.x+bounds.width)*world.k,bottom:world.y+(map.y+bounds.y+bounds.height)*world.k};
+  }catch{/* Detached or unavailable SVG metrics use the conservative text estimate. */}
+  return {left:box.left-padding,top:box.top-padding,right:box.right+padding,bottom:box.bottom+padding};
 }
 function fitWorld(){
   const ms=maps.filter(visibleMap);if(!ms.length)return;const r=$('mapCanvas').getBoundingClientRect();const padX=r.width<600?50:90,padY=100;
@@ -274,37 +322,74 @@ function renderDirectory(){const q=$('directorySearch').value.trim().toLowerCase
   $('directoryGrid').querySelectorAll('img').forEach(img=>img.addEventListener('error',e=>imageFallback(e.target)));
 }
 
-function openRoute(){ $('routePanel').hidden=false;$('routeToggle').setAttribute('aria-pressed','true');$('sidePanel').scrollTo({top:0,behavior:scrollBehavior()});if(!$('routeFrom').value && byId.has(activeId))$('routeFrom').value=mapLabel(byId.get(activeId)); }
-function planTo(mapId,fromId){
-  const target=byId.get(Number(mapId)),origin=byId.get(Number(fromId))||byId.get(activeId);
-  if(!target||!origin)return;
+function defaultRouteOrigin(){return byId.get(window.AtlasPersonal?.getOrigin?.())||byId.get(activeId);}
+function openRoute(){ $('routePanel').hidden=false;$('routeToggle').setAttribute('aria-pressed','true');$('sidePanel').scrollTo({top:0,behavior:scrollBehavior()});const origin=defaultRouteOrigin();if(!$('routeFrom').value&&origin)$('routeFrom').value=mapLabel(origin); }
+function planTo(mapId,fromId,options={}){
+  if(!options||typeof options!=='object'||Array.isArray(options))return false;
+  const target=byId.get(Number(mapId)),origin=fromId==null?defaultRouteOrigin():byId.get(Number(fromId));
+  if(!target||!origin)return false;
   window.Hunt?.close();if($('sceneDialog').open)$('sceneDialog').close();$('directory').hidden=true;
   selectMap(target.id,{scroll:false});openRoute();
-  $('routeFrom').value=mapLabel(origin);$('routeTo').value=mapLabel(target);
+  const stops=options.stops??[];
   // Conditional entrances stay visible in each route step; only use them when needed.
-  $('useServices').checked=!findRoute(origin.id,target.id,false)&&!!findRoute(origin.id,target.id,true);
-  submitRoute();
+  const services=options.services??(!findRoute(origin.id,target.id,false,stops)&&!!findRoute(origin.id,target.id,true,stops));
+  return planJourney({from:origin.id,to:target.id,stops,services,step:0,...(options.goal?{goal:options.goal}:{})});
+}
+function readRouteStops(){return routeStopValues.map((value,index)=>$('routeStop'+index)?.value??value);}
+function renderRouteStops(){
+  const host=$('routeStops');if(!host)return;
+  host.innerHTML=routeStopValues.map((value,index)=>`<div class="route-stop-row"><label for="routeStop${index}">${L('עצירה','Stop')} ${index+1}</label><input id="routeStop${index}" data-route-stop="${index}" data-map-lookup type="text" autocomplete="off" dir="auto" aria-describedby="routeStop${index}Error" value="${esc(value)}"><div class="route-stop-actions"><button type="button" data-stop-move="${index}" data-stop-direction="-1" aria-label="${L('הקדמת העצירה','Move stop earlier')} ${index+1}" ${index===0?'disabled':''}>↑</button><button type="button" data-stop-move="${index}" data-stop-direction="1" aria-label="${L('דחיית העצירה','Move stop later')} ${index+1}" ${index===routeStopValues.length-1?'disabled':''}>↓</button><button type="button" data-stop-remove="${index}" aria-label="${L('הסרת עצירה','Remove stop')} ${index+1}">×</button></div><small id="routeStop${index}Error" class="field-error" role="status"></small></div>`).join('');
+  routeStopValues.forEach((value,index)=>{const input=$('routeStop'+index);if(input){input.value=value;window.MapSearch?.attach(input);}});
+  if($('routeAddStop')){$('routeAddStop').disabled=routeStopValues.length>=AtlasJourney.MAX_STOPS;$('routeAddStop').textContent=L('＋ הוספת עצירה','＋ Add stop');}
+  if($('routeSwap')){$('routeSwap').textContent=L('⇄ החלפת מוצא ויעד','⇄ Swap start and destination');$('routeSwap').setAttribute('aria-label',L('החלפת המוצא והיעד והיפוך סדר העצירות','Swap start and destination and reverse stop order'));}
+}
+function addStop(mapId){
+  if(routeStopValues.length>=AtlasJourney.MAX_STOPS){toast(L('אפשר לתכנן עד 8 עצירות ביניים.','You can plan up to 8 intermediate stops.'));return false;}
+  if(mapId!=null&&(!Number.isSafeInteger(mapId)||!byId.has(mapId)))return false;
+  routeStopValues=readRouteStops();routeStopValues.push(mapId==null?'':mapLabel(byId.get(mapId)));openRoute();renderRouteStops();$('routeStop'+(routeStopValues.length-1))?.focus();return true;
+}
+function swapRouteEnds(){
+  const from=$('routeFrom').value;$('routeFrom').value=$('routeTo').value;$('routeTo').value=from;
+  routeStopValues=readRouteStops().reverse();pendingRouteGoal=null;pendingGoalDestination=null;renderRouteStops();renderRouteGoal();
+  for(const id of ['routeFrom','routeTo']){$(id).removeAttribute('aria-invalid');$(id+'Error').textContent='';}
+  toast(L('המוצא, היעד וסדר העצירות הוחלפו. לחצו על מציאת מסלול כדי לחשב מחדש.','Start, destination and stop order swapped. Find a route to recalculate.'));
+}
+function getJourney(){return route?{from:route.from,to:route.to,stops:[...(route.stops||[])],services:routeUsesServices,step:navigationActive()?navigationIndex:0,...(route.goal?{goal:AtlasJourney.normalizeGoal(route.goal)}:{})}:null;}
+function planJourney(value,{persist=true,show=false,restoreStep=true}={}){
+  const recipe=AtlasJourney.normalizeRecipe(value,byId);if(!recipe)return false;
+  openRoute();$('routeFrom').value=mapLabel(byId.get(recipe.from));$('routeTo').value=mapLabel(byId.get(recipe.to));$('useServices').checked=recipe.services;
+  routeStopValues=recipe.stops.map(id=>mapLabel(byId.get(id)));pendingRouteGoal=recipe.goal||null;pendingGoalDestination=recipe.goal?recipe.to:null;renderRouteStops();
+  submitRoute(null,{persist:false});if(!route)return false;
+  const step=restoreStep&&recipe.step<=route.steps.length?recipe.step:0;
+  if(show){openRouteStep(step);return true;}
+  if(restoreStep&&step){navigationRoute=route;navigationIndex=step;navigationFollowing=false;updateRouteProgress();renderSceneNavigation();}
+  if(persist)window.AtlasPersonal?.saveJourney();notifyView();return true;
+}
+function renderRouteGoal(){
+  const host=$('routeGoal');if(!host)return;host.hidden=!pendingRouteGoal;
+  host.innerHTML=pendingRouteGoal?`<div class="route-goal-copy"><strong>${L('מטרת המסע','Journey goal')}</strong><p>${esc(window.Hunt?.describeGoal?.(pendingRouteGoal)||L('מסע ציד לפי המטרות שנבחרו','Hunting journey for your selected targets'))}</p></div><button type="button" class="button quiet" id="routeClearGoal">${L('הסרת המטרה','Remove goal')}</button>`:'';
+}
+function renderRouteAlternatives(){
+  const host=$('routeAlternatives');if(!host)return;host.hidden=!routeChoices;if(!routeChoices){host.innerHTML='';return;}
+  const same=routeChoices.ordinary&&routeChoices.conditional&&AtlasJourney.pathSignature(routeChoices.ordinary)===AtlasJourney.pathSignature(routeChoices.conditional);
+  host.innerHTML=`<h3>${L('השוואת אפשרויות מסלול','Compare route options')}</h3><div class="route-alternative-grid">${[['ordinary',false,L('שערים מתועדים','Documented portals')],['conditional',true,L('כולל כניסות מותנות','Allow conditional entrances')]].map(([key,services,label])=>{const candidate=routeChoices[key],count=candidate?.steps.filter(step=>step.service&&!step.service.walkable).length||0;return `<button type="button" class="route-alternative" data-route-policy="${key}" aria-pressed="${routeUsesServices===services}" ${candidate?'':'disabled'}><strong>${label}</strong><span>${candidate?L(`${candidate.steps.length} מעברים · ${count} מותנים`,`${candidate.steps.length} passages · ${count} conditional`):L('לא נמצא מסלול מלא','No complete route')}</span></button>`;}).join('')}</div>${same?`<p class="route-help">${L('שתי האפשרויות מובילות לאותו מסלול מתועד.','Both options follow the same documented route.')}</p>`:''}`;
 }
 function routeMap(value){if(typeof window!=='undefined'&&window.MapSearch)return window.MapSearch.resolve(value);const id=value.match(/\[(\d+)\]\s*$/);if(id)return byId.get(Number(id[1]));const normalized=value.trim().toLowerCase();const exact=maps.filter(m=>m.name.toLowerCase()===normalized||String(m.id)===normalized);return exact.length===1?exact[0]:null;}
-function findRoute(from,to,services=false){
-  const queue=[{id:from,origin:null}],seen=new Set([`${from}:null`]),prev=new Map();let found=null;
-  for(let i=0;i<queue.length;i++){
-    const item=queue[i],key=`${item.id}:${item.origin}`;if(item.id===to){found=key;break;}
-    const options=[...(adjacency.get(item.id)||[])];for(const s of getServices(item.id))if(canRouteService(s) && (services || s.walkable===true))options.push({to:s.to,service:s});
-    for(const option of options){let origin=item.origin;const s=option.service;
-      if(s?.active_until_utc && new Date(s.active_until_utc).getTime()<new Date(atlas.meta.asOf+'T00:00:00Z').getTime())continue;
-      if(s?.requires_state?.florina_origin && origin!==s.requires_state.florina_origin)continue;
-      if(s?.stores_state==='florina_origin')origin=s.from;
-      const nextKey=`${option.to}:${origin}`;if(seen.has(nextKey))continue;seen.add(nextKey);prev.set(nextKey,{key,from:item.id,to:option.to,p:option.p,service:s});queue.push({id:option.to,origin});
-    }
-  }
-  if(found===null)return null;const steps=[];while(prev.has(found)){const step=prev.get(found);steps.push(step);found=step.key;}steps.reverse();return {from,to,steps};
-}
+function findRoute(from,to,services=false,stops=[]){return AtlasJourney.findRoute({maps:byId,adjacency,services:atlas.services,asOf:atlas.meta.asOf},from,to,services,stops);}
 function routeInputError(){return L('בחרו מפה מההצעות. כשיש כמה שמות זהים, המזהה מבדיל ביניהם.','Choose a map from the suggestions. Use the ID to distinguish maps with identical names.');}
 function startRouteLabel(){return navigationActive()&&navigationIndex?L(`המשך מהמקום ששמרת · ${navigationIndex===route.steps.length?'מפת היעד':'מעבר '+(navigationIndex+1)}`,`Resume saved progress · ${navigationIndex===route.steps.length?'Destination':'Passage '+(navigationIndex+1)}`):L('פתיחת מדריך המסלול','Open route guide');}
-function submitRoute(e,{persist=true}={}){if(e)e.preventDefault();const from=routeMap($('routeFrom').value),to=routeMap($('routeTo').value);for(const [id,map] of [['routeFrom',from],['routeTo',to]]){$(id).setAttribute('aria-invalid',String(!map));$(id+'Error').textContent=map?'':routeInputError();}if(!from||!to){$(!from?'routeFrom':'routeTo').focus();return;}
-  routeUsesServices=$('useServices').checked;route=findRoute(from.id,to.id,routeUsesServices);navigationRoute=null;navigationIndex=0;$('routeRestoreNote').textContent='';$('routeShareBox').hidden=true;if(persist)window.AtlasPersonal?.saveJourney();renderSceneNavigation();drawRoute();
-  renderRouteResult();
+function submitRoute(e,{persist=true}={}){
+  if(e)e.preventDefault();const from=routeMap($('routeFrom').value),to=routeMap($('routeTo').value);
+  routeStopValues=readRouteStops();const stops=routeStopValues.map(routeMap),fields=[['routeFrom',from],...stops.map((map,index)=>['routeStop'+index,map]),['routeTo',to]];
+  for(const [id,map]of fields){$(id).setAttribute('aria-invalid',String(!map));$(id+'Error').textContent=map?'':routeInputError();}
+  const invalid=fields.find(([,map])=>!map);if(invalid){$(invalid[0]).focus();return;}
+  if(to.id!==pendingGoalDestination){pendingRouteGoal=null;pendingGoalDestination=null;}
+  routeUsesServices=$('useServices').checked;
+  const recipe={from:from.id,to:to.id,stops:stops.map(map=>map.id),services:routeUsesServices,step:0,...(pendingRouteGoal?{goal:pendingRouteGoal}:{})};
+  routeChoices={recipe,ordinary:findRoute(from.id,to.id,false,recipe.stops),conditional:findRoute(from.id,to.id,true,recipe.stops)};
+  for(const candidate of [routeChoices.ordinary,routeChoices.conditional])if(candidate&&pendingRouteGoal)candidate.goal=AtlasJourney.normalizeGoal(pendingRouteGoal);
+  route=routeChoices[routeUsesServices?'conditional':'ordinary'];navigationRoute=null;navigationIndex=0;$('routeRestoreNote').textContent='';$('routeShareBox').hidden=true;if(persist)window.AtlasPersonal?.saveJourney();renderSceneNavigation();drawRoute();
+  renderRouteResult();renderRouteAlternatives();renderRouteGoal();notifyView();
   if(!route)return;
   const ids=[route.from,...route.steps.map(s=>s.to)];
   if(ids.length>1)fitRoute(ids);toast(route.steps.length?L(`נמצא מסלול עם ${route.steps.length} מעברים`,`Found a route with ${route.steps.length} passages`):L('זו כבר מפת המוצא','You are already at the destination'));
@@ -321,7 +406,7 @@ function renderRouteResult(){
   html+=ids.map((id,i)=>{const step=route.steps[i],m=byId.get(id),gate=step?.p||(step?.service?m.portals.find(p=>supplementForGate(p,m)?.id===step.service.id):null);return `<div class="route-step" data-step-index="${i}" data-step-state="${routeStepState(i)}"><span class="step-number">${i+1}</span><div class="route-step-content"><button type="button" data-route-map="${id}">${eng(m.name)}${step?`<small>${step.service?esc(serviceLabel(step.service)):esc(`${L('שער','Portal')} ${step.p.number} · ${directionLabel(step.p,m)} · ${portalTypeLabel(step.p,m)}`)}</small>${step.service?`<small>${esc(serviceCondition(step.service))}</small>`:''}`:`<small>${L('מפת היעד','Destination map')}</small>`}</button>${gate?`<button type="button" class="route-locate" data-route-scene="${id}" data-route-gate="${esc(gate.key)}" data-route-index="${i}">${icon('pin')}${L(`הצגת שער היציאה ${gate.number}`,`Show exit portal ${gate.number}`)}</button>`:''}</div></div>`;}).join('');
   html+=`<button type="button" id="clearRoute" class="clear-route">${L('ניקוי המסלול','Clear route')}</button>`;$('routeResult').innerHTML=html;
 }
-function drawRoute(){const layer=$('routeLayer');layer.replaceChildren();if(!route)return;for(const s of route.steps){const a=byId.get(s.from),b=byId.get(s.to);layer.append(svgEl('path',{d:edgePath(a,b),class:`route-edge ${s.service?'service':''}`}));}const ids=[route.from,...route.steps.map(s=>s.to)];ids.forEach((id,i)=>{const m=byId.get(id),g=svgEl('g',{transform:`translate(${m.x+19},${m.y-20})`});g.append(svgEl('circle',{class:'route-dot',r:17}),svgEl('text',{class:'route-number'},i+1));layer.append(g);});}
+function drawRoute(){const layer=$('routeLayer');layer.replaceChildren();if(!route){updateGraphDetail();return;}for(const s of route.steps){const a=byId.get(s.from),b=byId.get(s.to);layer.append(svgEl('path',{d:edgePath(a,b),class:`route-edge ${s.service?'service':''}`}));}const ids=[route.from,...route.steps.map(s=>s.to)];ids.forEach((id,i)=>{const m=byId.get(id),g=svgEl('g',{transform:`translate(${m.x+19},${m.y-20})`});g.append(svgEl('circle',{class:'route-dot',r:17}),svgEl('text',{class:'route-number'},i+1));layer.append(g);});updateGraphDetail();}
 function fitRoute(ids){const ms=ids.map(id=>byId.get(id)),r=$('mapCanvas').getBoundingClientRect();const minX=Math.min(...ms.map(m=>m.x))-100,maxX=Math.max(...ms.map(m=>m.x))+100,minY=Math.min(...ms.map(m=>m.y))-100,maxY=Math.max(...ms.map(m=>m.y))+100;world.k=Math.min((r.width-90)/(maxX-minX),(r.height-185)/(maxY-minY),1.6);world.k=Math.max(.07,world.k);world.x=(r.width-(minX+maxX)*world.k)/2;world.y=100+(r.height-150-(minY+maxY)*world.k)/2;applyWorld();$('mapIntro').classList.add('is-hidden');}
 
 // Navigation progress is explicit, never inferred from the player's location.
@@ -331,6 +416,7 @@ function navigationGate(index=navigationIndex){
   return step.p||(step.service?byId.get(step.from)?.portals.find(p=>supplementForGate(p,byId.get(step.from))?.id===step.service.id):null);
 }
 function navigationActive(){return !!route&&navigationRoute===route;}
+function navigationArrival(){return navigationActive()&&navigationFollowing?AtlasJourney.arrivalInfo(route,navigationIndex,byId):{portal:null,reason:'start'};}
 function routeStepState(index){return !navigationActive()?'upcoming':index<navigationIndex?'completed':index===navigationIndex?'current':'upcoming';}
 function updateRouteProgress(){
   const start=$('startRoute');if(start)start.textContent=startRouteLabel();
@@ -348,7 +434,7 @@ function renderSceneNavigation(){
   const bar=$('sceneNavigation'),active=navigationActive();bar.hidden=!active;
   $('sceneDialog').classList.toggle('compact-navigation',active&&navigationFollowing&&compactNavigation);
   $('sceneNavCompact').setAttribute('aria-pressed',String(compactNavigation));$('sceneNavCompact').textContent=compactNavigation?L('תצוגה מלאה','Full view'):L('ניווט מצומצם','Compact navigation');
-  if(!active)return;
+  if(!active){notifyView();return;}
   const step=route.steps[navigationIndex],gate=navigationGate();
   const following=navigationFollowing&&sceneId===(step?.from??route.to);
   $('sceneNavStatus').textContent=!following?L('סיור חופשי · המסלול שלך שמור','Free exploration · Your route is saved'):step?L(`מעבר ${navigationIndex+1} מתוך ${route.steps.length}`,`Passage ${navigationIndex+1} of ${route.steps.length}`):L('הגעת למפת היעד','You reached the destination map');
@@ -366,6 +452,20 @@ function renderSceneNavigation(){
   $('sceneNavFocus').hidden=!following||!gate;
   $('sceneNavProgress').max=Math.max(1,route.steps.length);
   $('sceneNavProgress').value=navigationIndex;
+  renderJourneyNavigation(following);notifyView();
+}
+function renderJourneyNavigation(following){
+  const ids=[route.from,...route.steps.map(step=>step.to)],breadcrumb=$('sceneNavBreadcrumb'),picker=$('sceneNavStep'),goalHost=$('sceneNavGoal');
+  if(breadcrumb){
+    const arrival=navigationArrival(),entry=arrival.portal?L(`כניסה מתועדת: שער ${arrival.portal.number}`,`Recorded arrival: portal ${arrival.portal.number}`):arrival.reason==='ambiguous'?L('שם שער הכניסה מופיע בכמה נקודות; לא נבחר מיקום משוער.','The arrival portal name matches several points; no position was guessed.'):L('לא תועד שער כניסה מדויק למעבר הזה.','No exact arrival portal is recorded for this passage.');
+    breadcrumb.innerHTML=`<div class="journey-breadcrumb">${[navigationIndex-1,navigationIndex,navigationIndex+1].filter(index=>index>=0&&index<ids.length).map(index=>`<button type="button" data-route-jump="${index}" ${index===navigationIndex?'aria-current="step"':''}><small>${index<navigationIndex?L('הקודמת','Previous'):index===navigationIndex?L('עכשיו','Current'):L('הבאה','Next')}</small>${eng(byId.get(ids[index]).name)}</button>`).join('')}</div>${following&&navigationIndex>0?`<p class="journey-entry-note">${entry}</p>`:''}`;
+  }
+  if(picker){picker.innerHTML=ids.map((id,index)=>`<option value="${index}">${index+1}. ${esc(byId.get(id).name)}${index===route.steps.length?' · '+L('היעד','Destination'):''}</option>`).join('');picker.value=String(navigationIndex);picker.setAttribute('aria-label',L('כל שלבי המסלול','All route steps'));}
+  if(!goalHost)return;
+  const goal=route.goal,atDestination=following&&navigationIndex===route.steps.length;
+  goalHost.hidden=!goal;if(!goal){goalHost.innerHTML='';return;}
+  const present=new Set((window.HuntData?.mapSpawns?.[route.to]?.points||[]).map(point=>point.mobId)),idsAtDestination=goal.monsterIds.filter(id=>present.has(id));
+  goalHost.innerHTML=`<strong>${L('מטרת המסע','Journey goal')}</strong><p>${esc(window.Hunt?.describeGoal?.(goal)||L('מטרות הציד שבחרתם','Your selected hunting targets'))}</p>${atDestination?`<button type="button" class="button primary" id="sceneNavArrival" ${idsAtDestination.length?'':'disabled'}>${L('הצגת נקודות ההופעה ביעד','Show target spawn points')}</button><small>${idsAtDestination.length?L('הנקודות מבוססות על נתוני המפה; אינן מיקום חי.','Points come from map data; they are not live positions.'):window.HuntData?L('למטרות האלה אין נקודות הופעה מתועדות במפת היעד.','These targets have no recorded spawn points on the destination map.'):L('נתוני נקודות ההופעה עדיין נטענים.','Spawn point data is still loading.')}</small>`:''}`;
 }
 function fitNavigationScene(){
   fitScene();
@@ -378,10 +478,9 @@ function setCompactNavigation(enabled){
 }
 function rerouteFromScene(){
   if(!navigationActive()||!byId.has(sceneId))return false;
-  const destination=route.to,candidate=findRoute(sceneId,destination,routeUsesServices);
+  const destination=route.to,stops=AtlasJourney.remainingStops(route,navigationIndex),goal=route.goal,candidate=findRoute(sceneId,destination,routeUsesServices,stops);
   if(!candidate){$('sceneNavError').textContent=rerouteError();return false;}
-  $('routeFrom').value=mapLabel(byId.get(sceneId));$('routeTo').value=mapLabel(byId.get(destination));$('useServices').checked=routeUsesServices;
-  submitRoute();openRouteStep(0);$('sceneNavCompact').focus();toast(L('המסלול חושב מחדש מהמפה שבחרת לאותו יעד.','Route recalculated from the selected map to the same destination.'));return true;
+  planJourney({from:sceneId,to:destination,stops,services:routeUsesServices,step:0,...(goal?{goal}:{})},{show:true});$('sceneNavCompact').focus();toast(L('המסלול חושב מחדש מהמפה שבחרת לאותו יעד.','Route recalculated from the selected map to the same destination.'));return true;
 }
 function rerouteError(){return L('לא נמצא מסלול מהמפה הזאת עם אפשרויות המעבר שבחרת. המסלול הקודם נשמר; אפשר לחזור אליו או לשנות את אפשרויות התכנון.','No route was found from this map with your selected travel options. Your previous route is saved; return to it or change the route options.');}
 function travelScenePortal(key){
@@ -389,7 +488,7 @@ function travelScenePortal(key){
   const supplement=supplementForGate(p,m),target=byId.get(p.kind==='cross'?p.to:supplement?.to);
   if(!target){pickGate(key,true);return;}
   if(navigationActive()&&navigationFollowing&&navigationGate()?.key===key){openRouteStep(navigationIndex+1);return;}
-  const arrivals=target.portals.filter(q=>q.name===p.toPortal);
+  const arrivals=p.kind==='cross'&&p.to===target.id&&p.toPortal?target.portals.filter(q=>q.name===p.toPortal):[];
   selectMap(target.id,{scroll:false});
   openScene(target.id,arrivals.length===1?arrivals[0].key:null);
 }
@@ -404,11 +503,25 @@ function loadSceneImage(retry=false){
   image.onerror=()=>{if(sceneId!==requestedMap)return;status.dataset.state='error';$('sceneImageMessage').textContent=L("תמונת המפה לא נטענה. השערים והמיקומים עדיין זמינים ברשימה.","The map image could not load. Portals and locations are still available in the list.");$('sceneImageRetry').hidden=false;$('sceneCanvas').setAttribute('aria-busy','false');};
   image.setAttribute('href',retry?`${m.image}?retry=${Date.now()}`:m.image);
 }
-function openScene(id,gateKey=null,options={}){const m=byId.get(Number(id));if(!m)return;navigationFollowing=options.following===true;sceneId=m.id;window.AtlasPersonal?.visit(m.id);selectedGate=gateKey;const gate=m.portals.find(p=>p.key===gateKey);sceneKind=gate?displayKind(gate,m):'cross';$('sceneTitle').textContent=m.name;$('sceneRegion').textContent=groupLabel(m);$('sceneImage').setAttribute('width',m.width||3000);$('sceneImage').setAttribute('height',m.height||1500);loadSceneImage();$('originalImage').href=m.originalImage||m.image;if(!$('sceneDialog').open)$('sceneDialog').showModal();setSceneLayer('portals',[]);renderSceneNavigation();requestAnimationFrame(()=>{fitNavigationScene();if(gate&&!compactNavigation)pickGate(gate.key,false);});}
+function openScene(id,gateKey=null,options={}){const m=byId.get(Number(id));if(!m)return;navigationFollowing=options.following===true;sceneId=m.id;window.AtlasPersonal?.visit(m.id);selectedGate=gateKey;const gate=m.portals.find(p=>p.key===gateKey);sceneKind=gate?displayKind(gate,m):'cross';$('sceneTitle').textContent=m.name;$('sceneRegion').textContent=groupLabel(m);$('sceneImage').setAttribute('width',m.width||3000);$('sceneImage').setAttribute('height',m.height||1500);loadSceneImage();$('originalImage').href=m.originalImage||m.image;if(!$('sceneDialog').open)$('sceneDialog').showModal();setSceneLayer('portals',[]);renderSceneNavigation();$('sceneNavigation').scrollTop=0;requestAnimationFrame(()=>{fitNavigationScene();if(gate&&!compactNavigation)pickGate(gate.key,false);});}
 function fitScene(){const m=byId.get(sceneId);if(!m)return;const r=$('sceneCanvas').getBoundingClientRect(),w=m.width||3000,h=m.height||1500;scene.k=Math.min((r.width-48)/w,(r.height-60)/h);scene.x=(r.width-w*scene.k)/2;scene.y=(r.height-h*scene.k)/2;applyScene();}
 function applyScene(){const m=byId.get(sceneId);if(!m)return;$('sceneViewport').setAttribute('transform',`translate(${scene.x},${scene.y}) scale(${scene.k})`);for(const pin of portalPinElements.values()){pin.querySelector('circle').setAttribute('r',12/scene.k);pin.querySelector('circle').setAttribute('stroke-width',1.7/scene.k);pin.querySelector('text').setAttribute('font-size',11/scene.k);}for(const pin of entityPinElements.values()){pin.querySelector('circle').setAttribute('r',(pin.classList.contains('boss')?14:11)/scene.k);pin.querySelector('circle').setAttribute('stroke-width',1.7/scene.k);pin.querySelector('text').setAttribute('font-size',10/scene.k);}document.querySelectorAll('.internal-path').forEach(p=>{p.setAttribute('stroke-width',2/scene.k);p.setAttribute('stroke-dasharray',`${6/scene.k} ${5/scene.k}`);});}
 function zoomScene(factor,cx,cy){const r=$('sceneCanvas').getBoundingClientRect();cx??=r.width/2;cy??=r.height/2;const k=Math.max(.015,Math.min(3,scene.k*factor)),ratio=k/scene.k;scene.x=cx-(cx-scene.x)*ratio;scene.y=cy-(cy-scene.y)*ratio;scene.k=k;applyScene();}
-function renderScenePins(){const m=byId.get(sceneId);$('scenePins').replaceChildren();portalPinElements.clear();for(const p of m.portals){if(sceneKind!=='all'&&displayKind(p,m)!==sceneKind)continue;const g=svgEl('g',{class:`scene-pin ${p.kind} ${p.noEffect?'no-effect':''} ${p.key===selectedGate?'chosen':''} ${navigationActive()&&navigationFollowing&&navigationGate()?.key===p.key?'route-required':''}`,transform:`translate(${p.x},${p.y})`,role:'button',tabindex:'0','aria-label':`${L('שער','Portal')} ${p.number}: ${portalTarget(p,m)}`});g.append(svgEl('circle',{r:12/scene.k}),svgEl('text',{'font-size':11/scene.k},p.number));g.addEventListener('click',e=>{e.stopPropagation();if(!sceneDragging)pickGate(p.key,false);});g.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();pickGate(p.key,false);}});$('scenePins').append(g);portalPinElements.set(p.key,g);}drawInternal();applyScene();}
+function renderScenePins(){
+  const m=byId.get(sceneId),arrival=navigationArrival().portal,required=navigationActive()&&navigationFollowing?navigationGate():null;
+  $('scenePins').replaceChildren();portalPinElements.clear();
+  for(const p of m.portals){
+    const isArrival=arrival?.key===p.key,isRequired=required?.key===p.key;
+    if(sceneKind!=='all'&&displayKind(p,m)!==sceneKind&&!isArrival&&!isRequired)continue;
+    const role=[isArrival?L('כניסה מתועדת','Recorded arrival'):'',isRequired?L('היציאה הבאה','Next exit'):''].filter(Boolean).join(' · ');
+    const g=svgEl('g',{class:`scene-pin ${p.kind} ${p.noEffect?'no-effect':''} ${p.key===selectedGate?'chosen':''} ${isRequired?'route-required':''} ${isArrival?'route-arrival':''}`,transform:`translate(${p.x},${p.y})`,role:'button',tabindex:'0','aria-label':`${L('שער','Portal')} ${p.number}: ${portalTarget(p,m)}${role?' · '+role:''}`});
+    g.append(svgEl('circle',{r:12/scene.k}),svgEl('text',{'font-size':11/scene.k},p.number));
+    g.addEventListener('click',e=>{e.stopPropagation();if(!sceneDragging)pickGate(p.key,false);});
+    g.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();pickGate(p.key,false);}});
+    $('scenePins').append(g);portalPinElements.set(p.key,g);
+  }
+  drawInternal();applyScene();
+}
 function renderSceneSidebar(){const m=byId.get(sceneId);document.querySelectorAll('#sceneFilters button').forEach(b=>b.classList.toggle('active',b.dataset.kind===sceneKind));const ps=m.portals.filter(p=>sceneKind==='all'||displayKind(p,m)===sceneKind);let text='';if(sceneKind==='unknown')text=`<p class="section-note">${L('נקודות ללא יעד קבוע. אין להסיק שכל נקודה כזאת היא שער פעיל.','Points without a fixed destination. Not every point is an active portal.')}</p>`;if(sceneKind==='internal')text=`<p class="section-note">${L('בחרו שער כדי לראות גם את נקודת הנחיתה שלו. קו מופיע רק אם נקודת היעד נמצאה בשמה.','Select a portal to see its arrival point. A line appears only when a destination with the matching name is found.')}</p>`;$('scenePortalList').innerHTML=text+(ps.length?ps.map(p=>portalCard(p,m,true)).join(''):`<p class="empty-state">${L('אין שערים מהסוג הזה במפה.','This map has no portals of this type.')}</p>`);renderSceneSelected();}
 function renderSceneSelected(){
   const m=byId.get(sceneId),p=m.portals.find(p=>p.key===selectedGate);if(!p){$('sceneSelected').innerHTML='';return;}
@@ -505,6 +618,9 @@ function renderHuntAbout(){
 function refreshLanguage(){
   if(!atlas)return;
   const selectedSearch=activeSearchResults[searchIndex],searchOpen=!$('searchResults').hidden;
+  const invalidStops=routeStopValues.map((_,index)=>$('routeStop'+index)?.getAttribute('aria-invalid')==='true');
+  routeStopValues=readRouteStops();renderRouteStops();invalidStops.forEach((invalid,index)=>{if(invalid){$('routeStop'+index).setAttribute('aria-invalid','true');$('routeStop'+index+'Error').textContent=routeInputError();}});
+  renderRouteAlternatives();renderRouteGoal();
   renderDetails();renderDirectoryGroups();
   if(!$('directory').hidden)renderDirectory();
   if(searchOpen&&$('search').value.trim()){
@@ -531,15 +647,30 @@ function renderLoadingError(){
 }
 function bindEvents(){
   window.addEventListener('atlas-languagechange',refreshLanguage);
+  $('routeAddStop')?.addEventListener('click',()=>addStop());
+  $('routeSwap')?.addEventListener('click',swapRouteEnds);
+  $('routeStops')?.addEventListener('input',event=>{const index=Number(event.target.dataset.routeStop);if(Number.isInteger(index)&&index>=0&&index<routeStopValues.length){routeStopValues[index]=event.target.value;event.target.removeAttribute('aria-invalid');$('routeStop'+index+'Error').textContent='';}});
+  $('routeStops')?.addEventListener('click',event=>{
+    const remove=event.target.closest('[data-stop-remove]'),move=event.target.closest('[data-stop-move]');if(!remove&&!move)return;
+    routeStopValues=readRouteStops();const index=Number((remove||move).dataset[remove?'stopRemove':'stopMove']);if(!Number.isInteger(index)||index<0||index>=routeStopValues.length)return;
+    let focus=index;if(remove)routeStopValues.splice(index,1);else{const direction=Number(move.dataset.stopDirection),next=index+direction;if(![-1,1].includes(direction)||next<0||next>=routeStopValues.length)return;[routeStopValues[index],routeStopValues[next]]=[routeStopValues[next],routeStopValues[index]];focus=next;}
+    renderRouteStops();($('routeStop'+Math.min(focus,routeStopValues.length-1))||$('routeAddStop'))?.focus();
+  });
+  $('routeAlternatives')?.addEventListener('click',event=>{const button=event.target.closest('[data-route-policy]');if(!button||!routeChoices)return;const key=button.dataset.routePolicy;if(!['ordinary','conditional'].includes(key)||!routeChoices[key])return;planJourney({...routeChoices.recipe,services:key==='conditional'});});
+  $('routeGoal')?.addEventListener('click',event=>{if(event.target.id!=='routeClearGoal')return;pendingRouteGoal=null;pendingGoalDestination=null;if(route)delete route.goal;if(routeChoices){delete routeChoices.recipe.goal;for(const candidate of [routeChoices.ordinary,routeChoices.conditional])if(candidate)delete candidate.goal;}window.AtlasPersonal?.saveJourney();renderRouteGoal();renderSceneNavigation();});
+  $('sceneNavBreadcrumb')?.addEventListener('click',event=>{const button=event.target.closest('[data-route-jump]');if(button)openRouteStep(Number(button.dataset.routeJump));});
+  $('sceneNavStep')?.addEventListener('change',event=>openRouteStep(Number(event.target.value)));
+  $('sceneNavGoal')?.addEventListener('click',event=>{if(event.target.id!=='sceneNavArrival'||!navigationActive()||!navigationFollowing||navigationIndex!==route.steps.length||!route.goal)return;const present=new Set((window.HuntData?.mapSpawns?.[route.to]?.points||[]).map(point=>point.mobId)),ids=route.goal.monsterIds.filter(id=>present.has(id));if(!ids.length)return;setCompactNavigation(false);setSceneLayer('monsters',ids);fitScene();notifyView();});
+  $('sceneDialog').addEventListener('close',notifyView);
   $('search').addEventListener('input',renderSearch);$('search').addEventListener('focus',()=>{if($('search').value.trim())renderSearch();});$('search').addEventListener('keydown',handleSearchKey);
   $('searchResults').addEventListener('click',e=>{const b=e.target.closest('[data-id]');if(b)chooseSearch(b.dataset.id,b.dataset.kind);});document.addEventListener('click',e=>{if(!e.target.closest('.search-wrap'))closeSearch();});
-  document.addEventListener('keydown',e=>{if(e.key==='/'&&!['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)&&!$('sceneDialog').open&&!$('aboutDialog').open){e.preventDefault();$('search').focus();}});
+  document.addEventListener('keydown',e=>{if(e.key==='/'&&!['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)&&!document.activeElement.isContentEditable&&!document.querySelector('dialog[open]')){e.preventDefault();$('search').focus();}});
   document.querySelectorAll('.region-nav [data-region]').forEach(b=>b.addEventListener('click',()=>{currentRegion=b.dataset.region;document.querySelectorAll('.region-nav [data-region]').forEach(btn=>btn.classList.toggle('active',btn===b));updateVisibleNodes();fitWorld();$('directory').hidden=true;}));
   $('zoomIn').addEventListener('click',()=>zoomWorld(1.35));$('zoomOut').addEventListener('click',()=>zoomWorld(1/1.35));$('fitMap').addEventListener('click',fitWorld);$('labelsToggle').addEventListener('click',()=>{showAllLabels=!showAllLabels;$('labelsToggle').setAttribute('aria-pressed',String(showAllLabels));applyWorld();});
   $('directoryToggle').addEventListener('click',openDirectory);$('closeDirectory').addEventListener('click',()=>$('directory').hidden=true);$('directorySearch').addEventListener('input',renderDirectory);$('directoryGroup').addEventListener('change',renderDirectory);$('directoryGrid').addEventListener('click',e=>{const card=e.target.closest('[data-id]');if(card){$('directory').hidden=true;selectMap(card.dataset.id,{focus:true});}});
   $('routeToggle').addEventListener('click',()=>{if($('routePanel').hidden)openRoute();else{$('routePanel').hidden=true;$('routeToggle').setAttribute('aria-pressed','false');}});$('closeRoute').addEventListener('click',()=>{$('routePanel').hidden=true;$('routeToggle').setAttribute('aria-pressed','false');});$('routeForm').addEventListener('submit',submitRoute);
-  $('routeResult').addEventListener('click',e=>{if(e.target.id==='shareRoute'){window.AtlasPersonal?.share();return;}if(e.target.id==='restartRoute'){openRouteStep(0);return;}if(e.target.id==='startRoute'){openRouteStep(navigationActive()?navigationIndex:0);return;}const gate=e.target.closest('[data-route-scene]');if(gate){const index=gate.dataset.routeIndex!==undefined?Number(gate.dataset.routeIndex):route?.steps.findIndex((s,i)=>s.from===Number(gate.dataset.routeScene)&&navigationGate(i)?.key===gate.dataset.routeGate);openRouteStep(index);return;}const map=e.target.closest('[data-route-map]');if(map)selectMap(map.dataset.routeMap,{focus:true,scroll:false});if(e.target.id==='clearRoute'){route=null;navigationRoute=null;navigationIndex=0;window.AtlasPersonal?.saveJourney();renderSceneNavigation();drawRoute();$('routeResult').innerHTML='';$('routeRestoreNote').textContent='';$('routeShareBox').hidden=true;}});
-  $('mapDetails').addEventListener('click',e=>{const tab=e.target.closest('[data-tab]');if(tab){detailsTab=tab.dataset.tab;renderPortalContent();return;}const b=e.target.closest('[data-action]');if(!b)return;const m=byId.get(activeId),p=m.portals.find(p=>p.key===b.dataset.gate);switch(b.dataset.action){case'favorite':window.AtlasPersonal?.toggle(m.id);break;case'open-scene':openScene(m.id);break;case'map-monsters':openSpawns(m.id);break;case'map-npcs':openNpcs(m.id);break;case'route-from':openRoute();$('routeFrom').value=mapLabel(m);$('routeTo').focus();break;case'route-to':{const old=routeMap($('routeFrom').value);openRoute();if(!old||old.id===m.id)$('routeFrom').value=mapLabel(byId.get(10001000)||maps[0]);$('routeTo').value=mapLabel(m);$('routeFrom').focus();break;}case'portal-go':if(p?.kind==='cross')selectMap(p.to,{focus:true});else if(p)openScene(m.id,p.key);break;case'locate':if(p)openScene(m.id,p.key);break;case'incoming':selectMap(b.dataset.from,{focus:true});break;case'incoming-scene':openScene(Number(b.dataset.from),b.dataset.gate);break;case'service-target':if(b.dataset.target)selectMap(b.dataset.target,{focus:true});else toast(L("למעבר הזה אין יעד קבוע. הפרטים מופיעים בתנאי השירות.","This passage has no fixed destination. See its requirements for details."));break;}});
+  $('routeResult').addEventListener('click',e=>{if(e.target.id==='shareRoute'){window.AtlasPersonal?.share();return;}if(e.target.id==='restartRoute'){openRouteStep(0);return;}if(e.target.id==='startRoute'){openRouteStep(navigationActive()?navigationIndex:0);return;}const gate=e.target.closest('[data-route-scene]');if(gate){const index=gate.dataset.routeIndex!==undefined?Number(gate.dataset.routeIndex):route?.steps.findIndex((s,i)=>s.from===Number(gate.dataset.routeScene)&&navigationGate(i)?.key===gate.dataset.routeGate);openRouteStep(index);return;}const map=e.target.closest('[data-route-map]');if(map)selectMap(map.dataset.routeMap,{focus:true,scroll:false});if(e.target.id==='clearRoute'){route=null;navigationRoute=null;navigationIndex=0;routeChoices=null;pendingRouteGoal=null;pendingGoalDestination=null;renderRouteAlternatives();renderRouteGoal();window.AtlasPersonal?.saveJourney();renderSceneNavigation();drawRoute();$('routeResult').innerHTML='';$('routeRestoreNote').textContent='';$('routeShareBox').hidden=true;}});
+  $('mapDetails').addEventListener('click',e=>{const tab=e.target.closest('[data-tab]');if(tab){detailsTab=tab.dataset.tab;renderPortalContent();return;}const b=e.target.closest('[data-action]');if(!b)return;const m=byId.get(activeId),p=m.portals.find(p=>p.key===b.dataset.gate);switch(b.dataset.action){case'favorite':window.AtlasPersonal?.toggle(m.id);break;case'open-scene':openScene(m.id);break;case'map-monsters':openSpawns(m.id);break;case'map-npcs':openNpcs(m.id);break;case'route-from':openRoute();$('routeFrom').value=mapLabel(m);$('routeTo').focus();break;case'route-to':{const old=routeMap($('routeFrom').value);openRoute();if(!old||old.id===m.id){const origin=defaultRouteOrigin();$('routeFrom').value=mapLabel(origin&&origin.id!==m.id?origin:byId.get(10001000)||maps[0]);}$('routeTo').value=mapLabel(m);$('routeFrom').focus();break;}case'portal-go':if(p?.kind==='cross')selectMap(p.to,{focus:true});else if(p)openScene(m.id,p.key);break;case'locate':if(p)openScene(m.id,p.key);break;case'incoming':selectMap(b.dataset.from,{focus:true});break;case'incoming-scene':openScene(Number(b.dataset.from),b.dataset.gate);break;case'service-target':if(b.dataset.target)selectMap(b.dataset.target,{focus:true});else toast(L("למעבר הזה אין יעד קבוע. הפרטים מופיעים בתנאי השירות.","This passage has no fixed destination. See its requirements for details."));break;}});
   $('sceneNavCompact').addEventListener('click',()=>setCompactNavigation(!compactNavigation));
   $('sceneNavReroute').addEventListener('click',rerouteFromScene);
   for(const id of ['routeFrom','routeTo'])$(id).addEventListener('input',()=>{$(id).removeAttribute('aria-invalid');$(id+'Error').textContent='';});
@@ -553,7 +684,7 @@ function bindEvents(){
   $('sceneImageRetry').addEventListener('click',()=>loadSceneImage(true));
   $('sceneEntitySummary').addEventListener('click',e=>{if(e.target.id==='sceneShowAll')setSceneLayer(sceneLayer,[]);if(e.target.id==='sceneRetryCatalog'){$('sceneDialog').close();window.Hunt?.open('monster');}});
   window.addEventListener('hunt-unavailable',()=>{if($('sceneDialog').open&&sceneLayer==='monsters')setSceneLayer(sceneLayer,sceneEntityIds);});
-  window.addEventListener('hunt-ready',()=>{renderDetails();if($('search').value)renderSearch();renderHuntAbout();if($('sceneDialog').open&&sceneLayer!=='portals')setSceneLayer(sceneLayer,sceneEntityIds);});
+  window.addEventListener('hunt-ready',()=>{const rerouteFailed=!!$('sceneNavError').textContent;renderDetails();if($('search').value)renderSearch();renderHuntAbout();renderRouteGoal();renderSceneNavigation();if(rerouteFailed)$('sceneNavError').textContent=rerouteError();if($('sceneDialog').open&&sceneLayer!=='portals')setSceneLayer(sceneLayer,sceneEntityIds);});
   const about=()=>{renderHuntAbout();$('aboutDialog').showModal();};$('aboutButton').addEventListener('click',about);$('coverageButton').addEventListener('click',about);$('closeAbout').addEventListener('click',()=>$('aboutDialog').close());$('aboutDialog').addEventListener('click',e=>{if(e.target===$('aboutDialog')){const r=$('aboutDialog').getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)$('aboutDialog').close();}});
   document.querySelector('.brand').addEventListener('click',e=>{e.preventDefault();currentRegion='world';document.querySelectorAll('.region-nav [data-region]').forEach(b=>b.classList.toggle('active',b.dataset.region==='world'));updateVisibleNodes();fitWorld();});
   enablePanZoom($('worldSvg'),'world');enablePanZoom($('sceneSvg'),'scene');let resizeTimer;window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{fitWorld();if($('sceneDialog').open)fitNavigationScene();},180);});window.addEventListener('hashchange',()=>{const id=location.hash.match(/map=(\d+)/);if(id)selectMap(Number(id[1]),{focus:true,hash:false});});
@@ -563,12 +694,12 @@ async function init(){
   try{const response=await fetch('atlas-data.json');if(!response.ok)throw Error(`data ${response.status}`);atlas=await response.json();maps=atlas.maps;groups=atlas.groups;byId=new Map(maps.map(m=>[m.id,m]));incoming=new Map();adjacency=new Map();for(const m of maps){const out=[];for(const p of m.portals){if(p.kind==='cross'&&byId.has(p.to)){out.push({to:p.to,p});if(!incoming.has(p.to))incoming.set(p.to,[]);incoming.get(p.to).push({from:m,p});}}adjacency.set(m.id,out);}
     $('mapCount').textContent=maps.length;$('mapOptions').innerHTML=maps.map(m=>`<option value="${esc(mapLabel(m))}"></option>`).join('');renderDirectoryGroups();
     window.MapSearch?.init({maps,groupLabel,groupTerms:m=>{const g=groupId(m.group);return `${g?.he||''} ${g?.en||''} ${window.AtlasTranslations?.[g?.he]||''}`;}});
-    buildWorld();renderAbout();bindEvents();const hash=location.hash.match(/map=(\d+)/);selectMap(hash&&byId.has(Number(hash[1]))?Number(hash[1]):10001000,{hash:false,scroll:false});$('loading').hidden=true;requestAnimationFrame(()=>{fitWorld();if(hash)centerOnMap(byId.get(activeId));});
-    window.Atlas={get data(){return atlas},findRoute,selectMap,openScene,openSpawns,openNpcs,planTo,get activeMap(){return activeId},get currentRoute(){return route},fitWorld};
+    buildWorld();renderAbout();renderRouteStops();bindEvents();const hash=location.hash.match(/map=(\d+)/);selectMap(hash&&byId.has(Number(hash[1]))?Number(hash[1]):10001000,{hash:false,scroll:false});$('loading').hidden=true;requestAnimationFrame(()=>{fitWorld();if(hash)centerOnMap(byId.get(activeId));});
+    window.Atlas={get data(){return atlas},findRoute,selectMap,openScene,openSpawns,openNpcs,planTo,planJourney,getJourney,addStop,swapRouteEnds,openRoute,getContext,describeMap,get activeMap(){return activeId},get currentRoute(){return route},fitWorld};
     window.AtlasPersonal?.init({maps:byId,version:`${atlas.meta.version||''}:${atlas.meta.asOf}`,escape:esc,notice:toast,
       getRoute:()=>route,getStep:()=>navigationActive()?navigationIndex:0,getServices:()=>routeUsesServices,
       refresh:renderDetails,select:id=>selectMap(id,{focus:true}),
-      restore:saved=>{openRoute();$('routeFrom').value=mapLabel(byId.get(saved.from));$('routeTo').value=mapLabel(byId.get(saved.to));$('useServices').checked=saved.services;submitRoute(null,{persist:false});return !!route;},
+      restore:saved=>planJourney(saved,{persist:false,restoreStep:false}),
       resume:(index,show)=>openRouteStep(index,{show})});
     window.dispatchEvent(new Event('atlas-ready'));
   }catch(error){renderLoadingError();window.addEventListener('atlas-languagechange',renderLoadingError);console.error('Atlas loading failed',error);}
