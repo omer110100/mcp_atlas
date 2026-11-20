@@ -78,7 +78,7 @@
   function scan(root){if(root.matches?.(TARGETS))attach(root);root.querySelectorAll?.(TARGETS).forEach(attach);}
   function init(options){
     maps=Array.isArray(options.maps)?options.maps:[...options.maps.values()];byId=new Map(maps.map(m=>[m.id,m]));groupLabel=options.groupLabel||(()=> '');
-    records=maps.map(map=>{const name=norm(map.name),localAliases=aliasEntries.filter(([,en])=>name.includes(en)).map(([he])=>he).join(' ');return {map,name,text:norm(`${map.name} ${map.id} ${map.street||''} ${groupLabel(map)} ${window.AtlasTranslations?.[groupLabel(map)]||Object.entries(window.AtlasTranslations||{}).find(([,en])=>en===groupLabel(map))?.[0]||''} ${localAliases}`)};});
+    records=maps.map(map=>{const name=norm(map.name),localAliases=aliasEntries.filter(([,en])=>name.includes(en)).map(([he])=>he).join(' ');return {map,name,text:norm(`${map.name} ${map.id} ${map.street||''} ${groupLabel(map)} ${options.groupTerms?.(map)||''} ${window.AtlasTranslations?.[groupLabel(map)]||Object.entries(window.AtlasTranslations||{}).find(([,en])=>en===groupLabel(map))?.[0]||''} ${localAliases}`)};});
     scan(document);
     if(!observer&&typeof MutationObserver!=='undefined'){
       observer=new MutationObserver(changes=>{for(const change of changes)for(const node of change.addedNodes)if(node.nodeType===1)scan(node);});

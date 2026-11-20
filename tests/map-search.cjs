@@ -102,4 +102,7 @@ check('language switch never touches detached comboboxes',detached.every(box=>bo
 check('open combobox localizes suggestions while preserving the typed Hebrew query',current.value==='אליניה'&&currentList.getAttribute('aria-label')==='Game map suggestions'&&!/[\u0590-\u05ff]/.test(currentList.children[0].children[1].textContent)&&currentNote.textContent.includes('Showing 8 of'));
 check('closed connected combobox labels also update on language change',list.hidden&&list.getAttribute('aria-label')==='Game map suggestions');
 check('English region search remains available after language change',search.search('Forests',atlas.maps.length).length>5);
+search.init({maps:atlas.maps,groupLabel:m=>atlas.groups.find(g=>g.id===m.group)?.en||'',groupTerms:m=>{const g=atlas.groups.find(g=>g.id===m.group);return `${g?.he||''} ${g?.en||''} ${ctx.window.AtlasTranslations[g?.he]||''}`;}});
+check('English-first visits keep Hebrew region phrases searchable',search.search('והיערות',atlas.maps.length).length>5);
+check('English-first visits keep translated descriptive regions searchable',search.search('Forests',atlas.maps.length).length>5);
 const failures=results.filter(r=>!r.passed);console.log(JSON.stringify({checks:results.length,failed:failures.length,failures}));process.exitCode=failures.length?1:0;
