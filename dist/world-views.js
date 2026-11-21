@@ -2,7 +2,7 @@
 // Presentation coordinates only. Source map, portal and spawn coordinates stay untouched.
 (() => {
   /** @typedef {{x:number,y:number}} Point */
-  const modes=Object.freeze(['atlas','metro','celestial','board']);
+  const modes=Object.freeze(['atlas','metro','celestial','board','storybook']);
   const GAP=64, MARGIN=96, MAX_ROW=3080;
   const round=value=>Math.round(value*100)/100;
   const idOrder=(a,b)=>Number(Boolean(b.major))-Number(Boolean(a.major))||Number(Boolean(b.isTown))-Number(Boolean(a.isTown))||a.id-b.id;
@@ -101,7 +101,7 @@
     const mode=modes.includes(requestedMode)?requestedMode:'atlas',entries=records(atlas),positions=new Map(),panels=[];
     const aspectRatio=options?.aspectRatio;
     const rowWidth=Number.isFinite(aspectRatio)&&aspectRatio>0?(aspectRatio>=1.5?4600:aspectRatio<1?2500:MAX_ROW):MAX_ROW;
-    if(mode==='atlas'){
+    if(mode==='atlas'||mode==='storybook'){
       for(const map of atlas.maps){
         if(!Number.isFinite(map.x)||!Number.isFinite(map.y))throw new TypeError('Original atlas positions must be finite.');
         positions.set(map.id,{x:map.x,y:map.y});

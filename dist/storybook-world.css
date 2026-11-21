@@ -1,0 +1,59 @@
+/* An illustrated backdrop for the original complete connection graph.
+   The painting is decorative: it does not define map or portal positions. */
+html[data-world-view="storybook"] .map-canvas {
+  background:#d7e9d1 url('assets/maplestory/storybook-world.webp') center / cover no-repeat;
+}
+html[data-world-view="storybook"] .map-canvas::before {
+  background:radial-gradient(ellipse at center,#fffcead9 0%,#fffceabf 52%,#fffcea33 88%);
+  mask-image:none;opacity:1;
+}
+html.atlas-shell[data-world-view="storybook"] .map-canvas::after {
+  background-image:none;
+  box-shadow:inset 0 0 100px #fff5d84d;
+}
+html[data-world-view="storybook"] .maple-grove {display:none;}
+html[data-world-view="storybook"] #landLayer > :is(path,ellipse,circle,.decor-tree) {display:none;}
+html[data-world-view="storybook"] #worldSvg .land-title,
+html[data-world-view="storybook"] #worldSvg .group-label {
+  fill:#486d57;stroke:#fff9e6;stroke-width:5;paint-order:stroke;opacity:.75;
+}
+html[data-world-view="storybook"] #worldSvg .world-edge {
+  stroke:#315b44;stroke-opacity:.86;stroke-width:1.55;vector-effect:non-scaling-stroke;filter:none;
+}
+html[data-world-view="storybook"] #worldSvg .world-edge.no-effect {stroke:#87598e;stroke-dasharray:5 7;}
+html[data-world-view="storybook"] #worldSvg .world-edge.service {stroke:#9a702e;stroke-dasharray:12 9;}
+html[data-world-view="storybook"] #worldSvg .world-edge.dimmed {stroke-opacity:.07;}
+html[data-world-view="storybook"] #worldSvg .world-edge.highlighted {
+  stroke:#174b2c;stroke-opacity:1;stroke-width:2.5;filter:drop-shadow(0 1px 1px #fffce3);
+}
+html[data-world-view="storybook"] #worldSvg .world-edge.no-effect.highlighted {stroke:#734386;}
+html[data-world-view="storybook"] #worldSvg .node-dot {fill:#fffdf0;stroke:#315b3d;stroke-width:1.25;vector-effect:non-scaling-stroke;}
+html[data-world-view="storybook"] #worldSvg .node-secret {fill:#e5caec;stroke:#76518a;}
+html[data-world-view="storybook"] #worldSvg .town-base {
+  fill:#fff3cd;stroke:#795125;stroke-width:1.8;vector-effect:non-scaling-stroke;filter:drop-shadow(0 2px 2px #45633a44);
+}
+html[data-world-view="storybook"] #worldSvg .town-glyph {stroke:#6d572e;}
+html[data-world-view="storybook"] #worldSvg .node-label {
+  fill:#193f2b;stroke:#fffdf0;stroke-width:2.8;vector-effect:non-scaling-stroke;paint-order:stroke;
+}
+html[data-world-view="storybook"] #worldSvg .town-label {fill:#493019;stroke:#fff9e5;stroke-width:3.5;font-weight:600;}
+html[data-world-view="storybook"] #worldSvg .world-node.selected :is(.node-dot,.town-base) {fill:#ffd98a;stroke:#a4441e;}
+html[data-world-view="storybook"] #worldSvg .world-node.neighbor .node-dot {fill:#ecf4cb;stroke:#357543;}
+html[data-world-view="storybook"] #worldSvg .world-node .node-halo {stroke:#9f642b;filter:none;}
+html[data-world-view="storybook"] #worldSvg .world-node.selected .node-halo {stroke:#ab4b23;}
+html[data-world-view="storybook"] #worldSvg .route-edge {
+  stroke:#aa421e;stroke-width:3.5;vector-effect:non-scaling-stroke;filter:drop-shadow(0 1px 2px #fff8d9);
+}
+html[data-world-view="storybook"] #worldSvg .world-node.reachable-map .node-dot {fill:#d4efad;stroke:#2f6c3e;}
+html[data-world-view="storybook"] #worldSvg .world-node.reachability-origin :is(.node-dot,.town-base) {fill:#ffe4a1;stroke:#a24b1f;}
+.preview-storybook {
+  background:#d7e9d1 url('assets/maplestory/storybook-world.webp') center / cover;
+}
+.preview-storybook svg {background:#fff9dd55;stroke:#436b4e;fill:#fff2c4;}
+.preview-storybook .preview-land {fill:#d7e7ad88;stroke:#748e5d;}
+@media(forced-colors:active) {
+  html[data-world-view="storybook"] .map-canvas {background:Canvas;}
+  html[data-world-view="storybook"] #worldSvg :is(.world-edge,.route-edge) {stroke:CanvasText;}
+  html[data-world-view="storybook"] #worldSvg .node-label {fill:CanvasText;stroke:Canvas;}
+  html[data-world-view="storybook"] #worldSvg :is(.node-dot,.town-base) {fill:Canvas;stroke:CanvasText;}
+}

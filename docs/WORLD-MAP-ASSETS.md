@@ -1,5 +1,11 @@
 # Authentic Classic World map artwork
 
+Historical provenance: the owner clarified on 2026-11-21 that the interactive
+view should retain the full schematic graph with an illustrated backdrop.
+The game-sheet modules and images below are retained as archived research but
+are no longer loaded by the app. Storybook replaces the former `classic` view;
+see `STORYBOOK-ART.md` for the background now displayed.
+
 Retrieved 2026-11-21. These are actual MapleStory Classic World game sheets, not
 generated illustrations or the atlas's schematic graph layout.
 

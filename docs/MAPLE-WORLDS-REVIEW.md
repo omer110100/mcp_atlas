@@ -14,13 +14,14 @@ is recorded separately in the workspace's production release receipts.
   sprites, leaves and a portal. Motion can be disabled. Crowded and mobile
   layouts hide ambient decorations.
 - Five independent world views: the existing atlas; an open transit diagram;
-  regional constellations; a postcard board; and authentic Victoria/Maple
-  Island world sheets. Wide displays use wider regional packing. Region
-  headings can be activated to focus their maps.
-- The original sheets contain 76 documented spots covering 281 map IDs.
-  Shared spots open a bounded map chooser instead of overlapping hit targets.
-  The other 83 map records stay available in a clearly labeled extension
-  panel. No physical positions are invented for them on the original art.
+  regional constellations; a postcard board; and Storybook, the complete
+  original atlas graph over an original illustrated fantasy backdrop.
+  Wide displays use wider regional packing in the organized layouts.
+- The owner clarified that literal game world sheets were not the intended
+  result. Storybook preserves all original node coordinates and connections;
+  the illustration does not define geography. A previous `classic` preference
+  migrates to `storybook`, including when storage writes are unavailable.
+  The game-sheet research is retained but its modules are not loaded by the app.
 - Every view retains all 364 map IDs, routing, selected map, scene coordinates,
   navigation progress, region filters and reachability indicators. A view is
   a presentation layer, not a replacement dataset or route graph.
@@ -42,6 +43,7 @@ is recorded separately in the workspace's production release receipts.
 | Theme | `dist/maple-theme.css`, `dist/maple-theme.js`, `dist/assets/maplestory/logo.webp`, `dist/assets/maplestory/henesys.webp` |
 | World views | `dist/world-views.js`, `dist/world-views.css`, `dist/world-presentation.js`, `dist/world-view-controls.js`, `dist/world-view-controls.css` |
 | Original game map | `dist/world-map-art.js`, `dist/world-art-layout.js`, `dist/world-clusters.js`, `dist/assets/worldmaps/victoria-island.png`, `dist/assets/worldmaps/maple-island.png` |
+| Corrected illustrated view | `dist/storybook-world.css`, `dist/assets/maplestory/storybook-world.webp`, `docs/STORYBOOK-ART.md`; original game-map research above is archived, not loaded |
 | Privacy and notices | `dist/legal.html`, `dist/legal.css`, `dist/legal.js`, `dist/privacy-tools.js`, `dist/privacy-tools.css` |
 | Fonts | `dist/fonts.css`; five WOFF2 subsets, two OFL texts and `SOURCES.json` in `dist/assets/fonts/` |
 | Tests | `tests/world-views.cjs`, `tests/privacy-tools.cjs`, `tests/atlas-graph.cjs`, `tests/preferences.cjs`, `tests/run.cjs` |
@@ -52,7 +54,7 @@ dependency installation or production configuration changed.
 
 ## Validation
 
-- `npm run test:app`: 792 checks pass across 18 suites. These are data/logic
+- `npm run test:app`: 813 checks pass across 18 suites. These are data/logic
   and DOM-contract tests, not browser or live-game assertions.
 - `npm run verify`: pinned hashes, dataset contracts, JavaScript syntax,
   local HTML dependencies and static HTTP checks pass.
@@ -61,12 +63,17 @@ dependency installation or production configuration changed.
   suite. All 76 source positions were cross-checked against an independent
   published game-map dataset. Font signatures, lengths and hashes were also
   verified; source and license records are bundled.
-- Actual browser QA at 1280×720 and 375×812: four themes; all five views;
+- Initial candidate browser QA at 1280×720 and 375×812: four themes; all five views;
   no horizontal page overflow; readable region headings; region focusing;
   exact shop selection from Lith Harbor; routing preserved while changing
   all five views; next navigation step and stop navigation; Hebrew/English;
   motion switch; saved preferences after reload; loaded local fonts; both
   original game images loaded; no captured JavaScript errors.
+- The corrected Storybook view was checked in desktop and mobile browser
+  layouts. Its artwork is a decorative backdrop; all 364 graph nodes retain
+  their exact centers. Fixed screen-space line widths and marker-size floors
+  keep the overview readable. Ordinary labels stay decluttered, while points
+  remain visible. The prior game-sheet selection migrates on reload.
 - Standalone notices were checked in both languages and on mobile. The
   erase button is disabled before confirmation, enabled after checking,
   and disabled after revocation. No real user data was erased in browser QA;

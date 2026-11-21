@@ -20,9 +20,9 @@ for(const mode of modes){
   check(`${mode}: input remains immutable`,JSON.stringify(atlas)===snapshot);
   check(`${mode}: points fit the returned bounds`,points.every(point=>point.x>=layout.bounds.minX&&point.y>=layout.bounds.minY&&point.x<=layout.bounds.maxX&&point.y<=layout.bounds.maxY));
   check(`${mode}: designed extent remains manageable`,layout.bounds.width<4000&&layout.bounds.height<4500);
-  if(mode==='atlas'){
-    check('atlas: preserves every stored original position',atlas.maps.every(map=>layout.positions.get(map.id).x===map.x&&layout.positions.get(map.id).y===map.y));
-    check('atlas: original landscape remains renderer-owned',layout.panels.length===0&&layout.edgeStyle==='curved');
+  if(mode==='atlas'||mode==='storybook'){
+    check(`${mode}: preserves every stored original position`,atlas.maps.every(map=>layout.positions.get(map.id).x===map.x&&layout.positions.get(map.id).y===map.y));
+    check(`${mode}: original landscape remains renderer-owned`,layout.panels.length===0&&layout.edgeStyle==='curved');
     continue;
   }
   check(`${mode}: source map order does not affect geometry`,serial(layout)===serial(createLayout(mode,{...atlas,maps:[...atlas.maps].reverse()})));
@@ -34,7 +34,8 @@ for(const mode of modes){
   check(`${mode}: all region thumbnails are actual bundled assets`,layout.panels.every(panel=>panel.thumbnail?.startsWith('assets/')&&fs.existsSync(path.join(root,'dist',panel.thumbnail))&&panel.mapIds.includes(panel.thumbnailMapId)));
   check(`${mode}: each point has enough space for its node marker`,points.every((point,index)=>points.slice(index+1).every(other=>Math.hypot(point.x-other.x,point.y-other.y)>70)));
 }
-check('all four modes have different geometry',new Set([...layouts.values()].map(layout=>JSON.stringify([...layout.positions].sort((a,b)=>a[0]-b[0])))).size===4);
+check('the four graph arrangements remain distinct; storybook only changes the background',new Set([...layouts.values()].map(layout=>JSON.stringify([...layout.positions].sort((a,b)=>a[0]-b[0])))).size===4);
+check('storybook: geometry exactly matches the complete atlas',JSON.stringify([...layouts.get('storybook').positions])===JSON.stringify([...layouts.get('atlas').positions]));
 check('metro: every guide rail is orthogonal',layouts.get('metro').panels.every(panel=>panel.tracks.length&&panel.tracks.every(track=>track.x1===track.x2||track.y1===track.y2)));
 check('celestial: every multi-map region has orbital guides',layouts.get('celestial').panels.every(panel=>panel.count===1||panel.orbitRadii.length>0));
 check('board: postcard headers reserve room above every node',layouts.get('board').panels.every(panel=>panel.mapIds.every(id=>layouts.get('board').positions.get(id).y>panel.y+panel.headerHeight)));
@@ -96,6 +97,28 @@ check('classic: absent artwork returns a safe unavailable result',artLayout(atla
 const futureAtlas={...atlas,maps:[...atlas.maps,{id:123456789,group:'future-region',x:0,y:0,portals:[]}]};
 const futureLayout=artLayout(futureAtlas,art);
 check('classic: unknown future regions remain visible in extension panels',futureLayout.positions.get(123456789)?.source==='extension'&&futureLayout.panels.some(panel=>panel.mapIds.includes(123456789)));
+// Saved preferences must survive the replacement of limited game-sheet placement.
+function controlsSession(initial,{readBlocked=false,writeBlocked=false,ready=true}={}){
+  const values=new Map(initial===undefined?[]:[['maple-atlas-world-view-v1',initial]]),listeners=new Map(),nodes=[];
+  const makeElement=()=>({dataset:{},attributes:{},listeners:{},setAttribute(key,value){this.attributes[key]=String(value);},addEventListener(key,fn){this.listeners[key]=fn;},focus(){},querySelector(){return null;}});
+  const html=makeElement(),help=makeElement(),window={AtlasI18n:{text:(he,en)=>en},addEventListener(key,fn){listeners.set(key,fn);}};
+  const atlasApi={worldView:'atlas',setWorldView(mode){if(!modes.includes(mode))return false;this.worldView=mode;return true;}};
+  if(ready)window.Atlas=atlasApi;
+  const document={documentElement:html,body:{append(...elements){nodes.push(...elements);}},createElement:makeElement,querySelector:()=>help};
+  const localStorage={getItem(key){if(readBlocked)throw Error('blocked');return values.get(key)??null;},setItem(key,value){if(writeBlocked)throw Error('quota');values.set(key,value);}};
+  vm.runInContext(fs.readFileSync(path.join(root,'dist/world-view-controls.js'),'utf8'),vm.createContext({window,document,localStorage}));
+  return {html,values,help,dialog:nodes.find(node=>node.id==='worldViewDialog'),api:atlasApi,finishLoading(){window.Atlas=atlasApi;listeners.get('atlas-ready')();}};
+}
+const legacy=controlsSession('classic');
+check('stored classic choice migrates to storybook and persists',legacy.api.worldView==='storybook'&&legacy.html.dataset.worldView==='storybook'&&legacy.values.get('maple-atlas-world-view-v1')==='storybook');
+check('replacement picker contains five modes and no game-sheet choice',(legacy.dialog.innerHTML.match(/data-world-view-option=/g)||[]).length===5&&legacy.dialog.innerHTML.includes('data-world-view-option="storybook"')&&!legacy.dialog.innerHTML.includes('data-world-view-option="classic"')&&!legacy.dialog.innerHTML.includes('assets/worldmaps/'));
+check('storybook help distinguishes atmosphere from game geography',legacy.help.textContent.includes('not an in-game geographic map'));
+check('existing nonclassic preferences remain unchanged',['atlas','metro','celestial','board','storybook'].every(mode=>{const session=controlsSession(mode);return session.api.worldView===mode&&session.values.get('maple-atlas-world-view-v1')===mode;}));
+const quota=controlsSession('classic',{writeBlocked:true});
+check('migration remains usable when storage cannot be written',quota.api.worldView==='storybook'&&quota.dialog.innerHTML.includes('Storage is unavailable'));
+check('blocked reads and corrupt choices safely select atlas',controlsSession('classic',{readBlocked:true}).api.worldView==='atlas'&&controlsSession('__invalid__').api.worldView==='atlas');
+const waiting=controlsSession('classic',{ready:false});waiting.finishLoading();
+check('legacy migration applies when the atlas initializes after controls',waiting.api.worldView==='storybook'&&waiting.html.dataset.worldView==='storybook');
 const failed=results.filter(result=>!result.passed);
 process.stdout.write(JSON.stringify({suite:'world-views',checks:results.length,failed:failed.length,failures:failed}));
 process.exitCode=failed.length?1:0;

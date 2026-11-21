@@ -30,7 +30,7 @@ const document={getElementById:get,createElementNS:(ns,tag)=>new Element(tag),cr
 const entities=[...hunt.items.map(x=>({...x,kind:'item'})),...hunt.monsters.map(x=>({...x,kind:x.isBoss?'boss':'monster'})),...hunt.npcs.map(x=>({...x,kind:'npc'}))];
 const window={HuntData:hunt,Hunt:{searchAll:q=>entities.filter(x=>`${x.name} ${x.id}`.toLowerCase().includes(q)).sort((a,b)=>Number(String(b.id)===q)-Number(String(a.id)===q)),close(){},open(){}},addEventListener:(k,f)=>{(windowListeners.get(k)||windowListeners.set(k,[]).get(k)).push(f);},dispatchEvent:e=>{for(const fn of windowListeners.get(e.type)||[])fn(e);}};
 const ctx=vm.createContext({console,document,window,ATLAS:atlas,HUNT:hunt,location:{hash:'',href:'https://example.test/'},history:{replaceState(){}},requestAnimationFrame:fn=>fn(),setTimeout:()=>1,clearTimeout(){},Event:class{constructor(type){this.type=type;}}});
-for(const file of ['journey','world-views','world-map-art','world-art-layout','world-presentation','world-clusters'])vm.runInContext(fs.readFileSync(root+'/dist/'+file+'.js','utf8'),ctx);
+for(const file of ['journey','world-views','world-presentation'])vm.runInContext(fs.readFileSync(root+'/dist/'+file+'.js','utf8'),ctx);
 vm.runInContext(source.replace(/\ninit\(\);\s*$/,'\n'),ctx);
 vm.runInContext(`atlas=ATLAS;maps=atlas.maps;groups=atlas.groups;byId=new Map(maps.map(m=>[m.id,m]));incoming=new Map();adjacency=new Map();for(const m of maps){const out=[];for(const p of m.portals)if(p.kind==='cross'&&byId.has(p.to)){out.push({to:p.to,p});if(!incoming.has(p.to))incoming.set(p.to,[]);incoming.get(p.to).push({from:m,p});}adjacency.set(m.id,out);}activeId=10001000;bindEvents();`,ctx);
 const run=s=>vm.runInContext(s,ctx),results=[];
@@ -124,7 +124,7 @@ function endpoints(d){
   return {start,end:point};
 }
 const matchingEnds=edge=>{const actual=endpoints(edge.d);return actual.start?.x===edge.from.x&&actual.start?.y===edge.from.y&&actual.end.x===edge.to.x&&actual.end.y===edge.to.y;};
-const modes=['atlas','metro','celestial','board','classic'];
+const modes=['atlas','metro','celestial','board','storybook'];
 for(const mode of modes){
   run(`currentRegion='world';openRouteStep(2);compactNavigation=true;renderSceneNavigation();globalThis.routeReference=route;globalThis.beforeJourney=captureJourney();globalThis.beforeScene=captureScene();globalThis.beforeSelection=activeId;`);
   check(`${mode}: view activates without changing the route recipe or navigation progress`,run(`setWorldView(${JSON.stringify(mode)})&&worldView===${JSON.stringify(mode)}&&route===routeReference&&captureJourney()===beforeJourney`));
@@ -159,35 +159,29 @@ for(const mode of modes){
 }
 run('globalThis.beforeInvalid={view:worldView,layout:worldLayout,journey:captureJourney(),scene:captureScene(),geometry:JSON.stringify([...nodeElements].map(([id,node])=>[id,node.attrs.transform])),world:JSON.stringify(world)}');
 check('invalid layout choices are rejected without any state or geometry mutation',run('[null,undefined,"","invalid","__proto__",{},9].every(mode=>setWorldView(mode)===false)&&worldView===beforeInvalid.view&&worldLayout===beforeInvalid.layout&&captureJourney()===beforeInvalid.journey&&captureScene()===beforeInvalid.scene&&JSON.stringify([...nodeElements].map(([id,node])=>[id,node.attrs.transform]))===beforeInvalid.geometry&&JSON.stringify(world)===beforeInvalid.world'));
-run('globalThis.savedArt=window.AtlasWorldMapArt;window.AtlasWorldMapArt=null');
-check('unavailable game artwork leaves the current view and journey intact',run('setWorldView("classic")===false&&worldView===beforeInvalid.view&&worldLayout===beforeInvalid.layout&&captureJourney()===beforeInvalid.journey&&captureScene()===beforeInvalid.scene'));
-run('window.AtlasWorldMapArt=savedArt;setWorldView("classic")');
-check('original artwork uses both bundled source images with loading/error handlers',run('(()=>{const pictures=$("landLayer").children.flatMap(node=>node.children||[]).filter(node=>node.classList.contains("world-game-image"));return pictures.length===2&&pictures.every(picture=>savedArt.maps.some(sheet=>sheet.image===picture.getAttribute("href"))&&picture.listeners.load?.length&&picture.listeners.error?.length);})()'));
-run('window.Atlas={data:atlas,selectMap,get activeMap(){return activeId}};currentRegion="world";openRouteStep(2);globalThis.clusterJourney=captureJourney();globalThis.clusterScene=captureScene();globalThis.clusterNodes=$("decorationLayer").querySelectorAll("[data-anchor]");');
-check('classic: all76 source anchors expose their exact281 known map memberships',run('clusterNodes.length===76&&new Set(clusterNodes.flatMap(node=>node.getAttribute("data-map-ids").split(",").map(Number))).size===281&&clusterNodes.every(node=>{const anchor=worldLayout.anchors.find(entry=>entry.id===node.getAttribute("data-anchor")),ids=node.getAttribute("data-map-ids").split(",").map(Number);return anchor&&node.getAttribute("transform")===`translate(${anchor.x},${anchor.y})`&&ids.length===anchor.mapIds.length&&ids.every(id=>byId.has(id)&&anchor.mapIds.includes(id))&&node.getAttribute("role")==="button";})'));
-check('classic: overlapping source maps use clusters while83 extension maps keep their own targets',run('maps.filter(map=>worldPoint(map).source==="game").every(map=>nodeElements.get(map.id).style.display==="none")&&maps.filter(map=>worldPoint(map).source==="extension").length===83&&maps.filter(map=>worldPoint(map).source==="extension").every(map=>nodeElements.get(map.id).style.display!=="none")'));
-const clusterFilterFailures=[];
-for(const region of ['world','victoria','maple','hollow','special','archive']){
-  run(`currentRegion=${JSON.stringify(region)};updateVisibleNodes();applyWorld()`);
-  if(!run('clusterNodes.every(node=>{const ids=node.getAttribute("data-map-ids").split(",").map(Number),visible=ids.some(id=>visibleMap(byId.get(id)));return (node.style.display!=="none")===visible&&node.getAttribute("tabindex")===(visible?"0":"-1");})'))clusterFilterFailures.push(region);
+check('legacy classic mode opens the complete storybook graph without game artwork modules',run('setWorldView("classic")&&worldView==="storybook"&&worldLayout.positions.size===maps.length&&maps.every(map=>worldPoint(map).x===map.x&&worldPoint(map).y===map.y)&&captureJourney()===beforeInvalid.journey&&captureScene()===beforeInvalid.scene'));
+check('storybook keeps source atlas geometry for every graph connection',run('edgeElements.every(edge=>edge.element.getAttribute("d")===edgePath(byId.get(edge.a),byId.get(edge.b)))&&$("decorationLayer").children.length===0'));
+run('world.k=.8;applyWorld()');
+check('storybook exposes all364 individual node targets when zoomed, without shared source-image clusters',run('nodeElements.size===364&&[...nodeElements].every(([id,node])=>node.style.display!=="none"&&node.getAttribute("data-map")===String(id))'));
+run('showAllLabels=true;world.k=.1;applyWorld()');
+check('storybook all-labels control retains every individual map at overview zoom',run('[...nodeElements.values()].every(node=>node.style.display!=="none")'));
+run('showAllLabels=false;currentRegion="world";updateVisibleNodes();applyWorld();globalThis.storybookScene=captureScene();globalThis.storybookJourney=captureJourney();globalThis.storybookGeometry=JSON.stringify([...nodeElements].map(([id,node])=>[id,node.attrs.transform]));');
+check('storybook overview keeps all364 map points even with ordinary labels off',run('nodeElements.size===364&&[...nodeElements.values()].every(node=>node.style.display!=="none")&&maps.filter(map=>!map.major&&map.id!==activeId&&![route.from,...route.steps.map(step=>step.to)].includes(map.id)).every(map=>nodeElements.get(map.id).querySelector("text").style.visibility==="hidden")'));
+check('storybook overview still declutters town labels and retains the selected label',run('nodeElements.get(activeId).querySelector("text").style.visibility!=="hidden"&&maps.filter(map=>map.major).some(map=>nodeElements.get(map.id).querySelector("text").style.visibility==="hidden")'));
+check('storybook overview keeps region filters on the now-visible individual points',run('maps.every(map=>nodeElements.get(map.id).classList.contains("dimmed")===!visibleMap(map))'));
+const markerScaleFailures=[];
+for(const zoom of [.03,.1,.25,.8,1.5]){
+  run(`world.k=${zoom};applyWorld()`);
+  if(!run('maps.every(map=>{const node=nodeElements.get(map.id),radius=Number(node.querySelector(map.major?".town-base":".node-dot").getAttribute("r"));return radius*world.k>=(map.major?9:2.2)-.00001&&Number(node.querySelector(".node-halo").getAttribute("r"))>radius&&Number(node.querySelector(".node-hit").getAttribute("r"))>=radius&&(!map.major||(Number(node.querySelector("text").getAttribute("y"))-radius)*world.k>=14);})'))markerScaleFailures.push(zoom);
 }
-check('classic: cluster keyboard targets obey all6 region filters',clusterFilterFailures.length===0,clusterFilterFailures);
-run('currentRegion="world";updateVisibleNodes();applyWorld()');
-check('classic: source clusters identify selected and route maps',run('clusterNodes.every(node=>{const ids=node.getAttribute("data-map-ids").split(",").map(Number),routeIds=[route.from,...route.steps.map(step=>step.to)];return node.classList.contains("selected")===ids.includes(activeId)&&node.classList.contains("on-route")===ids.some(id=>routeIds.includes(id));})'));
-run('for(const handler of clusterNodes[0].listeners.keydown||[])handler({key:"Enter",preventDefault(){}});globalThis.clusterDialog=document.body.children.find(node=>node.id==="worldClusterDialog");');
-check('classic: Enter opens the map chooser without disturbing scene or journey',run('clusterDialog?.open&&captureJourney()===clusterJourney&&captureScene()===clusterScene'));
-run('clusterDialog.close();for(const handler of clusterNodes[1].listeners.keydown||[])handler({key:" ",preventDefault(){}});');
-check('classic: Space also opens a source cluster with only its actual map choices',run('clusterDialog.open&&(()=>{const expected=clusterNodes[1].getAttribute("data-map-ids").split(","),buttons=clusterDialog.querySelectorAll("button").filter(node=>node.dataset.clusterMap);return buttons.length===expected.length&&buttons.every(button=>expected.includes(button.dataset.clusterMap));})()'));
-run(`globalThis.clusterChoiceFailures=[];globalThis.chosenClusterIds=new Set();
-for(const node of clusterNodes){
-  for(const handler of node.listeners.click||[])handler({stopPropagation(){}});
-  const expected=node.getAttribute('data-map-ids').split(',').map(Number),buttons=clusterDialog.querySelectorAll('button').filter(button=>button.dataset.clusterMap);
-  if(buttons.length!==expected.length||buttons.some(button=>!expected.includes(Number(button.dataset.clusterMap))))clusterChoiceFailures.push(node.getAttribute('data-anchor'));
-  for(const button of buttons){const id=Number(button.dataset.clusterMap);for(const handler of button.listeners.click||[])handler({});chosenClusterIds.add(id);if(activeId!==id||!nodeElements.get(id).classList.contains('selected')||captureJourney()!==clusterJourney)clusterChoiceFailures.push(id);}
-}`);
-check('classic: all281 clustered map choices select their exact map and retain the journey',run('chosenClusterIds.size===281&&clusterChoiceFailures.length===0'),run('clusterChoiceFailures'));
-run('for(const handler of clusterNodes[0].listeners.click||[])handler({stopPropagation(){}});globalThis.fixedChoice=clusterDialog.querySelectorAll("button").find(button=>button.dataset.clusterMap);globalThis.fixedChoiceId=Number(fixedChoice.dataset.clusterMap);fixedChoice.dataset.clusterMap="90040003";for(const handler of fixedChoice.listeners.click||[])handler({});');
-check('classic: altered button data cannot select an unrelated arbitrary map',run('activeId===fixedChoiceId&&activeId!==90040003&&captureJourney()===clusterJourney'));
+check('storybook markers remain readable and their halos, hit areas and labels clear the circles at every supported scale',markerScaleFailures.length===0,markerScaleFailures);
+check('storybook marker scaling does not move nodes or alter scene coordinates and journey progress',run('storybookGeometry===JSON.stringify([...nodeElements].map(([id,node])=>[id,node.attrs.transform]))&&captureScene()===storybookScene&&captureJourney()===storybookJourney'));
+run('nodeElements.get(activeId).classList.add("reachability-origin");globalThis.reachableExample=maps.find(map=>!map.major&&map.id!==activeId);nodeElements.get(reachableExample.id).classList.add("reachable-map");world.k=.1;applyWorld()');
+check('storybook overview retains reachability and selected states while revealing all points',run('nodeElements.get(activeId).classList.contains("reachability-origin")&&nodeElements.get(activeId).classList.contains("selected")&&nodeElements.get(reachableExample.id).classList.contains("reachable-map")&&nodeElements.get(reachableExample.id).style.display!=="none"'));
+run('showAllLabels=true;applyWorld()');
+check('storybook explicit all-labels mode restores names without changing the readable marker sizes',run('[...nodeElements.values()].every(node=>node.querySelector("text").style.visibility!=="hidden")&&maps.every(map=>Number(nodeElements.get(map.id).querySelector(map.major?".town-base":".node-dot").getAttribute("r"))*world.k>=(map.major?9:2.2)-.00001)'));
+run('showAllLabels=false;setWorldView("atlas");world.k=.1;applyWorld()');
+check('switching from storybook restores original marker geometry and original overview decluttering',run('maps.every(map=>{const node=nodeElements.get(map.id);return Number(node.querySelector(map.major?".town-base":".node-dot").getAttribute("r"))===(map.major?37:8.5)&&(!map.major||(node.querySelector(".town-glyph").getAttribute("transform")==="translate(-25,-25)"&&Number(node.querySelector("text").getAttribute("y"))===66));})&&maps.some(map=>nodeElements.get(map.id).style.display==="none")'));
 const report={checkedAt:new Date().toISOString(),method:'Node VM with lightweight DOM contract stubs; no browser, no rendering, no network checks',appSha256:crypto.createHash('sha256').update(source).digest('hex'),results,failures:results.filter(r=>!r.passed)};
 process.exitCode=report.failures.length?1:0;
 console.log(JSON.stringify({checks:results.length,failed:report.failures.length,results}));

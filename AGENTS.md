@@ -32,8 +32,9 @@ older requirements to obtain fresh approval for each Atlas publication.
 Use the buildless project's `npm run verify` and `npm run test:app`. Preserve
 pinned game datasets and exact scene coordinates when changing presentation.
 World layout coordinates are derived independently of routing and source
-portal/NPC/spawn coordinates. The original world-sheet spots can represent
-multiple map IDs; retain the explicit chooser and unmapped extension panel.
+portal/NPC/spawn coordinates. The owner clarified that the illustrated view
+must retain the original full graph and use artwork only as a backdrop.
+Do not reintroduce literal game world sheets as a replacement for the graph.
 
 Artwork attribution is not licensing clearance. Keep the distinctions and
 outstanding decisions in `docs/OWNER-PROTECTION-REVIEW.md` visible in relevant

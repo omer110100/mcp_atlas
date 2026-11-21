@@ -24,7 +24,7 @@
     mapControls:['פקדי מפה','Map controls'],zoomIn:['הגדלה','Zoom in'],zoomOut:['הקטנה','Zoom out'],
     center:['מרכז מפה','Center map'],help:['מפת העולם סכמטית. מיקומי שערים בתמונה נשמרים לפי המקור.','The world map is schematic. Portal image positions follow the source data.']
   };
-  const text=key=>key==='help'&&window.Atlas?.worldView==='classic'?L('איורי המשחק המקוריים. לחצו על נקודה כדי לבחור מפה. רשומות שאינן באיור מופיעות בלוח נוסף.','Original game artwork. Click a spot to choose a map. Records absent from the artwork appear in an additional panel.'):L(...labels[key]);
+  const text=key=>key==='help'&&window.Atlas?.worldView==='storybook'?L('כל מפות האטלס והקשרים נשמרים בפריסה המוכרת, על רקע מאויר בהשראת מייפל. הרקע אינו מפה גאוגרפית של המשחק.','All atlas maps and connections retain their familiar layout on a Maple-inspired illustrated backdrop. The background is not an in-game geographic map.'):L(...labels[key]);
   function el(tag,attributes={},content=''){
     const node=document.createElement(tag);
     for(const [key,value]of Object.entries(attributes))node.setAttribute(key,String(value));

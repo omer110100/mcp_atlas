@@ -149,10 +149,12 @@ function highlightGraph() {
 }
 
 function worldPoint(map){return worldLayout?.positions.get(map.id)||map;}
+function originalWorldGeometry(){return worldView==='atlas'||worldView==='storybook';}
 function focusWorldPanel(id){const panel=worldLayout?.panels.find(entry=>entry.id===id);if(panel?.mapIds.length)fitRoute(panel.mapIds);}
 function setWorldView(mode){
+  if(mode==='classic')mode='storybook';
   const viewport=canvasView('mapCanvas');
-  const next=mode==='classic'?window.AtlasArtLayout?.createLayout(atlas,window.AtlasWorldMapArt):window.AtlasWorldViews?.createLayout(mode,atlas,{aspectRatio:viewport.width/viewport.height});
+  const next=window.AtlasWorldViews?.createLayout(mode,atlas,{aspectRatio:viewport.width/viewport.height});
   if(!next||next.mode!==mode)return false;
   worldView=mode;worldLayout=next;
   $('worldSvg').setAttribute('data-world-view',mode);
@@ -184,7 +186,7 @@ function buildWorld() {
   $('nodeLayer').replaceChildren();nodeElements.clear();
   const ordered=[...maps].sort((a,b)=>Number(a.major)-Number(b.major));
   for(const m of ordered){
-    const point=worldPoint(m),g=svgEl('g',{class:`world-node ${m.major?'major':''} ${point.source==='game'?'world-art-point':''}`,transform:`translate(${point.x},${point.y})`,tabindex:'0',role:'button','aria-label':worldNodeLabel(m),'data-map':m.id});
+    const point=worldPoint(m),g=svgEl('g',{class:`world-node ${m.major?'major':''}`,transform:`translate(${point.x},${point.y})`,tabindex:'0',role:'button','aria-label':worldNodeLabel(m),'data-map':m.id});
     g.style.setProperty?.('--node-region',groupId(m.group)?.color||'#97b3c9');
     if(reachableIds.has(m.id))g.classList.add('reachable-map');if(reachOrigins.has(m.id))g.classList.add('reachability-origin');
     const major=Boolean(m.major),r=major?37:8.5;
@@ -199,7 +201,6 @@ function buildWorld() {
     $('nodeLayer').append(g);nodeElements.set(m.id,g);
   }
   $('decorationLayer').replaceChildren();
-  if(worldView==='classic')window.AtlasWorldClusters?.render($('decorationLayer'),worldLayout,{svgEl,canActivate:()=>!worldMoved});
   updateVisibleNodes();
 }
 function townGlyph(m) {
@@ -216,7 +217,7 @@ function townGlyph(m) {
 }
 function buildLandscape() {
   const land=$('landLayer');land.innerHTML='';
-  if(worldLayout&&worldView!=='atlas'&&window.AtlasWorldPresentation){window.AtlasWorldPresentation.render(land,worldLayout,{svgEl,groupName,groupId,canActivate:()=>!worldMoved});return;}
+  if(worldLayout&&!originalWorldGeometry()&&window.AtlasWorldPresentation){window.AtlasWorldPresentation.render(land,worldLayout,{svgEl,groupName,groupId,canActivate:()=>!worldMoved});return;}
   const mainland='M250 790C170 620 390 530 600 570C650 380 780 240 1000 260C1240 180 1400 300 1510 440C1760 380 1890 470 2080 570C2270 640 2430 840 2340 1070C2410 1250 2460 1470 2300 1650C2150 1840 1870 1900 1640 1830C1420 1930 1120 1840 990 1790C740 1910 420 1810 280 1620C120 1450 140 1260 220 1100C120 990 130 870 250 790Z';
   const island='M140 270C150 130 300 30 470 80C590 0 770 80 840 220C980 360 770 480 620 480C470 540 280 450 180 390C90 360 110 320 140 270Z';
   land.append(svgEl('path',{d:mainland,fill:'url(#landGrad)',class:'land-border',filter:'url(#landShadow)'}),svgEl('path',{d:island,fill:'url(#mapleGrad)',class:'land-border',filter:'url(#landShadow)'}));
@@ -264,20 +265,35 @@ function updateVisibleNodes(){
 function applyWorld(){
   $('worldViewport').setAttribute('transform',`translate(${world.x},${world.y}) scale(${world.k})`);
   $('worldSvg').classList.toggle('detail-zoom',world.k>.82);$('worldSvg').classList.toggle('all-labels',showAllLabels);
-  for(const [id,g] of nodeElements){const m=byId.get(id),label=g.querySelector('text');const size=m.major?14/world.k:12/world.k;label.setAttribute('font-size',size);if(!m.major)g.querySelector('.node-hit').setAttribute('r',Math.max(18,11/world.k));}
-  if(worldView!=='atlas')window.AtlasWorldPresentation?.scale?.($('landLayer'),worldLayout,world.k);
+  for(const [id,g] of nodeElements){
+    const m=byId.get(id),label=g.querySelector('text');
+    label.setAttribute('font-size',(m.major?14:12)/world.k);
+    if(!m.major)g.querySelector('.node-hit').setAttribute('r',Math.max(18,11/world.k));
+    if(worldView==='storybook'){
+      // Keep graph markers legible against the illustration at overview zoom.
+      const radius=Math.max(m.major?37:8.5,(m.major?9:2.2)/world.k);
+      g.querySelector(m.major?'.town-base':'.node-dot').setAttribute('r',radius);
+      g.querySelector('.node-halo').setAttribute('r',Math.max(m.major?46:17,radius+3/world.k));
+      if(m.major){
+        const scale=radius/37;
+        g.querySelector('.town-glyph').setAttribute('transform',`scale(${scale}) translate(-25,-25)`);
+        g.querySelector('.node-hit').setAttribute('r',Math.max(57,11/world.k));
+        label.setAttribute('y',Math.max(66,radius+16/world.k));
+      }
+    }
+  }
+  if(!originalWorldGeometry())window.AtlasWorldPresentation?.scale?.($('landLayer'),worldLayout,world.k);
   updateGraphDetail();
 }
 function updateGraphDetail(){
   const journeyMaps=new Set(route?[route.from,...route.steps.map(step=>step.to)]:[]);
-  if(worldView==='classic')window.AtlasWorldClusters?.sync($('decorationLayer'),worldLayout,{scale:world.k,activeId,journeyMaps,reachableIds:new Set([...nodeElements].filter(([,node])=>node.classList.contains('reachable-map')).map(([id])=>id)),reachOrigins:new Set([...nodeElements].filter(([,node])=>node.classList.contains('reachability-origin')).map(([id])=>id)),visibleIds:new Set(maps.filter(visibleMap).map(map=>map.id))});
-  const unclutterOverview=worldView==='atlas'&&currentRegion==='world'&&world.k<.3&&!showAllLabels;
+  const unclutterOverview=originalWorldGeometry()&&currentRegion==='world'&&world.k<.3&&!showAllLabels;
   const labels=[];
   for(const [id,node]of nodeElements){
-    const map=byId.get(id),hidden=(worldView==='classic'&&worldPoint(map).source==='game')||(worldView==='atlas'&&currentRegion==='world'&&world.k<.3&&!showAllLabels&&!map.major&&id!==activeId&&!journeyMaps.has(id));
-    node.style.display=hidden?'none':'';
+    const map=byId.get(id),hidden=unclutterOverview&&!map.major&&id!==activeId&&!journeyMaps.has(id);
+    node.style.display=hidden&&worldView!=='storybook'?'none':'';
     const label=node.querySelector('text');if(!label)continue;
-    label.style.visibility='';
+    label.style.visibility=hidden&&worldView==='storybook'?'hidden':'';
     if(['metro','board','celestial'].includes(worldView)&&world.k<.45&&!showAllLabels&&id!==activeId&&!journeyMaps.has(id))label.style.visibility='hidden';
     if(unclutterOverview&&visibleMap(map)&&(map.major||id===activeId))labels.push({map,label,priority:id===activeId?2:journeyMaps.has(id)?1:0});
   }
@@ -293,7 +309,7 @@ function updateGraphDetail(){
   }
 }
 function worldLabelBox(map,label){
-  const point=worldPoint(map),fontSize=map.major?14:12,padding=5,anchorX=world.x+point.x*world.k,anchorY=world.y+(point.y+(map.major?66:-19))*world.k;
+  const point=worldPoint(map),fontSize=map.major?14:12,padding=5,labelY=Number(label.getAttribute?.('y')??(map.major?66:-19)),anchorX=world.x+point.x*world.k,anchorY=world.y+(point.y+labelY)*world.k;
   const fallbackWidth=(label.textContent||map.name).length*fontSize*.8;
   let box={left:anchorX-fallbackWidth/2,top:anchorY-fontSize,right:anchorX+fallbackWidth/2,bottom:anchorY+fontSize*.3};
   try{
@@ -696,7 +712,7 @@ function refreshLanguage(){
     if(selectedSearch){const index=activeSearchResults.findIndex(result=>result.id===selectedSearch.id&&result.kind===selectedSearch.kind);if(index>=0){searchIndex=index-1;moveSearchSelection(1);}}
   }
   for(const [id,node]of nodeElements)node.setAttribute('aria-label',worldNodeLabel(byId.get(id)));
-  if(worldView!=='atlas'){buildLandscape();if(worldView==='classic'){$('decorationLayer').replaceChildren();window.AtlasWorldClusters?.render($('decorationLayer'),worldLayout,{svgEl,canActivate:()=>!worldMoved});}updateVisibleNodes();applyWorld();}
+  if(!originalWorldGeometry()){buildLandscape();updateVisibleNodes();applyWorld();}
   $('mapTooltip').hidden=true;
   if(route||$('routeResult').innerHTML)renderRouteResult();
   for(const id of ['routeFrom','routeTo'])if($(id).getAttribute('aria-invalid')==='true')$(id+'Error').textContent=routeInputError();
