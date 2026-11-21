@@ -178,7 +178,7 @@
   }
   function clearReachability(){
     reach={...reach,open:false,results:[]};for(const node of document.querySelectorAll('.world-node[data-map]')){node.classList.remove('reachable-map','reachability-origin');node.removeAttribute('data-reach-hops');}
-    document.getElementById('worldSvg')?.classList.remove('reachability-active');renderReachability();
+    document.getElementById('worldSvg')?.classList.remove('reachability-active');for(const node of document.querySelectorAll('.world-anchor'))node.classList.remove('reachable-map','reachability-origin');renderReachability();
   }
   function computeReachability(){
     if(!validId(reach.from,maps))return;
@@ -186,6 +186,7 @@
     reach.results=window.Atlas?.reachable?.(reach.from,reach.hops,reach.services)||[];
     const ids=new Map(reach.results.map(result=>[result.id,result.hops]));
     for(const node of document.querySelectorAll('.world-node[data-map]')){const id=Number(node.dataset.map);node.classList.toggle('reachable-map',ids.has(id));node.classList.toggle('reachability-origin',id===reach.from);if(ids.has(id))node.dataset.reachHops=String(ids.get(id));else node.removeAttribute('data-reach-hops');}
+    for(const node of document.querySelectorAll('.world-anchor[data-map-ids]')){const members=node.getAttribute('data-map-ids').split(',').map(Number);node.classList.toggle('reachable-map',members.some(id=>ids.has(id)));node.classList.toggle('reachability-origin',members.includes(reach.from));}
     $('worldSvg')?.classList.add('reachability-active');renderReachability();
     if(focusedHops)document.querySelector(`[data-explorer-hops="${focusedHops}"]`)?.focus({preventScroll:true});
     else if(focusedServices)$('reachServices')?.focus({preventScroll:true});

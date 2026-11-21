@@ -1,6 +1,9 @@
 'use strict';
 // Static shell and English annotations for the pinned dataset. Source JSON stays unchanged.
 window.AtlasTranslations={
+  "מייפלסטורי": "MapleStory",
+  "שמיים בהירים, פטריות וקסם נוסטלגי": "Bright skies, mushrooms and nostalgic magic",
+  "לכל מסע יש אווירה משלו.": "Every journey has its own atmosphere.",
   "המדריך לאטלס": "Your atlas guide",
   "אודות האטלס": "About the atlas",
   "נושאי המידע": "Information sections",

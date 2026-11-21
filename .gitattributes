@@ -10,3 +10,6 @@ source-data/** -text
 dist/*-data.json -text
 *.png binary
 *.webp binary
+*.woff2 binary
+# Preserve the exact licensed source bytes recorded in the font manifest.
+dist/assets/fonts/*-OFL.txt binary

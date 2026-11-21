@@ -8,14 +8,14 @@ function setup(saved={},blocked=false){
   const text=element(' תכנון מסלול '),gone=element('כל המקומות'),input=element();input.attrs.placeholder='שם מפה או מזהה…';
   const nodes=[text,gone],ids=new Map();
   const el=id=>{if(!ids.has(id))ids.set(id,element());return ids.get(id);};
-  const themes=['midnight','parchment','aurora'].map(theme=>{const e=element();e.dataset.themeOption=theme;return e;});
+  const themes=['midnight','parchment','aurora','maplestory'].map(theme=>{const e=element();e.dataset.themeOption=theme;return e;});
   const languages=['he','en'].map(language=>{const e=element();e.dataset.languageOption=language;return e;});
   const html=element(),meta=element();
   const document={documentElement:html,createTreeWalker(){let i=-1;return{nextNode(){return ++i<nodes.length;},get currentNode(){return nodes[i];}};},querySelectorAll(selector){return selector==='[data-theme-option]'?themes:selector==='[data-language-option]'?languages:[input];},querySelector:()=>meta,getElementById:el};
   const window={addEventListener(name,fn){const a=listeners.get(name)||[];a.push(fn);listeners.set(name,a);},dispatchEvent(event){events.push(event);for(const fn of listeners.get(event.type)||[])fn(event);}};
   const ctx=vm.createContext({window,document,NodeFilter:{SHOW_TEXT:4},CustomEvent:class{constructor(type,args){this.type=type;Object.assign(this,args);}},localStorage:{getItem:k=>{if(blocked)throw Error('blocked');return values.get(k)||null;},setItem:(k,v)=>{if(blocked)throw Error('quota');values.set(k,v);}}});
   for(const file of ['translations.js','i18n.js','appearance.js'])vm.runInContext(fs.readFileSync(path.join(root,file),'utf8'),ctx);
-  return{api:window.AtlasI18n,catalog:window.AtlasTranslations,el,html,text,gone,input,themes,languages,values,events,click(data){el('appearanceDialog').listeners.click({target:{closest:selector=>selector.includes('theme')?{dataset:{themeOption:data.theme}}:{dataset:{languageOption:data.language}}}});}};
+  return{api:window.AtlasI18n,catalog:window.AtlasTranslations,el,html,meta,text,gone,input,themes,languages,values,events,click(data){el('appearanceDialog').listeners.click({target:{closest:selector=>selector.includes('theme')?{dataset:{themeOption:data.theme}}:{dataset:{languageOption:data.language}}}});}};
 }
 const x=setup();check('first visit defaults to Hebrew, RTL and midnight',x.html.lang==='he'&&x.html.dir==='rtl'&&x.html.dataset.theme==='midnight');
 x.api.setLanguage('en');check('English updates static text, attributes and direction together',x.text.nodeValue===' Plan route '&&x.input.attrs.placeholder==='Map name or ID…'&&x.html.dir==='ltr');
@@ -32,6 +32,12 @@ const blocked=setup({},true);blocked.click({theme:'aurora'});blocked.click({lang
 check('blocked storage preserves usable language/theme controls and explains the limit',blocked.html.dataset.theme==='aurora'&&blocked.html.lang==='en'&&blocked.el('appearanceStorage').textContent.includes('unavailable'));
 const corrupt=setup({'maple-atlas-appearance-v1':'{"theme":"<script>","motion":"yes"}','maple-atlas-language-v1':'javascript:bad'});
 check('invalid saved preferences fall back to safe defaults',corrupt.html.dataset.theme==='midnight'&&corrupt.html.lang==='he');
+const classic=setup({'maple-atlas-appearance-v1':'{"theme":"maplestory","motion":false}','maple-atlas-language-v1':'en'});
+check('MapleStory theme restores with saved language and motion preferences',classic.html.dataset.theme==='maplestory'&&classic.html.dataset.motion==='off'&&classic.html.lang==='en'&&classic.meta.content==='#def3ff');
+check('MapleStory theme selection is announced accessibly without selecting another theme',classic.themes.filter(e=>e.attrs['aria-pressed']==='true').length===1&&classic.themes[3].attrs['aria-pressed']==='true');
+classic.click({theme:'midnight'});classic.click({theme:'maplestory'});
+check('switching back to MapleStory persists the theme and notifies optional artwork',setup(Object.fromEntries(classic.values)).html.dataset.theme==='maplestory'&&classic.events.at(-1).type==='atlas-appearancechange'&&classic.events.at(-1).detail.theme==='maplestory'&&classic.events.at(-1).detail.motion===false);
+classic.click({theme:'unsupported'});check('unsupported theme choice cannot alter valid saved preferences',classic.html.dataset.theme==='maplestory'&&JSON.parse(classic.values.get('maple-atlas-appearance-v1')).theme==='maplestory');
 let hebrew=[];function walk(v){if(typeof v==='string'&&/[\u0590-\u05ff]/.test(v))hebrew.push(v);else if(v&&typeof v==='object')Object.values(v).forEach(walk);}
 for(const file of fs.readdirSync(root).filter(n=>n.endsWith('.json')))walk(JSON.parse(fs.readFileSync(path.join(root,file),'utf8')));
 check('every Hebrew dataset annotation has an English translation',hebrew.every(s=>x.catalog[s]&&!/[\u0590-\u05ff]/.test(x.catalog[s])));

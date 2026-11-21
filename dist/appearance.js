@@ -1,7 +1,7 @@
 'use strict';
 (() => {
-  const KEY='maple-atlas-appearance-v1', themes=['midnight','parchment','aurora'];
-  const colors={midnight:'#0b1727',parchment:'#f5efdf',aurora:'#19132e'};
+  const KEY='maple-atlas-appearance-v1', themes=['midnight','parchment','aurora','maplestory'];
+  const colors={midnight:'#0b1727',parchment:'#f5efdf',aurora:'#19132e',maplestory:'#def3ff'};
   let state={theme:'midnight',motion:true},storageOk=true;
   try {
     const saved=JSON.parse(localStorage.getItem(KEY)||'null');
@@ -18,7 +18,11 @@
     motion.checked=state.motion;
     document.getElementById('appearanceStorage').textContent=storageOk&&window.AtlasI18n.storageOk?L('ההעדפות נשמרות בדפדפן הזה.','Preferences are saved in this browser.'):L('השמירה אינה זמינה. ההעדפות יחולו עד לסגירת הדף.','Storage is unavailable. Preferences apply until this page is closed.');
   }
-  function save(){try{localStorage.setItem(KEY,JSON.stringify(state));storageOk=true;}catch{storageOk=false;}render();}
+  function save(){
+    try{localStorage.setItem(KEY,JSON.stringify(state));storageOk=true;}catch{storageOk=false;}
+    render();
+    window.dispatchEvent(new CustomEvent('atlas-appearancechange',{detail:{theme:state.theme,motion:state.motion}}));
+  }
   document.getElementById('appearanceToggle').addEventListener('click',()=>{render();if(window.AtlasShell)window.AtlasShell.openPopover(dialog,document.getElementById('appearanceToggle'));else dialog.showModal();});
   document.getElementById('closeAppearance').addEventListener('click',()=>dialog.close());
   dialog.addEventListener('click',event=>{

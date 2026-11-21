@@ -27,9 +27,11 @@ The same commands work on Windows, macOS, and Linux. In PowerShell, use `npm.cmd
 
 ## Appearance and language
 
-The header gear opens three themes: Midnight forest, Explorer's journal and Arcane aurora. Each includes postcard map cards, woodland ornaments, regional accents and optional motion: drifting lights, route strokes, selection rings and portal emphasis. Decorations do not move map coordinates or intercept controls. The motion switch and device reduced-motion preference suppress decorative animation and smooth scrolling.
+The header gear opens four themes: Midnight forest, Explorer's journal, Arcane aurora and MapleStory. The MapleStory theme adds cream/orange game chrome, locally hosted official artwork and animated creature decorations. Each includes postcard map cards, woodland ornaments, regional accents and optional motion: drifting lights, route strokes, selection rings and portal emphasis. Decorations do not move map coordinates or intercept controls. The motion switch and device reduced-motion preference suppress decorative animation and smooth scrolling.
 
-Hebrew/English language, theme, reading mode and desktop panel width are saved locally. Language changes preserve the active route, progress, map camera, search and hunting comparison. Game entity names and source datasets retain their original values. A first-visit chooser, mobile bottom navigation, keyboard help and a map/postcard switch provide direct access to the main tools.
+The separate Map view picker offers the original atlas, regional transit lines, orbital constellations, a postcard board and authentic in-game world sheets. All 364 map IDs remain available: the original sheets have 76 documented spots containing 281 IDs, with a chooser for shared spots; 83 other records sit in a labeled extension panel. Regional headings focus the chosen area, and routes survive view changes. Source coordinates are never changed.
+
+Hebrew/English language, theme, world view, reading mode and desktop panel width are saved locally. Language changes preserve the active route, progress, map camera, search and hunting comparison. Game entity names and source datasets retain their original values. A first-visit chooser, mobile bottom navigation, keyboard help and a map/postcard switch provide direct access to the main tools.
 
 ## Journeys, hunting and personal maps
 
@@ -91,3 +93,9 @@ Independent source comparison preserved every map and portal field. Directed rou
 Catalog verification checks every spawn count against the raw placements, exact coordinate bounds, icon decoding, item/monster ID joins, duplicate boss IDs, ambiguous observations, ranking semantics, and NPC/monster navigation arguments. Browser checks cover item recommendations, a boss's exact point, an NPC's exact room position, and complete walking navigation to that room.
 
 The automated commands validate the archived data and app contracts. They do not test the live game server or establish current availability of conditional content. Browser checks remain useful after changes to interaction or layout. The runtime versions used for the reproducibility audit were Node.js 24.22.3 and Python 3.12.14 on Linux; the scripts use cross-platform standard-library APIs, and the November 20 interface update was checked on Windows with desktop and mobile browser viewports.
+
+## Privacy and owner notices
+
+`dist/legal.html` provides bilingual privacy, usage/support, accessibility, source-rights and contact information. Fonts are self-hosted under their OFL licenses. Local erasure requires explicit confirmation and removes only seven named atlas keys; it does not erase downloaded backups or provider records. The public-issue warning explains which navigation context is sent to GitHub.
+
+These notices are not legal clearance. Nexon artwork permissions, noncommercial source-license implications, payment/tax classification and live infrastructure retention require separate review. See [owner-protection review](docs/OWNER-PROTECTION-REVIEW.md), [notice decisions](docs/LEGAL-NOTICE-DECISIONS.md), [world artwork provenance](docs/WORLD-MAP-ASSETS.md) and [font sources](docs/FONT-SOURCES.md).

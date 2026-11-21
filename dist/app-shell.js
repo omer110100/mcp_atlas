@@ -24,7 +24,7 @@
     mapControls:['פקדי מפה','Map controls'],zoomIn:['הגדלה','Zoom in'],zoomOut:['הקטנה','Zoom out'],
     center:['מרכז מפה','Center map'],help:['מפת העולם סכמטית. מיקומי שערים בתמונה נשמרים לפי המקור.','The world map is schematic. Portal image positions follow the source data.']
   };
-  const text=key=>L(...labels[key]);
+  const text=key=>key==='help'&&window.Atlas?.worldView==='classic'?L('איורי המשחק המקוריים. לחצו על נקודה כדי לבחור מפה. רשומות שאינן באיור מופיעות בלוח נוסף.','Original game artwork. Click a spot to choose a map. Records absent from the artwork appear in an additional panel.'):L(...labels[key]);
   function el(tag,attributes={},content=''){
     const node=document.createElement(tag);
     for(const [key,value]of Object.entries(attributes))node.setAttribute(key,String(value));
@@ -44,6 +44,7 @@
   };
 
   // Reparent rather than clone: saved state, accessible labels and event listeners remain intact.
+  window.addEventListener('atlas-worldviewchange',()=>updateLabels());
   root.classList.add('atlas-shell');
   const header=document.querySelector('.app-header'),brand=header.querySelector('.brand');
   brand.querySelector('.brand-he')?.remove();
@@ -295,6 +296,7 @@
     if(!bounds)return{left:0,top:0,width:window.innerWidth,height:window.innerHeight};
     const padding=16;let left=padding,right=bounds.width-padding,top=Math.max(padding,header.getBoundingClientRect().bottom-bounds.top+padding),bottom=bounds.height-padding;
     const crumbs=$('atlasBreadcrumbs');if(crumbs&&!crumbs.hidden){const rect=crumbs.getBoundingClientRect();if(rect.height)top=Math.max(top,rect.bottom-bounds.top+12);}
+      const viewPicker=$('worldViewToggle');if(canvasId==='mapCanvas'&&viewPicker){const rect=viewPicker.getBoundingClientRect();if(rect.width&&rect.height)top=Math.max(top,rect.bottom-bounds.top+12);}
     if(mobile()){
       if(!companion){
         // Use the target height so an expanding/closing animation cannot fit the map to a stale full sheet.

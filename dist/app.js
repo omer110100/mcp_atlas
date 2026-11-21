@@ -29,6 +29,7 @@ const scopeLabels = {
 };
 let atlas, maps, groups, byId, incoming, adjacency, activeId, currentRegion='world', detailsTab='cross', sceneId, sceneKind='cross', selectedGate=null, route=null;
 let world = {x:0,y:0,k:1}, scene = {x:0,y:0,k:1}, showAllLabels=false, worldMoved=false;
+let worldView='atlas', worldLayout=null;
 let nodeElements=new Map(), edgeElements=[], serviceElements=[], portalPinElements=new Map();
 let activeSearchResults=[], searchIndex=-1, toastTimer;
 let sceneLayer='portals', sceneEntityIds=[], sceneEntityPoints=[], selectedEntity=null;
@@ -147,6 +148,19 @@ function highlightGraph() {
   updateGraphDetail();
 }
 
+function worldPoint(map){return worldLayout?.positions.get(map.id)||map;}
+function focusWorldPanel(id){const panel=worldLayout?.panels.find(entry=>entry.id===id);if(panel?.mapIds.length)fitRoute(panel.mapIds);}
+function setWorldView(mode){
+  const viewport=canvasView('mapCanvas');
+  const next=mode==='classic'?window.AtlasArtLayout?.createLayout(atlas,window.AtlasWorldMapArt):window.AtlasWorldViews?.createLayout(mode,atlas,{aspectRatio:viewport.width/viewport.height});
+  if(!next||next.mode!==mode)return false;
+  worldView=mode;worldLayout=next;
+  $('worldSvg').setAttribute('data-world-view',mode);
+  buildWorld();drawRoute();highlightGraph();fitWorld();
+  $('mapTooltip').hidden=true;
+  window.dispatchEvent(new Event('atlas-worldviewchange'));
+  return true;
+}
 function buildWorld() {
   $('worldDefs').innerHTML=`<radialGradient id="landGrad"><stop offset="0" stop-color="#335d45"/><stop offset=".65" stop-color="#284d3c"/><stop offset="1" stop-color="#203d35"/></radialGradient><radialGradient id="hollowGrad"><stop offset="0" stop-color="#4d496e"/><stop offset="1" stop-color="#273e46"/></radialGradient><radialGradient id="rockGrad"><stop offset="0" stop-color="#77704e"/><stop offset="1" stop-color="#4a5038"/></radialGradient><radialGradient id="mapleGrad"><stop offset="0" stop-color="#507146"/><stop offset="1" stop-color="#2d4b39"/></radialGradient><filter id="landShadow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="19" stdDeviation="26" flood-color="#071820" flood-opacity=".6"/></filter><pattern id="contour" width="190" height="140" patternUnits="userSpaceOnUse"><path d="M0 80Q45 40 95 70T190 50M0 100Q45 60 95 90T190 70M-30 130Q60 100 110 120T230 95" fill="none" stroke="#c7d396" stroke-opacity=".04" stroke-width="2"/></pattern>`;
   buildLandscape();
@@ -159,15 +173,20 @@ function buildWorld() {
   for(const edge of unique.values()){
     const a=byId.get(edge.a),b=byId.get(edge.b);
     const element=svgEl('path',{d:edgePath(a,b),class:`world-edge ${edge.noEffect?'no-effect':''}`});
+    if(a.group===b.group)element.style.setProperty?.('--edge-region',groupId(a.group)?.color||'#97b3c9');
     $('edgeLayer').append(element);edgeElements.push({...edge,element});
   }
   for(const s of atlas.services||[])if(s.to!=null && byId.has(s.from) && byId.has(s.to)){
     const a=byId.get(s.from),b=byId.get(s.to),element=svgEl('path',{d:edgePath(a,b),class:'world-edge service'});$('edgeLayer').append(element);serviceElements.push({a:s.from,b:s.to,element});
   }
+  const reachableIds=new Set([...nodeElements].filter(([,node])=>node.classList.contains('reachable-map')).map(([id])=>id));
+  const reachOrigins=new Set([...nodeElements].filter(([,node])=>node.classList.contains('reachability-origin')).map(([id])=>id));
   $('nodeLayer').replaceChildren();nodeElements.clear();
   const ordered=[...maps].sort((a,b)=>Number(a.major)-Number(b.major));
   for(const m of ordered){
-    const g=svgEl('g',{class:`world-node ${m.major?'major':''}`,transform:`translate(${m.x},${m.y})`,tabindex:'0',role:'button','aria-label':worldNodeLabel(m),'data-map':m.id});
+    const point=worldPoint(m),g=svgEl('g',{class:`world-node ${m.major?'major':''} ${point.source==='game'?'world-art-point':''}`,transform:`translate(${point.x},${point.y})`,tabindex:'0',role:'button','aria-label':worldNodeLabel(m),'data-map':m.id});
+    g.style.setProperty?.('--node-region',groupId(m.group)?.color||'#97b3c9');
+    if(reachableIds.has(m.id))g.classList.add('reachable-map');if(reachOrigins.has(m.id))g.classList.add('reachability-origin');
     const major=Boolean(m.major),r=major?37:8.5;
     g.append(svgEl('circle',{class:'node-hit',r:major?57:22}),svgEl('circle',{class:'node-halo',r:major?46:17}));
     if(major){g.append(svgEl('circle',{class:'town-base',r}));const glyph=svgEl('g',{class:'town-glyph',transform:'translate(-25,-25)'});glyph.innerHTML=townGlyph(m);g.append(glyph);}
@@ -179,6 +198,8 @@ function buildWorld() {
     g.addEventListener('pointerenter',e=>showMapTooltip(e,m));g.addEventListener('pointermove',e=>showMapTooltip(e,m));g.addEventListener('pointerleave',()=>$('mapTooltip').hidden=true);
     $('nodeLayer').append(g);nodeElements.set(m.id,g);
   }
+  $('decorationLayer').replaceChildren();
+  if(worldView==='classic')window.AtlasWorldClusters?.render($('decorationLayer'),worldLayout,{svgEl,canActivate:()=>!worldMoved});
   updateVisibleNodes();
 }
 function townGlyph(m) {
@@ -195,6 +216,7 @@ function townGlyph(m) {
 }
 function buildLandscape() {
   const land=$('landLayer');land.innerHTML='';
+  if(worldLayout&&worldView!=='atlas'&&window.AtlasWorldPresentation){window.AtlasWorldPresentation.render(land,worldLayout,{svgEl,groupName,groupId,canActivate:()=>!worldMoved});return;}
   const mainland='M250 790C170 620 390 530 600 570C650 380 780 240 1000 260C1240 180 1400 300 1510 440C1760 380 1890 470 2080 570C2270 640 2430 840 2340 1070C2410 1250 2460 1470 2300 1650C2150 1840 1870 1900 1640 1830C1420 1930 1120 1840 990 1790C740 1910 420 1810 280 1620C120 1450 140 1260 220 1100C120 990 130 870 250 790Z';
   const island='M140 270C150 130 300 30 470 80C590 0 770 80 840 220C980 360 770 480 620 480C470 540 280 450 180 390C90 360 110 320 140 270Z';
   land.append(svgEl('path',{d:mainland,fill:'url(#landGrad)',class:'land-border',filter:'url(#landShadow)'}),svgEl('path',{d:island,fill:'url(#mapleGrad)',class:'land-border',filter:'url(#landShadow)'}));
@@ -219,7 +241,12 @@ function buildLandscape() {
   const compass=svgEl('g',{class:'compass',transform:'translate(100,2080)'});compass.innerHTML='<circle r="51"/><circle r="42"/><path d="m0-75 12 58 63 17-63 12-12 63-12-63-63-12 63-17Z"/><path d="M0-51V51M-51 0H51"/><text y="-90">N</text>';land.append(compass);
 }
 function organicIsland(cx,cy,rx,ry,n,seed){const pts=[];for(let i=0;i<n;i++){const a=i/n*Math.PI*2,r=.9+.12*Math.sin(i*2.73+seed);pts.push([cx+Math.cos(a)*rx*r,cy+Math.sin(a)*ry*r]);}let d=`M${(pts[n-1][0]+pts[0][0])/2},${(pts[n-1][1]+pts[0][1])/2}`;for(let i=0;i<n;i++){const p=pts[i],q=pts[(i+1)%n];d+=`Q${p[0]},${p[1]} ${(p[0]+q[0])/2},${(p[1]+q[1])/2}`;}return d+'Z';}
-function edgePath(a,b) {const mx=(a.x+b.x)/2,my=(a.y+b.y)/2;const offset=((a.id+b.id)%3-1)*8;return `M${a.x},${a.y}Q${mx+offset},${my-offset} ${b.x},${b.y}`;}
+function edgePath(a,b) {
+  const p=worldPoint(a),q=worldPoint(b),mx=(p.x+q.x)/2,my=(p.y+q.y)/2;
+  if(worldLayout?.edgeStyle==='orthogonal')return `M${p.x},${p.y}H${mx}V${q.y}H${q.x}`;
+  if(worldLayout?.edgeStyle==='straight')return `M${p.x},${p.y}L${q.x},${q.y}`;
+  const offset=((a.id+b.id)%3-1)*8;return `M${p.x},${p.y}Q${mx+offset},${my-offset} ${q.x},${q.y}`;
+}
 function visibleMap(m) {
   if(currentRegion==='archive')return ['event','system','unavailable'].includes(m.scope);
   if(currentRegion==='world')return !['event','system','unavailable'].includes(m.scope);
@@ -232,22 +259,26 @@ function visibleMap(m) {
 function updateVisibleNodes(){
   for(const m of maps){const visible=visibleMap(m);nodeElements.get(m.id)?.classList.toggle('dimmed',!visible);}
   for(const e of [...edgeElements,...serviceElements]){const show=visibleMap(byId.get(e.a))&&visibleMap(byId.get(e.b));e.element.classList.toggle('dimmed',!show);}
+  if(worldLayout)window.AtlasWorldPresentation?.filter?.($('landLayer'),worldLayout,new Set(maps.filter(visibleMap).map(map=>map.id)));
 }
 function applyWorld(){
   $('worldViewport').setAttribute('transform',`translate(${world.x},${world.y}) scale(${world.k})`);
   $('worldSvg').classList.toggle('detail-zoom',world.k>.82);$('worldSvg').classList.toggle('all-labels',showAllLabels);
   for(const [id,g] of nodeElements){const m=byId.get(id),label=g.querySelector('text');const size=m.major?14/world.k:12/world.k;label.setAttribute('font-size',size);if(!m.major)g.querySelector('.node-hit').setAttribute('r',Math.max(18,11/world.k));}
+  if(worldView!=='atlas')window.AtlasWorldPresentation?.scale?.($('landLayer'),worldLayout,world.k);
   updateGraphDetail();
 }
 function updateGraphDetail(){
   const journeyMaps=new Set(route?[route.from,...route.steps.map(step=>step.to)]:[]);
-  const unclutterOverview=currentRegion==='world'&&world.k<.3&&!showAllLabels;
+  if(worldView==='classic')window.AtlasWorldClusters?.sync($('decorationLayer'),worldLayout,{scale:world.k,activeId,journeyMaps,reachableIds:new Set([...nodeElements].filter(([,node])=>node.classList.contains('reachable-map')).map(([id])=>id)),reachOrigins:new Set([...nodeElements].filter(([,node])=>node.classList.contains('reachability-origin')).map(([id])=>id)),visibleIds:new Set(maps.filter(visibleMap).map(map=>map.id))});
+  const unclutterOverview=worldView==='atlas'&&currentRegion==='world'&&world.k<.3&&!showAllLabels;
   const labels=[];
   for(const [id,node]of nodeElements){
-    const map=byId.get(id),hidden=currentRegion==='world'&&world.k<.3&&!showAllLabels&&!map.major&&id!==activeId&&!journeyMaps.has(id);
+    const map=byId.get(id),hidden=(worldView==='classic'&&worldPoint(map).source==='game')||(worldView==='atlas'&&currentRegion==='world'&&world.k<.3&&!showAllLabels&&!map.major&&id!==activeId&&!journeyMaps.has(id));
     node.style.display=hidden?'none':'';
     const label=node.querySelector('text');if(!label)continue;
     label.style.visibility='';
+    if(['metro','board','celestial'].includes(worldView)&&world.k<.45&&!showAllLabels&&id!==activeId&&!journeyMaps.has(id))label.style.visibility='hidden';
     if(unclutterOverview&&visibleMap(map)&&(map.major||id===activeId))labels.push({map,label,priority:id===activeId?2:journeyMaps.has(id)?1:0});
   }
   if(!unclutterOverview)return;
@@ -262,23 +293,24 @@ function updateGraphDetail(){
   }
 }
 function worldLabelBox(map,label){
-  const fontSize=map.major?14:12,padding=5,anchorX=world.x+map.x*world.k,anchorY=world.y+(map.y+(map.major?66:-19))*world.k;
+  const point=worldPoint(map),fontSize=map.major?14:12,padding=5,anchorX=world.x+point.x*world.k,anchorY=world.y+(point.y+(map.major?66:-19))*world.k;
   const fallbackWidth=(label.textContent||map.name).length*fontSize*.8;
   let box={left:anchorX-fallbackWidth/2,top:anchorY-fontSize,right:anchorX+fallbackWidth/2,bottom:anchorY+fontSize*.3};
   try{
     const bounds=label.getBBox?.();
-    if(bounds&&[bounds.x,bounds.y,bounds.width,bounds.height].every(Number.isFinite)&&bounds.width>0&&bounds.height>0)box={left:anchorX+bounds.x*world.k,top:world.y+(map.y+bounds.y)*world.k,right:anchorX+(bounds.x+bounds.width)*world.k,bottom:world.y+(map.y+bounds.y+bounds.height)*world.k};
+    if(bounds&&[bounds.x,bounds.y,bounds.width,bounds.height].every(Number.isFinite)&&bounds.width>0&&bounds.height>0)box={left:anchorX+bounds.x*world.k,top:world.y+(point.y+bounds.y)*world.k,right:anchorX+(bounds.x+bounds.width)*world.k,bottom:world.y+(point.y+bounds.y+bounds.height)*world.k};
   }catch{/* Detached or unavailable SVG metrics use the conservative text estimate. */}
   return {left:box.left-padding,top:box.top-padding,right:box.right+padding,bottom:box.bottom+padding};
 }
 function fitWorld(){
   const ms=maps.filter(visibleMap);if(!ms.length)return;const r=canvasView('mapCanvas');const padX=r.width<600?32:70,padY=32;
-  const minX=Math.min(...ms.map(m=>m.x))-70,maxX=Math.max(...ms.map(m=>m.x))+70,minY=Math.min(...ms.map(m=>m.y))-70,maxY=Math.max(...ms.map(m=>m.y))+80;
+  const points=ms.map(worldPoint),panels=(worldLayout?.panels||[]).filter(panel=>panel.mapIds.some(id=>byId.has(id)&&visibleMap(byId.get(id))));
+  const minX=Math.min(...points.map(p=>p.x),...panels.map(p=>p.x))-70,maxX=Math.max(...points.map(p=>p.x),...panels.map(p=>p.x+p.width))+70,minY=Math.min(...points.map(p=>p.y),...panels.map(p=>p.y-50))-70,maxY=Math.max(...points.map(p=>p.y),...panels.map(p=>p.y+p.height))+80;
   const k=Math.min((r.width-padX)/(maxX-minX),(r.height-padY)/(maxY-minY));world.k=Math.max(.03,Math.min(1.9,k));world.x=r.left+(r.width-(minX+maxX)*world.k)/2;world.y=r.top+(r.height-(minY+maxY)*world.k)/2;applyWorld();
   $('mapIntro').classList.toggle('is-hidden',currentRegion!=='world'||r.width<850||r.height<650);
 }
 function canvasView(id){const r=$(id).getBoundingClientRect();return window.AtlasShell?.mapViewport(id)||{left:0,top:0,width:r.width,height:r.height};}
-function centerOnMap(m){const r=canvasView('mapCanvas');world.k=Math.max(world.k,1.25);world.x=r.left+r.width/2-m.x*world.k;world.y=r.top+r.height/2-m.y*world.k;applyWorld();$('mapIntro').classList.add('is-hidden');}
+function centerOnMap(m){const r=canvasView('mapCanvas'),point=worldPoint(m);world.k=Math.max(world.k,1.25);world.x=r.left+r.width/2-point.x*world.k;world.y=r.top+r.height/2-point.y*world.k;applyWorld();$('mapIntro').classList.add('is-hidden');}
 function zoomWorld(factor,cx,cy){const r=$('mapCanvas').getBoundingClientRect();cx??=r.width/2;cy??=r.height/2;const k=Math.max(.06,Math.min(4,world.k*factor)),ratio=k/world.k;world.x=cx-(cx-world.x)*ratio;world.y=cy-(cy-world.y)*ratio;world.k=k;applyWorld();$('mapIntro').classList.add('is-hidden');}
 function worldNodeLabel(m){return `${m.name}. ${groupLabel(m)}. ${m.portals.filter(p=>p.kind==='cross').length} ${L('יציאות','exits')}`;}
 function showMapTooltip(e,m){if(worldMoved||e.pointerType==='touch')return;const box=$('mapCanvas').getBoundingClientRect();const x=e.clientX-box.left,y=e.clientY-box.top;const tip=$('mapTooltip');tip.innerHTML=`${eng(m.name)}<small>${esc(groupLabel(m))} · ${m.portals.filter(p=>p.kind==='cross').length} ${L('שערי יציאה','exit portals')}</small>`;tip.hidden=false;tip.style.left=`${Math.min(box.width-290,Math.max(12,x+18))}px`;tip.style.top=`${Math.min(box.height-90,y+18)}px`;}
@@ -418,8 +450,8 @@ function renderRouteResult(){
   html+=ids.map((id,i)=>{const step=route.steps[i],m=byId.get(id),gate=step?.p||(step?.service?m.portals.find(p=>supplementForGate(p,m)?.id===step.service.id):null);return `<div class="route-step" data-step-index="${i}" data-step-state="${routeStepState(i)}"><span class="step-number">${i+1}</span><div class="route-step-content"><button type="button" data-route-map="${id}">${eng(m.name)}${step?`<small>${step.service?esc(serviceLabel(step.service)):esc(`${L('שער','Portal')} ${step.p.number} · ${directionLabel(step.p,m)} · ${portalTypeLabel(step.p,m)}`)}</small>${step.service?`<small>${esc(serviceCondition(step.service))}</small>`:''}`:`<small>${L('מפת היעד','Destination map')}</small>`}</button>${gate?`<button type="button" class="route-locate" data-route-scene="${id}" data-route-gate="${esc(gate.key)}" data-route-index="${i}">${icon('pin')}${L(`הצגת שער היציאה ${gate.number}`,`Show exit portal ${gate.number}`)}</button>`:''}</div></div>`;}).join('');
   html+=`<button type="button" id="clearRoute" class="clear-route">${L('ניקוי המסלול','Clear route')}</button>`;$('routeResult').innerHTML=html;
 }
-function drawRoute(){const layer=$('routeLayer');layer.replaceChildren();if(!route){updateGraphDetail();return;}for(const s of route.steps){const a=byId.get(s.from),b=byId.get(s.to);layer.append(svgEl('path',{d:edgePath(a,b),class:`route-edge ${s.service?'service':''}`}));}const ids=[route.from,...route.steps.map(s=>s.to)];ids.forEach((id,i)=>{const m=byId.get(id),g=svgEl('g',{transform:`translate(${m.x+19},${m.y-20})`});g.append(svgEl('circle',{class:'route-dot',r:17}),svgEl('text',{class:'route-number'},i+1));layer.append(g);});updateGraphDetail();}
-function fitRoute(ids){const ms=ids.map(id=>byId.get(id)),r=canvasView('mapCanvas');const minX=Math.min(...ms.map(m=>m.x))-100,maxX=Math.max(...ms.map(m=>m.x))+100,minY=Math.min(...ms.map(m=>m.y))-100,maxY=Math.max(...ms.map(m=>m.y))+100;world.k=Math.min((r.width-90)/(maxX-minX),(r.height-32)/(maxY-minY),1.6);world.k=Math.max(.03,world.k);world.x=r.left+(r.width-(minX+maxX)*world.k)/2;world.y=r.top+(r.height-(minY+maxY)*world.k)/2;applyWorld();$('mapIntro').classList.add('is-hidden');}
+function drawRoute(){const layer=$('routeLayer');layer.replaceChildren();if(!route){updateGraphDetail();return;}for(const s of route.steps){const a=byId.get(s.from),b=byId.get(s.to);layer.append(svgEl('path',{d:edgePath(a,b),class:`route-edge ${s.service?'service':''}`}));}const ids=[route.from,...route.steps.map(s=>s.to)];ids.forEach((id,i)=>{const m=worldPoint(byId.get(id)),g=svgEl('g',{transform:`translate(${m.x+19},${m.y-20})`});g.append(svgEl('circle',{class:'route-dot',r:17}),svgEl('text',{class:'route-number'},i+1));layer.append(g);});updateGraphDetail();}
+function fitRoute(ids){const ms=ids.map(id=>worldPoint(byId.get(id))),r=canvasView('mapCanvas');const minX=Math.min(...ms.map(m=>m.x))-100,maxX=Math.max(...ms.map(m=>m.x))+100,minY=Math.min(...ms.map(m=>m.y))-100,maxY=Math.max(...ms.map(m=>m.y))+100;world.k=Math.min((r.width-90)/(maxX-minX),(r.height-32)/(maxY-minY),1.6);world.k=Math.max(.03,world.k);world.x=r.left+(r.width-(minX+maxX)*world.k)/2;world.y=r.top+(r.height-(minY+maxY)*world.k)/2;applyWorld();$('mapIntro').classList.add('is-hidden');}
 
 // Navigation progress is explicit, never inferred from the player's location.
 let navigationRoute=null, navigationIndex=0, navigationFollowing=false, routeUsesServices=false, compactNavigation=false;
@@ -664,6 +696,7 @@ function refreshLanguage(){
     if(selectedSearch){const index=activeSearchResults.findIndex(result=>result.id===selectedSearch.id&&result.kind===selectedSearch.kind);if(index>=0){searchIndex=index-1;moveSearchSelection(1);}}
   }
   for(const [id,node]of nodeElements)node.setAttribute('aria-label',worldNodeLabel(byId.get(id)));
+  if(worldView!=='atlas'){buildLandscape();if(worldView==='classic'){$('decorationLayer').replaceChildren();window.AtlasWorldClusters?.render($('decorationLayer'),worldLayout,{svgEl,canActivate:()=>!worldMoved});}updateVisibleNodes();applyWorld();}
   $('mapTooltip').hidden=true;
   if(route||$('routeResult').innerHTML)renderRouteResult();
   for(const id of ['routeFrom','routeTo'])if($(id).getAttribute('aria-invalid')==='true')$(id+'Error').textContent=routeInputError();
@@ -733,7 +766,7 @@ async function init(){
     $('mapCount').textContent=maps.length;$('mapOptions').innerHTML=maps.map(m=>`<option value="${esc(mapLabel(m))}"></option>`).join('');renderDirectoryGroups();
     window.MapSearch?.init({maps,groupLabel,groupTerms:m=>{const g=groupId(m.group);return `${g?.he||''} ${g?.en||''} ${window.AtlasTranslations?.[g?.he]||''}`;}});
     buildWorld();renderAbout();renderRouteStops();bindEvents();const hash=location.hash.match(/map=(\d+)/);selectMap(hash&&byId.has(Number(hash[1]))?Number(hash[1]):10001000,{hash:false,scroll:false,reveal:!!hash,remember:!!hash});$('loading').hidden=true;requestAnimationFrame(()=>{fitWorld();if(hash)centerOnMap(byId.get(activeId));});
-    window.Atlas={get data(){return atlas},findRoute,reachable,selectMap,openScene,openSpawns,openNpcs,planTo,planJourney,getJourney,addStop,swapRouteEnds,openRoute,openRouteStep,setCompactNavigation,stopNavigation,zoomScene,fitScene,getContext,describeMap,get activeMap(){return activeId},get currentRoute(){return route},fitWorld};
+    window.Atlas={get data(){return atlas},findRoute,reachable,selectMap,openScene,openSpawns,openNpcs,planTo,planJourney,getJourney,addStop,swapRouteEnds,openRoute,openRouteStep,setCompactNavigation,stopNavigation,zoomScene,fitScene,getContext,describeMap,get activeMap(){return activeId},get currentRoute(){return route},fitWorld,setWorldView,focusWorldPanel,get worldView(){return worldView}};
     window.AtlasPersonal?.init({maps:byId,version:`${atlas.meta.version||''}:${atlas.meta.asOf}`,escape:esc,notice:toast,
       getRoute:()=>route,getStep:()=>navigationActive()?navigationIndex:0,getServices:()=>routeUsesServices,
       refresh:renderDetails,select:id=>selectMap(id,{focus:true}),

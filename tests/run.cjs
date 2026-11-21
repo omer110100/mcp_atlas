@@ -5,6 +5,7 @@ const {spawnSync}=require('node:child_process');
 const {join}=require('node:path');
 const suites=[
   ['preferences.cjs','Language, appearance and translation coverage'],
+  ['privacy-tools.cjs','Confirmed local-data erasure and standalone notices'],
   ['explorer.cjs','Command palette, nearby maps and current location'],
   ['map-search.cjs','Unified Hebrew map lookup'],
   ['atlas-routing.cjs','Directed routing and original data'],
@@ -14,6 +15,7 @@ const suites=[
   ['atlas-behavior.cjs','Search, portal actions and entity scenes'],
   ['drawer-layout.cjs','Compact route and map lists, focus and navigation progress'],
   ['atlas-graph.cjs','Graph, selection and region filters'],
+  ['world-views.cjs','Presentation layouts and immutable source coordinates'],
   ['hunt.cjs','Item, monster and NPC catalog behavior'],
   ['personal.cjs','Saved journeys, sharing and personal map library'],
   ['library-store.cjs','Local backup boundaries and safe merging'],

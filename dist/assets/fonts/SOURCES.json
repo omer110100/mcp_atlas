@@ -1,0 +1,69 @@
+{
+  "retrievedAt": "2026-11-21T00:41:26+00:00",
+  "stylesheetSource": "https://fonts.googleapis.com/css2?family=Heebo:wght@400..800&family=Cinzel:wght@500..700&display=swap",
+  "license": "SIL Open Font License 1.1",
+  "fonts": [
+    {
+      "file": "cinzel-latin-ext-variable.woff2",
+      "family": "Cinzel",
+      "subset": "latin-ext",
+      "weights": "500 700",
+      "sourceUrl": "https://fonts.gstatic.com/s/cinzel/v26/8vIJ7ww63mVu7gt7-GT7LEc.woff2",
+      "bytes": 14540,
+      "sha256": "8fc2606f8ae6c569f444e138dba052d9a6e3f0657f9031796503bbb94eced600",
+      "woff2Tables": 20
+    },
+    {
+      "file": "cinzel-latin-variable.woff2",
+      "family": "Cinzel",
+      "subset": "latin",
+      "weights": "500 700",
+      "sourceUrl": "https://fonts.gstatic.com/s/cinzel/v26/8vIJ7ww63mVu7gt79mT7.woff2",
+      "bytes": 25904,
+      "sha256": "09941fb1c169c38fd414536b37690057fc01b3117a5c63dd6571186540c8f370",
+      "woff2Tables": 20
+    },
+    {
+      "file": "heebo-hebrew-variable.woff2",
+      "family": "Heebo",
+      "subset": "hebrew",
+      "weights": "400 800",
+      "sourceUrl": "https://fonts.gstatic.com/s/heebo/v28/NGS6v5_NC0k9P9H0TbFzsQ.woff2",
+      "bytes": 12036,
+      "sha256": "f1f7cfaef59431c7b391df81fb05520273303840bbe917213a2ab9f41b839675",
+      "woff2Tables": 20
+    },
+    {
+      "file": "heebo-latin-ext-variable.woff2",
+      "family": "Heebo",
+      "subset": "latin-ext",
+      "weights": "400 800",
+      "sourceUrl": "https://fonts.gstatic.com/s/heebo/v28/NGS6v5_NC0k9P9H4TbFzsQ.woff2",
+      "bytes": 14748,
+      "sha256": "dd3af41d4eac7f8b09b12d8d4a4bbf7ae13b0ff812560722d1a1d7c2077e02ea",
+      "woff2Tables": 20
+    },
+    {
+      "file": "heebo-latin-variable.woff2",
+      "family": "Heebo",
+      "subset": "latin",
+      "weights": "400 800",
+      "sourceUrl": "https://fonts.gstatic.com/s/heebo/v28/NGS6v5_NC0k9P9H2TbE.woff2",
+      "bytes": 30116,
+      "sha256": "50dae2e12dae22c920388023e35aaebcd1e1d27bbe915c83d64210377e083e60",
+      "woff2Tables": 20
+    }
+  ],
+  "licenses": [
+    {
+      "file": "HEEBO-OFL.txt",
+      "sourceUrl": "https://raw.githubusercontent.com/google/fonts/c1eda9233c33ad7775b27efd794f931095cf6133/ofl/heebo/OFL.txt",
+      "sha256": "866747cbccae229433e946b90fcfc457b81c33ac89e593855770851354f9e6c3"
+    },
+    {
+      "file": "CINZEL-OFL.txt",
+      "sourceUrl": "https://raw.githubusercontent.com/google/fonts/3dd78844021e948ceb633d1dcee3f7885561b5d9/ofl/cinzel/OFL.txt",
+      "sha256": "f2b3029aba64c378bf0963b62945eee15e564fe4330b934c8f2eb058282b5e83"
+    }
+  ]
+}

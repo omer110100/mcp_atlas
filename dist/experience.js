@@ -14,7 +14,7 @@
   } catch {storageOk=false;}
   const labels={
     tools:['כלים למסע','Journey tools'],welcome:['מאיפה מתחילים?','Start exploring'],shortcuts:['קיצורי מקלדת','Keyboard shortcuts'],news:['מה חדש','What’s new'],newBadge:['חדש','New'],
-    report:['דיווח על בעיה','Report a problem'],reportHelp:['פתיחת טיוטת דיווח ב־GitHub; הדיווח לא נשלח אוטומטית.','Open a draft on GitHub; nothing is submitted automatically.'],
+    report:['דיווח על בעיה','Report a problem'],reportHelp:['פתיחת GitHub מעבירה פרטי מפה, מסלול ועיצוב. פרסום דיווח הוא ציבורי; אל תכללו מידע אישי או פרצות אבטחה.','Opening GitHub sends map, route and appearance context. Submitted issues are public; do not include personal data or security vulnerabilities.'],
     support:['תמיכה דרך PayPal','Support via PayPal'],supportNote:['נהנים מהאטלס? אפשר לתמוך בפרויקט, לבחירתכם.','Finding the atlas useful? Supporting the project is optional.'],
     readability:['נוח יותר לקרוא','Comfortable reading'],readabilityToggle:['טקסט מרווח וכפתורים גדולים יותר','Roomier text and larger controls'],readabilityHelp:['יותר מקום לקריאה, בלי לשנות את המפה או את מיקומי השערים.','More room to read, with map and portal positions preserved.'],
     resetWidth:['איפוס רוחב חלונית הפרטים','Reset details panel width'],view:['תצוגת האטלס','Atlas view'],map:['מפה','Map'],list:['גלויות','Postcards'],search:['חיפוש','Search'],route:['מסלול','Route'],places:['המקומות שלי','My places'],
@@ -100,7 +100,7 @@
     const route=context.route;
     const stops=Array.isArray(route?.stops)?route.stops.filter(Number.isSafeInteger).slice(0,8):[];
     const routeLine=route&&Number.isSafeInteger(route.from)&&Number.isSafeInteger(route.to)?`${route.from} → ${route.to}; stops: ${stops.join(', ')||'—'}; step ${Number.isSafeInteger(route.index)?route.index:0}/${Number.isSafeInteger(route.total)?route.total:0}; services: ${route.services===true}`:'—';
-    const body=[L('מה לא עבד?','What went wrong?'),'\n',L('מה ציפיתם שיקרה?','What did you expect?'),'\n','---',`Atlas release: ${RELEASE}`,`Map: ${id===null?'—':`${name} [${id}]`}`,`Route: ${routeLine}`,`Language: ${window.AtlasI18n?.language==='en'?'en':'he'}`,`Theme: ${['midnight','parchment','aurora'].includes(document.documentElement.dataset.theme)?document.documentElement.dataset.theme:'midnight'}`].join('\n');
+    const body=[L('מה לא עבד?','What went wrong?'),'\n',L('מה ציפיתם שיקרה?','What did you expect?'),'\n','---',`Atlas release: ${RELEASE}`,`Map: ${id===null?'—':`${name} [${id}]`}`,`Route: ${routeLine}`,`Language: ${window.AtlasI18n?.language==='en'?'en':'he'}`,`Theme: ${['midnight','parchment','aurora','maplestory'].includes(document.documentElement.dataset.theme)?document.documentElement.dataset.theme:'midnight'}`].join('\n');
     const url=new URL('https://github.com/omer110100/mcp_atlas/issues/new');
     url.searchParams.set('title',L('דיווח מהאטלס','Atlas report')+(id===null?'':` · ${name} [${id}]`));url.searchParams.set('body',body);
     return url.href;

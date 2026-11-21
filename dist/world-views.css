@@ -1,0 +1,85 @@
+/* World layouts are independent of the interface color theme. */
+#worldSvg[data-world-view] .world-panel{pointer-events:none}
+#worldSvg[data-world-view] .world-panel-surface{fill:var(--panel,#142837);stroke:var(--world-region-color,#8eaaa0);stroke-width:2;stroke-opacity:.4}
+#worldSvg[data-world-view] .world-panel-title{fill:var(--ink,#e9eddf);font-family:var(--font);font-size:27px;font-weight:700;letter-spacing:.3px;paint-order:stroke;stroke:var(--panel,#142837);stroke-width:3px;stroke-linejoin:round}
+#worldSvg[data-world-view] .world-panel-count{fill:var(--muted,#a9bfc4);font-family:var(--font);font-size:18px;letter-spacing:1px}
+#worldSvg[data-world-view] .world-panel-image{opacity:.7;pointer-events:none}
+#worldSvg[data-world-view] .world-panel-image-shade{fill:var(--panel,#142837);fill-opacity:.58;pointer-events:none}
+#worldSvg[data-world-view] .world-panel-accent{fill:var(--world-region-color,#a4c5ac);stroke:none}
+#worldSvg[data-world-view] .world-panel-track{fill:none;stroke:var(--world-region-color,#a4c5ac);stroke-width:9;stroke-linecap:round;stroke-linejoin:round;opacity:.12}
+#worldSvg[data-world-view] circle.world-panel-orbit{fill:none;stroke:var(--world-region-color,#a4c5ac);stroke-width:1.5;stroke-dasharray:3 10;opacity:.24}
+
+/* Clear interchange stations and quiet guide rails distinguish the transit view. */
+#worldSvg[data-world-view="metro"] .world-panel-surface{fill:var(--panel,#142837);fill-opacity:.82;stroke-dasharray:3 8;stroke-opacity:.23}
+#worldSvg[data-world-view="metro"] .world-panel-title{text-anchor:start;letter-spacing:1px}
+#worldSvg[data-world-view="metro"] .world-edge{stroke:#97b3c9;stroke-width:2.1;stroke-opacity:.28;fill:none;stroke-linejoin:round}
+#worldSvg[data-world-view="metro"] .world-edge.service{stroke:var(--gold,#e8cc8c);stroke-dasharray:7 6}
+#worldSvg[data-world-view="metro"] .world-node .node-dot{fill:var(--panel,#142837);stroke:#b5d5df;stroke-width:3}
+#worldSvg[data-world-view="metro"] .world-node .town-base{fill:var(--panel,#142837);stroke:#dce8e1;stroke-width:5;r:25}
+#worldSvg[data-world-view="metro"] .world-node .town-glyph{display:none}
+#worldSvg[data-world-view="metro"] .world-node .node-halo{stroke:#9eced5;fill:none}
+#worldSvg[data-world-view="metro"] .world-node.selected .town-base,
+#worldSvg[data-world-view="metro"] .world-node.selected .node-dot{fill:var(--gold,#f3cd83);stroke:#fff7d9}
+#worldSvg[data-world-view="metro"] .route-edge{stroke-width:5;stroke-linejoin:round}
+
+/* Orbital geography: large, calm region discs with thin constellation links. */
+#worldSvg[data-world-view="celestial"] .world-panel-surface{fill:#171b38;fill-opacity:.4;stroke:#a4a6da;stroke-opacity:.14}
+#worldSvg[data-world-view="celestial"] .world-panel-title{text-anchor:middle;fill:#e0ddf6;stroke:#171b38;letter-spacing:2px}
+#worldSvg[data-world-view="celestial"] .world-panel-count{fill:#a8b4d4}
+#worldSvg[data-world-view="celestial"] .world-edge{stroke:#b6b9f4;stroke-width:1.5;stroke-opacity:.29}
+#worldSvg[data-world-view="celestial"] .world-node .node-dot{fill:#cbdcf9;stroke:#7c99c2;stroke-width:1.5}
+#worldSvg[data-world-view="celestial"] .world-node .town-base{fill:#293757;stroke:#bbcaf3;stroke-width:2.5;filter:drop-shadow(0 0 16px #849ceb44)}
+#worldSvg[data-world-view="celestial"] .world-node .node-halo{fill:#a6b9ef10;stroke:#c1cdf366}
+#worldSvg[data-world-view="celestial"] .world-node.selected .node-dot{fill:#fff3b5;stroke:#fffbe0;filter:drop-shadow(0 0 8px #f4d37c88)}
+#worldSvg[data-world-view="celestial"] .world-node.selected .town-base{stroke:#fff3b5;filter:drop-shadow(0 0 18px #f4d37c66)}
+#worldSvg[data-world-view="celestial"] .route-edge{stroke:#f7dc9f}
+
+/* Regional postcard sheets make small special areas as discoverable as towns. */
+#worldSvg[data-world-view="board"] .world-panel-surface{fill:var(--panel,#142837);stroke-opacity:.55;stroke-width:2;filter:drop-shadow(0 12px 12px #0002)}
+#worldSvg[data-world-view="board"] .world-panel-title{text-anchor:middle;font-size:29px;letter-spacing:.2px}
+#worldSvg[data-world-view="board"] .world-panel-image{opacity:.85}
+#worldSvg[data-world-view="board"] .world-panel-count{stroke:var(--panel,#142837);stroke-width:3px;stroke-linejoin:round;paint-order:stroke}
+#worldSvg[data-world-view="board"] .world-panel-accent{opacity:.82}
+#worldSvg[data-world-view="board"] .world-edge{stroke:var(--muted,#a5b8ba);stroke-width:1.8;stroke-opacity:.22}
+#worldSvg[data-world-view="board"] .world-edge.service{stroke:var(--gold,#e4c187);stroke-dasharray:5 7}
+#worldSvg[data-world-view="board"] .world-node .town-base{fill:var(--panel-2,#27423f);stroke:var(--gold,#d6bc84);stroke-width:2.5}
+#worldSvg[data-world-view="board"] .world-node .node-dot{fill:var(--panel-2,#27423f);stroke:var(--muted,#b6c6c5);stroke-width:2.2}
+#worldSvg[data-world-view="board"] .world-node.selected .node-dot{fill:var(--gold,#e7cb8e);stroke:var(--ink,#f7ecd3)}
+
+/* Strong semantic highlights must win over the appearance of every layout. */
+#worldSvg[data-world-view] .world-edge.highlighted{stroke:var(--gold,#e9cb8e);stroke-opacity:.9;stroke-width:3}
+#worldSvg[data-world-view] .world-edge.dimmed{stroke-opacity:.035}
+#worldSvg[data-world-view] .route-edge{fill:none;stroke-opacity:1}
+#worldSvg[data-world-view] .world-node:focus-visible .node-halo{stroke:var(--gold,#f2d38e);stroke-width:4;opacity:1}
+#worldSvg[data-world-view] .world-node.dimmed{opacity:.12}
+
+/* Light themes keep the same geometry with readable stations, labels and glyphs. */
+:root:is([data-theme="parchment"],[data-theme="maplestory"]) #worldSvg[data-world-view="celestial"] .world-panel-surface{fill:#eeeafa;fill-opacity:.96;stroke:#665a94;stroke-opacity:.3}
+:root:is([data-theme="parchment"],[data-theme="maplestory"]) #worldSvg[data-world-view="celestial"] .world-panel-title{fill:#4c3c77;stroke:#eeeafa}
+:root:is([data-theme="parchment"],[data-theme="maplestory"]) #worldSvg[data-world-view="celestial"] .world-panel-count{fill:#6a5c85}
+:root:is([data-theme="parchment"],[data-theme="maplestory"]) #worldSvg[data-world-view="celestial"] .world-edge{stroke:#7561a0;stroke-opacity:.38}
+:root:is([data-theme="parchment"],[data-theme="maplestory"]) #worldSvg[data-world-view="celestial"] .world-node .node-dot{fill:#6b64a2;stroke:#f0ebff}
+:root:is([data-theme="parchment"],[data-theme="maplestory"]) #worldSvg[data-world-view="celestial"] .world-node .town-base{fill:#f5efdb;stroke:#6b5d93;filter:none}
+:root:is([data-theme="parchment"],[data-theme="maplestory"]) #worldSvg[data-world-view="celestial"] .world-node .town-glyph{stroke:#5c4f85}
+:root:is([data-theme="parchment"],[data-theme="maplestory"]) #worldSvg[data-world-view="celestial"] .node-label{fill:#4c3c77;stroke:#eeeafa}
+:root:is([data-theme="parchment"],[data-theme="maplestory"]) #worldSvg[data-world-view="celestial"] .world-node.selected :is(.node-dot,.town-base){fill:#ffe8a3;stroke:#84501d}
+:root:is([data-theme="parchment"],[data-theme="maplestory"]) #worldSvg[data-world-view="celestial"] .route-edge{stroke:#9a4e1d;filter:drop-shadow(0 1px 2px #fff9e3)}
+:root:is([data-theme="parchment"],[data-theme="maplestory"]) #worldSvg[data-world-view="metro"] .world-edge{stroke:#48737b;stroke-opacity:.35}
+:root:is([data-theme="parchment"],[data-theme="maplestory"]) #worldSvg[data-world-view="metro"] .world-node .node-dot{stroke:#3e686b}
+:root:is([data-theme="parchment"],[data-theme="maplestory"]) #worldSvg[data-world-view="metro"] .world-node .town-base{stroke:#567d78}
+:root:is([data-theme="parchment"],[data-theme="maplestory"]) #worldSvg[data-world-view="metro"] .node-label{fill:var(--ink);stroke:var(--panel)}
+:root:is([data-theme="parchment"],[data-theme="maplestory"]) #worldSvg[data-world-view="board"] .node-label{fill:var(--ink);stroke:var(--panel)}
+
+@media(prefers-reduced-motion:reduce){
+  #worldSvg[data-world-view] .world-node,#worldSvg[data-world-view] .world-panel{animation:none!important;transition:none!important}
+}
+/* Transit is an open schematic, distinct from the framed postcard board. */
+html[data-world-view="metro"] .map-canvas{background:linear-gradient(90deg,color-mix(in srgb,var(--line) 12%,transparent) 1px,transparent 1px),linear-gradient(color-mix(in srgb,var(--line) 12%,transparent) 1px,transparent 1px),var(--bg);background-size:24px 24px}
+html[data-world-view="metro"] .map-canvas::after{background-image:none}
+html[data-world-view="metro"] .maple-grove{display:none}
+#worldSvg[data-world-view="metro"] .world-panel-surface{fill:none;stroke:none}
+#worldSvg[data-world-view="metro"] .world-panel-track{opacity:.06;stroke-dasharray:2 10;stroke-width:2}
+#worldSvg[data-world-view="metro"] .world-edge{stroke:color-mix(in srgb,var(--edge-region,#97b3c9) 65%,var(--ink));stroke-opacity:.55;stroke-width:3}
+#worldSvg[data-world-view="metro"] .world-node .node-dot,#worldSvg[data-world-view="metro"] .world-node .town-base{stroke:color-mix(in srgb,var(--node-region,#97b3c9) 65%,var(--ink))}
+#worldSvg[data-world-view="metro"] .world-edge.highlighted{stroke:var(--gold);stroke-opacity:1;stroke-width:4}
+#worldSvg[data-world-view="metro"] .world-edge.dimmed{stroke-opacity:.035}
